@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "semi": false,
+  "printWidth": 100,
+  "sortImports": true,
+  "sortTailwindcss": {
+    "stylesheet": "./src/styles/index.css",
+    "functions": ["cn", "cva"]
+  },
+  "ignorePatterns": ["pnpm-lock.yaml", "worker-configuration.d.ts", "src/components/ui/**"]
+}
