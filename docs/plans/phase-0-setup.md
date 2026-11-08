@@ -72,11 +72,11 @@ pnpm add tailwindcss @tailwindcss/vite
 `@` means the `src` folder, so imports read `@/components/ui/button`.
 
 Set it in **both** TypeScript and Vite:
-- `tsconfig.json` and `tsconfig.app.json`, under `compilerOptions`:
+- `tsconfig.json` (add a `compilerOptions` block, it has none) and `tsconfig.app.json` (existing `compilerOptions`):
   ```json
-  "baseUrl": ".",
   "paths": { "@/*": ["./src/*"] }
   ```
+  Do **not** add `baseUrl`: newer TypeScript deprecates it, and `paths` resolves relative to the tsconfig without it.
 - `vite.config.ts`:
   ```ts
   import path from "path"
