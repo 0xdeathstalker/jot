@@ -24,7 +24,50 @@ Why not the Tiptap CLI: SCSS + Radix + Floating UI, React 19 not fully supported
 
 Room name = Durable Object identity. Renaming later orphans data stored under the old name. It is free now (nothing is persisted), and cheap until Phase 3 creates real notes. Decide the index-doc naming (`IndexRoom` class vs `index-<userId>`) in the Phase 3 plan, before any real data exists.
 
-## Steps
+## Task list
+
+Small tasks, in order. Each one ends with a "done when" check, and leaves `pnpm check` passing from task 2.1 onwards. Step numbers point to the details below. **Checkpoints** are the points to stop and test in the browser.
+
+### A. Server
+
+- [ ] **A1. Install packages.** `pnpm add yjs partyserver y-partyserver @tiptap/react @tiptap/pm @tiptap/starter-kit @tiptap/extension-collaboration @tiptap/y-tiptap` (step 1). Done when: install finishes, no unmet peer warnings (if `@cloudflare/workers-types` is reported, ask the owner before adding).
+- [ ] **A2. Regenerate Worker types.** `pnpm cf-typegen` (step 1). Done when: `worker-configuration.d.ts` still has `NoteRoom` in `Env`.
+- [ ] **A3. Make `NoteRoom` a `YServer` with `hibernate: true`** in `worker/rooms/note-room.ts` (step 2). Done when: `pnpm typecheck` passes.
+- [ ] **A4. Route party requests** in `worker/index.ts` with `routePartykitRequest`, keep the 404 fallback (step 3). Done when: `pnpm typecheck` passes and `pnpm dev` starts without errors.
+
+### B. Client sync (no UI yet)
+
+- [ ] **B1. `src/sync/provider.ts`: create the provider.** A plain function that takes a note id and returns `{ doc, provider }` using `new YProvider(window.location.host, noteId, doc, { party: "note-room" })` (step 4). This is the only file importing `y-partyserver`. Done when: `pnpm check` passes.
+- [ ] **B2. Add the React hook** in the same file: creates the provider once per note id and calls `provider.disconnect()` on unmount, never `destroy()` (step 4). Done when: `pnpm check` passes.
+- [ ] **B3. Add reconnect listeners** in the hook: on `visibilitychange` (visible) and `window` `online`, call `provider.connect()` if `!provider.wsconnected`; remove the listeners on cleanup (step 4). Done when: `pnpm check` passes.
+
+### C. Editor and app shell
+
+- [ ] **C1. `src/editor/Editor.tsx`, minimal.** `useEditor` with `StarterKit.configure({ undoRedo: false })` and `Collaboration.configure({ document: provider.doc })`, rendered with `EditorContent`. No Tiptap `content` option (step 5). Done when: `pnpm check` passes.
+- [ ] **C2. `src/App.tsx`: read `?note=`**, default `test`, render `<Editor key={noteId} noteId={noteId} />` (step 6). Done when: the page loads at `/` and at `/?note=test` with no console errors.
+- [ ] **C3. Editor styles** on `.ProseMirror` in `src/styles/index.css`: headings, lists, blockquote, code, font size at least 16px (step 5). Done when: typing `# ` or `- ` shows styled heading or list.
+- [ ] **C4. Checkpoint: two-tab sync.** Run verify items 1–3 from step 8. Done when: text typed in one tab shows in the other within about a second, a WebSocket to `/parties/note-room/test` is open in both, and `?note=other` stays separate.
+  - If the WebSocket gets the SPA page instead of connecting, add `run_worker_first: ["/parties/*"]` to `wrangler.jsonc` and run `pnpm cf-typegen`.
+
+### D. Toolbar
+
+- [ ] **D1. Add the shadcn toggle.** `pnpm dlx shadcn@latest add toggle` (step 7). Done when: `src/components/ui/toggle.tsx` exists and is not hand-edited.
+- [ ] **D2. `src/editor/Toolbar.tsx` with mark toggles:** bold, italic, strike, inline code. Active state from `editor.isActive`, `aria-label` on each (step 7). Done when: clicking bold in tab 1 formats text and shows it in tab 2.
+- [ ] **D3. Heading toggles** H1 and H2 via `toggleHeading({ level })`. Done when: heading toggles and syncs.
+- [ ] **D4. List toggles:** bullet and ordered. Done when: both toggle and sync.
+- [ ] **D5. Blockquote and code block toggles.** Done when: both toggle and sync.
+- [ ] **D6. Render `<Toolbar editor={editor} />` inside `Editor.tsx`.** Done when: toolbar is visible and no undo/redo buttons exist.
+
+### E. Wrap-up
+
+- [ ] **E1. Checkpoint: reconnect and undo.** Run verify items 4–5 from step 8. Done when: tabs recover after a `pnpm dev` restart, and `Ctrl+Z` undoes only your own text.
+- [ ] **E2. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all three pass.
+- [ ] **E3. Docs.** Update `docs/project-context.md` (Phase 1 boxes, §7 plain room IDs, index-doc naming deferred to Phase 3) (step 9). Done when: no `note:` room names remain in the file.
+- [ ] **E4. Commit** in the split from step 11. Done when: pre-commit hook passes on each commit.
+
+Order notes: A and B can be built before any UI exists. C4 is the first real test of the whole pipeline, so fix problems there before starting D.
+
+## Step details (reference)
 
 ### 1. Packages
 
