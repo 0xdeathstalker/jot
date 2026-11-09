@@ -20,12 +20,13 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 
 | Layer   | Tool                                                    |
 | ------- | ------------------------------------------------------- |
-| UI      | React, Vite, TypeScript                                 |
+| UI      | React, Vite, TypeScript, Tailwind CSS v4, shadcn/ui     |
 | Editor  | TipTap (open source, headless)                          |
 | Sync    | Yjs + `y-partyserver`                                   |
 | Server  | Cloudflare Worker + Durable Objects (one per note)      |
 | Storage | IndexedDB (client), Durable Object SQLite + D1 (server) |
-| Hosting | Cloudflare, at `jot.deathstalker.dev`                   |
+| Tooling | pnpm, oxlint, oxfmt, Husky + lint-staged                |
+| Hosting | Cloudflare Workers                                      |
 
 ---
 
@@ -33,7 +34,7 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 
 ### Prerequisites
 
-- Node.js 20+ and npm
+- Node.js 20+ and [pnpm](https://pnpm.io/installation) (`corepack enable` works)
 - A free [Cloudflare account](https://dash.cloudflare.com/sign-up) (only needed to deploy)
 
 ### Install and run
@@ -41,13 +42,15 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 ```bash
 git clone <repo-url> jot
 cd jot
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
-`npm run dev` starts Vite and a local simulation of the Cloudflare Worker and Durable Objects together. Nothing touches your Cloudflare account.
+`pnpm dev` starts Vite and a local simulation of the Cloudflare Worker and Durable Objects together. Nothing touches your Cloudflare account.
 
 ### Check that sync works
+
+_Available from Phase 1 onwards._
 
 1. Open `http://localhost:5173/?note=test` in two browser tabs.
 2. Type in one tab, and it should appear in the other.
@@ -58,16 +61,13 @@ npm run dev
 ## Deploy
 
 ```bash
-npx wrangler login     # first time only
-npm run deploy
+pnpm exec wrangler login     # first time only
+pnpm deploy
 ```
 
 This builds the app and deploys a single Worker that serves both the PWA and the sync server. It's live at `https://jot.<your-account>.workers.dev`.
 
-### Custom domain (`jot.deathstalker.dev`)
-
-1. Add `deathstalker.dev` to Cloudflare and switch its nameservers (free).
-2. In the Cloudflare dashboard, go to **Workers & Pages → jot → Settings → Domains & Routes → Add custom domain**, and enter `jot.deathstalker.dev`.
+To use your own domain, add it in the Cloudflare dashboard under **Workers & Pages → jot → Settings → Domains & Routes → Add custom domain**. The domain's DNS must be on Cloudflare.
 
 ## Install on devices
 
@@ -79,10 +79,43 @@ This builds the app and deploys a single Worker that serves both the PWA and the
 ## Project structure
 
 ```
-src/        React PWA (editor, sync, features)
-worker/     Cloudflare Worker + NoteRoom Durable Object
-docs/       Project context and per-task plans
+src/                React PWA
+  components/ui/    shadcn/ui components (generated, not formatted)
+  editor/           TipTap editor and its UI
+  sync/             Yjs providers and persistence
+  features/         notes, sharing
+  lib/              shared helpers
+worker/             Cloudflare Worker + NoteRoom Durable Object
+docs/               Project context and per-task plans
 ```
+
+Imports inside `src/` use the `@/` alias (`@/components/ui/button`), never `../`.
+
+## Adding UI components
+
+shadcn components are added only when a feature needs them:
+
+```bash
+pnpm dlx shadcn@latest add <component>
+```
+
+## Scripts
+
+| Command           | What it does                                                  |
+| ----------------- | ------------------------------------------------------------- |
+| `pnpm dev`        | Run the app + Worker locally                                  |
+| `pnpm build`      | Type-check and build for production                           |
+| `pnpm preview`    | Build and preview the production bundle locally               |
+| `pnpm deploy`     | Build and deploy to Cloudflare                                |
+| `pnpm lint`       | Lint with oxlint                                              |
+| `pnpm lint:fix`   | Lint and apply safe fixes                                     |
+| `pnpm format`     | Check formatting (oxfmt), writes nothing                      |
+| `pnpm format:fix` | Format all files                                              |
+| `pnpm typecheck`  | Regenerate Worker types and run `tsc -b`                      |
+| `pnpm check`      | Lint + format check + typecheck. Run before pushing or in CI  |
+| `pnpm cf-typegen` | Regenerate `worker-configuration.d.ts` after editing wrangler |
+
+A Husky pre-commit hook runs lint-staged: staged files are linted (`oxlint --fix`) and formatted (`oxfmt`). A lint error blocks the commit.
 
 ## Documentation
 
@@ -91,15 +124,3 @@ docs/       Project context and per-task plans
 | [`docs/project-context.md`](docs/project-context.md) | Architecture, decisions, data model, traps to avoid |
 | [`docs/plans/`](docs/plans/)                         | One plan per feature, setup step or critical fix    |
 | [`CLAUDE.md`](CLAUDE.md)                             | Working rules for AI coding agents                  |
-
-## Scripts
-
-| Command          | What it does                   |
-| ---------------- | ------------------------------ |
-| `npm run dev`    | Run the app + Worker locally   |
-| `npm run build`  | Production build               |
-| `npm run deploy` | Build and deploy to Cloudflare |
-
-## Cost
-
-₹0/month. Everything runs on Cloudflare's free plan, and hitting a limit causes temporary errors, never a bill. No paid TipTap packages are used.
