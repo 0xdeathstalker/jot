@@ -1,12 +1,8 @@
-export default {
-  fetch(request) {
-    const url = new URL(request.url)
+export { NoteRoom } from "./rooms/note-room.ts"
 
-    if (url.pathname.startsWith("/api/")) {
-      return Response.json({
-        name: "Cloudflare",
-      })
-    }
+export default {
+  fetch() {
+    // Static assets (the PWA) are served before this runs; anything else is unknown.
     return new Response(null, { status: 404 })
   },
 } satisfies ExportedHandler<Env>
