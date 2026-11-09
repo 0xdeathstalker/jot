@@ -30,10 +30,10 @@ Small tasks, in order. Each one ends with a "done when" check, and leaves `pnpm 
 
 ### A. Server
 
-- [ ] **A1. Install packages.** `pnpm add yjs partyserver y-partyserver @tiptap/react @tiptap/pm @tiptap/starter-kit @tiptap/extension-collaboration @tiptap/y-tiptap` (step 1). Done when: install finishes, no unmet peer warnings (if `@cloudflare/workers-types` is reported, ask the owner before adding).
-- [ ] **A2. Regenerate Worker types.** `pnpm cf-typegen` (step 1). Done when: `worker-configuration.d.ts` still has `NoteRoom` in `Env`.
-- [ ] **A3. Make `NoteRoom` a `YServer` with `hibernate: true`** in `worker/rooms/note-room.ts` (step 2). Done when: `pnpm typecheck` passes.
-- [ ] **A4. Route party requests** in `worker/index.ts` with `routePartykitRequest`, keep the 404 fallback (step 3). Done when: `pnpm typecheck` passes and `pnpm dev` starts without errors.
+- [x] **A1. Install packages.** `pnpm add yjs partyserver y-partyserver @tiptap/react @tiptap/pm @tiptap/starter-kit @tiptap/extension-collaboration @tiptap/y-tiptap` (step 1). Done when: install finishes, no unmet peer warnings (if `@cloudflare/workers-types` is reported, ask the owner before adding).
+- [x] **A2. Regenerate Worker types.** `pnpm cf-typegen` (step 1). Done when: `worker-configuration.d.ts` still has `NoteRoom` in `Env`.
+- [x] **A3. Make `NoteRoom` a `YServer` with `hibernate: true`** in `worker/rooms/note-room.ts` (step 2). Done when: `pnpm typecheck` passes.
+- [x] **A4. Route party requests** in `worker/index.ts` with `routePartykitRequest`, keep the 404 fallback (step 3). Done when: `pnpm typecheck` passes and `pnpm dev` starts without errors.
 
 ### B. Client sync (no UI yet)
 
