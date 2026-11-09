@@ -173,13 +173,13 @@ Rules (context §11): DO classes go under `new_sqlite_classes`. Never edit the `
 
 ### 10. Done checklist
 
-- [ ] `pnpm dev` runs React app + Worker with no errors
-- [ ] `pnpm build` passes; typecheck clean (`pnpm exec tsc -b` or template script)
-- [ ] `pnpm exec wrangler deploy --dry-run` accepts the config
-- [ ] shadcn smoke test passed and cleaned up
-- [ ] Layout matches context §5, no leftover template junk
-- [ ] `README.md` is still yours (not create-vite's)
-- [ ] Context §10 Phase 0 boxes ticked
+- [x] `pnpm dev` runs React app + Worker with no errors
+- [x] `pnpm build` passes; typecheck clean (`pnpm exec tsc -b` or template script)
+- [x] `pnpm exec wrangler deploy --dry-run` accepts the config
+- [x] shadcn smoke test passed and cleaned up
+- [x] Layout matches context §5, no leftover template junk
+- [x] `README.md` is still yours (not create-vite's)
+- [x] Context §10 Phase 0 boxes ticked
 
 ### 11. Commit (suggested split)
 
