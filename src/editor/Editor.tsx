@@ -2,6 +2,7 @@ import Collaboration from "@tiptap/extension-collaboration"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 
+import { Toolbar } from "@/editor/Toolbar"
 import { useNoteSession } from "@/sync/provider"
 
 // Content comes from the Y.Doc, never from Tiptap's `content` option.
@@ -17,5 +18,10 @@ export function Editor({ noteId }: { noteId: string }) {
     ],
   })
 
-  return <EditorContent editor={editor} />
+  return (
+    <>
+      <Toolbar editor={editor} />
+      <EditorContent editor={editor} />
+    </>
+  )
 }

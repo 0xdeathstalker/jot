@@ -51,12 +51,12 @@ Small tasks, in order. Each one ends with a "done when" check, and leaves `pnpm 
 
 ### D. Toolbar
 
-- [ ] **D1. Add the shadcn toggle.** `pnpm dlx shadcn@latest add toggle` (step 7). Done when: `src/components/ui/toggle.tsx` exists and is not hand-edited.
-- [ ] **D2. `src/editor/Toolbar.tsx` with mark toggles:** bold, italic, strike, inline code. Active state from `editor.isActive`, `aria-label` on each (step 7). Done when: clicking bold in tab 1 formats text and shows it in tab 2.
-- [ ] **D3. Heading toggles** H1 and H2 via `toggleHeading({ level })`. Done when: heading toggles and syncs.
-- [ ] **D4. List toggles:** bullet and ordered. Done when: both toggle and sync.
-- [ ] **D5. Blockquote and code block toggles.** Done when: both toggle and sync.
-- [ ] **D6. Render `<Toolbar editor={editor} />` inside `Editor.tsx`.** Done when: toolbar is visible and no undo/redo buttons exist.
+- [x] **D1. Add the shadcn toggle.** `pnpm dlx shadcn@latest add toggle` (step 7). Done when: `src/components/ui/toggle.tsx` exists and is not hand-edited.
+- [x] **D2. `src/editor/Toolbar.tsx` with mark toggles:** bold, italic, strike, inline code. Active state from `editor.isActive`, `aria-label` on each (step 7). Done when: clicking bold in tab 1 formats text and shows it in tab 2.
+- [x] **D3. Heading toggles** H1 and H2 via `toggleHeading({ level })`. Done when: heading toggles and syncs.
+- [x] **D4. List toggles:** bullet and ordered. Done when: both toggle and sync.
+- [x] **D5. Blockquote and code block toggles.** Done when: both toggle and sync.
+- [x] **D6. Render `<Toolbar editor={editor} />` inside `Editor.tsx`.** Done when: toolbar is visible and no undo/redo buttons exist.
 
 ### E. Wrap-up
 
