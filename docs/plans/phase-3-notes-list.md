@@ -71,8 +71,8 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step E: Title and preview from the editor
 
-- [ ] **E1. Helper.** Pure function `getTitleAndPreview(editor.getText())`: title = first non-empty line, trimmed, max 100 chars; preview = text after the title, whitespace collapsed, first 200 chars. Done when: a tiny self-check script or `demo()` covers an empty doc, a one-line doc and a long doc.
-- [ ] **E2. Write on local edits only.** In `Editor.tsx` use `onUpdate`, **debounced ~500 ms**, skip transactions that came from Yjs (`isChangeOrigin` from `@tiptap/y-tiptap`) so remote edits do not echo, and skip the write when title and preview are unchanged. Also bump `updatedAt` when it writes. Done when: typing updates the sidebar row and a remote-only change causes no index write.
+- [x] **E1. Helper.** Pure function `getTitleAndPreview(editor.getText())`: title = first non-empty line, trimmed, max 100 chars; preview = text after the title, whitespace collapsed, first 200 chars. Done when: a tiny self-check script or `demo()` covers an empty doc, a one-line doc and a long doc.
+- [x] **E2. Write on local edits only.** In `Editor.tsx` use `onUpdate`, **debounced ~500 ms**, skip transactions that came from Yjs (`isChangeOrigin` from `@tiptap/y-tiptap`) so remote edits do not echo, and skip the write when title and preview are unchanged. Also bump `updatedAt` when it writes. Done when: typing updates the sidebar row and a remote-only change causes no index write.
 - [ ] **E3. Checkpoint: two tabs.** Tab A types a first line; tab B's sidebar row shows it. Done when: it appears in under ~2 s.
 
 ### Step F: Search

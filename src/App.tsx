@@ -1,13 +1,13 @@
 import { Add01Icon, Menu01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Editor } from "@/editor/Editor"
 import { NoteList } from "@/features/notes/NoteList"
 import { useNoteId } from "@/features/notes/useNoteId"
-import { createNote, softDelete, togglePin, useNotes } from "@/sync/indexDoc"
+import { createNote, softDelete, togglePin, updateMeta, useNotes } from "@/sync/indexDoc"
 import { useIndexSession } from "@/sync/provider"
 
 function App() {
@@ -26,6 +26,14 @@ function App() {
     openNote(createNote(doc))
     setSidebarOpen(false)
   }
+
+  // Stable per (doc, noteId): the editor re-subscribes when this changes.
+  const handleMeta = useCallback(
+    (meta: { title: string; preview: string }) => {
+      if (noteId) updateMeta(doc, noteId, meta)
+    },
+    [doc, noteId],
+  )
 
   const handleOpen = (id: string) => {
     openNote(id)
@@ -72,7 +80,7 @@ function App() {
           </Button>
 
           {noteId ? (
-            <Editor key={noteId} noteId={noteId} />
+            <Editor key={noteId} noteId={noteId} onMetaChange={handleMeta} />
           ) : (
             <p className="text-muted-foreground">No notes yet. Create one with “New note”.</p>
           )}
