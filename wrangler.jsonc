@@ -14,12 +14,19 @@
     "enabled": true,
   },
   "upload_source_maps": true,
-  // One NoteRoom Durable Object per note. Free plan needs SQLite-backed classes.
-  // Never edit the "v1" migration: add a new tag (v2, ...) for any class change.
+  // One NoteRoom Durable Object per note, one IndexRoom per user (the note list).
+  // Free plan needs SQLite-backed classes.
+  // Never edit an existing migration ("v1", "v2"): add a new tag (v3, ...) for any class change.
   "durable_objects": {
-    "bindings": [{ "name": "NoteRoom", "class_name": "NoteRoom" }],
+    "bindings": [
+      { "name": "NoteRoom", "class_name": "NoteRoom" },
+      { "name": "IndexRoom", "class_name": "IndexRoom" },
+    ],
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["NoteRoom"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["NoteRoom"] },
+    { "tag": "v2", "new_sqlite_classes": ["IndexRoom"] },
+  ],
   /**
    * Smart Placement
    * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

@@ -43,10 +43,10 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step A: Server – IndexRoom (`worker/`, `wrangler.jsonc`)
 
-- [ ] **A1. Class.** Create `worker/rooms/index-room.ts`: `import { NoteRoom } from "./note-room.ts"` and `export class IndexRoom extends NoteRoom {}` with a one-line comment (same persistence, separate Durable Object namespace). Done when: file compiles.
-- [ ] **A2. Binding and migration.** In `wrangler.jsonc` add binding `{ "name": "IndexRoom", "class_name": "IndexRoom" }` and a **new** migration `{ "tag": "v2", "new_sqlite_classes": ["IndexRoom"] }`. Never edit `v1`. Done when: both are in the file.
-- [ ] **A3. Export and typegen.** `export { IndexRoom } from "./rooms/index-room.ts"` in `worker/index.ts`, then `pnpm cf-typegen`. Done when: `pnpm check` passes.
-- [ ] **A4. Checkpoint: dry run.** `pnpm build` then `pnpm exec wrangler deploy --dry-run`. Done when: both `NoteRoom` and `IndexRoom` bindings are listed.
+- [x] **A1. Class.** Create `worker/rooms/index-room.ts`: `import { NoteRoom } from "./note-room.ts"` and `export class IndexRoom extends NoteRoom {}` with a one-line comment (same persistence, separate Durable Object namespace). Done when: file compiles.
+- [x] **A2. Binding and migration.** In `wrangler.jsonc` add binding `{ "name": "IndexRoom", "class_name": "IndexRoom" }` and a **new** migration `{ "tag": "v2", "new_sqlite_classes": ["IndexRoom"] }`. Never edit `v1`. Done when: both are in the file.
+- [x] **A3. Export and typegen.** `export { IndexRoom } from "./rooms/index-room.ts"` in `worker/index.ts`, then `pnpm cf-typegen`. Done when: `pnpm check` passes.
+- [x] **A4. Checkpoint: dry run.** `pnpm build` then `pnpm exec wrangler deploy --dry-run`. Done when: both `NoteRoom` and `IndexRoom` bindings are listed.
 
 ### Step B: Client sync layer (`src/sync/`)
 
