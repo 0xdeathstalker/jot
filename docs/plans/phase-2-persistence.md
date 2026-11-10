@@ -1,6 +1,6 @@
 # Plan: Phase 2 – Offline and persistence
 
-Status: ready, decisions made, not started
+Status: done
 Source: `docs/project-context.md` §10 Phase 2, `docs/research/phase-1-sync.md` (server persistence sketch, limits).
 
 Goal: a note survives a page reload, going offline, and the server restarting. Edits made offline in two tabs merge on reconnect.
@@ -45,8 +45,8 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step D: Wrap-up
 
-- [ ] **D1. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass.
-- [ ] **D2. Docs.** Tick the Phase 2 boxes in `docs/project-context.md` and note the KV key, the `jot-note-` prefix, and "render immediately". Done when: nothing in the file still calls persistence future work.
+- [x] **D1. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass.
+- [x] **D2. Docs.** Tick the Phase 2 boxes in `docs/project-context.md` and note the KV key, the `jot-note-` prefix, and "render immediately". Done when: nothing in the file still calls persistence future work.
 - [ ] **D3. Commit** as `feat: persist NoteRoom state in DO storage` (A), `feat: y-indexeddb offline cache` (B), `docs: update project context for phase 2` (D). Done when: the pre-commit hook passes on each.
 
 ## Details and traps

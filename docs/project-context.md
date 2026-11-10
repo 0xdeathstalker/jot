@@ -227,9 +227,9 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 
 ### Phase 2: Offline and persistence
 
-- [ ] `y-indexeddb` on the client
-- [ ] `onLoad` / `onSave` in NoteRoom, writing to DO SQLite
-- [ ] Test: edit offline in both tabs → reconnect → both edits are kept
+- [x] `y-indexeddb` on the client (database `jot-note-<noteId>`, created in the `useNoteSession` effect; the name is fixed because renaming orphans users' offline data)
+- [x] `onLoad` / `onSave` in NoteRoom, writing to DO storage (`ctx.storage.kv`, key `doc`, compacted Yjs update; move to a SQL table only if a room needs more than one blob)
+- [x] Test: edit offline in both tabs → reconnect → both edits are kept
 
 ### Phase 3: Notes list
 
