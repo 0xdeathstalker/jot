@@ -1,0 +1,5 @@
+# Copy to .dev.vars (gitignored) and fill in. Production: `pnpm exec wrangler secret put <NAME>`.
+BETTER_AUTH_SECRET=        # 32+ random chars, e.g. node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+GOOGLE_CLIENT_ID=          # Google Cloud Console > Credentials > OAuth client (Web application)
+GOOGLE_CLIENT_SECRET=
+ALLOWED_EMAILS=            # comma-separated Gmail addresses allowed to sign up. Empty = nobody

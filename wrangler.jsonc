@@ -7,9 +7,24 @@
   "name": "jot",
   "main": "worker/index.ts",
   "compatibility_date": "2026-11-04",
+  // Better Auth needs node:async_hooks / node:crypto.
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "not_found_handling": "single-page-application",
+    // The Google callback is a browser navigation: without this the SPA fallback would answer it
+    // with index.html before the Worker runs, and login would silently never complete.
+    "run_worker_first": ["/api/*"],
   },
+  // Auth tables + note_members. "local" is fine for `pnpm dev`; the real id comes from
+  // `wrangler d1 create jot-db` (docs/plans/phase-4-auth.md, E1).
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "jot-db",
+      "database_id": "local",
+      "migrations_dir": "migrations",
+    },
+  ],
   "observability": {
     "enabled": true,
   },
