@@ -11,9 +11,10 @@
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "not_found_handling": "single-page-application",
-    // The Google callback is a browser navigation: without this the SPA fallback would answer it
-    // with index.html before the Worker runs, and login would silently never complete.
-    "run_worker_first": ["/api/*"],
+    // Without this the SPA fallback answers GETs with index.html before the Worker runs:
+    //  - /api/*: the Google callback is a browser navigation, so login would never complete.
+    //  - /parties/*: a WebSocket handshake is a GET, so it would skip the permission guard.
+    "run_worker_first": ["/api/*", "/parties/*"],
   },
   // Auth tables + note_members. "local" is fine for `pnpm dev`; the real id comes from
   // `wrangler d1 create jot-db` (docs/plans/phase-4-auth.md, E1).

@@ -1,6 +1,7 @@
 import { routePartykitRequest } from "partyserver"
 
 import { createAuth } from "./auth/auth.ts"
+import { guardRoom } from "./auth/gate.ts"
 
 export { IndexRoom } from "./rooms/index-room.ts"
 export { NoteRoom } from "./rooms/note-room.ts"
@@ -13,6 +14,10 @@ export default {
 
     // Party URLs look like /parties/note-room/<noteId> and /parties/index-room/<room>;
     // anything else is unknown.
-    return (await routePartykitRequest(request, env)) || new Response("Not Found", { status: 404 })
+    const response = await routePartykitRequest(request, env, {
+      onBeforeConnect: (req, lobby) => guardRoom(req, env, lobby),
+      onBeforeRequest: (req, lobby) => guardRoom(req, env, lobby),
+    })
+    return response || new Response("Not Found", { status: 404 })
   },
 } satisfies ExportedHandler<Env>

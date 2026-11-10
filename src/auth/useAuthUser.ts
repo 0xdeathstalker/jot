@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 
 import { authClient } from "@/auth/client"
+import { requestWipe } from "@/sync/localData"
 
 export type AuthUser = { id: string; name: string; email: string; image?: string | null }
 export type AuthState =
@@ -59,7 +60,15 @@ export function useAuthUser(): AuthState {
   return { status: "signedOut" }
 }
 
+// Ends the session and removes this device's notes. The wipe runs on the next page load (see
+// localData.ts); callers should have tried `syncAllLocalData` first.
 export async function signOut() {
   writeCached(null)
-  await authClient.signOut()
+  requestWipe()
+  try {
+    await authClient.signOut()
+  } catch {
+    // Offline: the cookie stays until we are online again, but local data is wiped regardless.
+  }
+  window.location.assign("/")
 }

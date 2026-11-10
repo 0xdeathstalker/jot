@@ -5,6 +5,7 @@ import YProvider from "y-partyserver/provider"
 import { Doc } from "yjs"
 
 import { carryOverLegacyIndex } from "@/sync/legacyIndex"
+import { listLocalDatabases } from "@/sync/localData"
 
 export type RoomSession = { doc: Doc; provider: YProvider }
 
@@ -72,4 +73,48 @@ export function useIndexSession(userId: string): RoomSession {
   }, [session.doc])
 
   return session
+}
+
+const SYNC_TIMEOUT_MS = 6000
+
+// Opens a throwaway connection to one room and waits until the server has exchanged state with us.
+// "synced" is y-websocket's flag: we received the server's state after our reply to its handshake,
+// so edits made while offline have been sent. The short pause lets that reply leave the socket.
+async function syncRoom(options: RoomOptions): Promise<boolean> {
+  const { doc, provider } = createSession(options)
+  const persistence = new IndexeddbPersistence(options.idbName, doc)
+  try {
+    await persistence.whenSynced // local edits are in the doc first
+    void provider.connect()
+    const synced = await new Promise<boolean>((resolve) => {
+      if (provider.synced) return resolve(true)
+      const timer = setTimeout(() => resolve(false), SYNC_TIMEOUT_MS)
+      provider.on("sync", (isSynced: boolean) => {
+        if (!isSynced) return
+        clearTimeout(timer)
+        resolve(true)
+      })
+    })
+    if (synced) await new Promise((resolve) => setTimeout(resolve, 300))
+    return synced
+  } finally {
+    provider.disconnect() // not destroy(): partykit #402
+    void persistence.destroy()
+  }
+}
+
+// Before sign-out: push every local note and this user's index to the server.
+// Returns how many could not be synced (offline, refused, or timed out). They are all started at
+// once: fine for tens of notes; add a concurrency limit if someone has hundreds.
+export async function syncAllLocalData(userId: string): Promise<{ failed: number }> {
+  const targets: RoomOptions[] = (await listLocalDatabases()).flatMap((name) => {
+    if (name === `jot-index-${userId}`)
+      return [{ party: "index-room", room: `index-${userId}`, idbName: name }]
+    if (name.startsWith("jot-note-")) {
+      return [{ party: "note-room", room: name.slice("jot-note-".length), idbName: name }]
+    }
+    return [] // another account's index or the Phase 3 placeholder: this session cannot sync them
+  })
+  const results = await Promise.all(targets.map(syncRoom))
+  return { failed: results.filter((ok) => !ok).length }
 }

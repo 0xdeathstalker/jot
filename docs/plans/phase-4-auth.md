@@ -20,7 +20,7 @@ Defaults I chose without asking (change them if you disagree):
 - **Note ownership is claimed on first connection.** Table `note_members` (the Phase 6 schema, used now with role `owner`). The first logged-in user to connect to a note id becomes its owner. Ids are random UUIDs, so this works offline-first (notes are created offline, claimed when first synced). Old plain-id dev notes such as `test` get claimed by whoever connects first.
 - **Index room per user:** `index-<userId>` (party `index-room`). The Worker only lets you open your own.
 - **Login required to open the app.** No logged-out local-only mode. Once logged in the app must still open **offline** (see traps).
-- **Sign out keeps the local IndexedDB data** on that device. Fine for your own devices; revisit before sharing a computer.
+- **Sign out syncs then clears local data** on that device (B4b). Offline notes need one online visit after the next sign-in.
 
 ## Access control (decided: no paid plan, no daily upkeep)
 
@@ -78,7 +78,7 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 ### Step A: Auth on the Worker (spike first)
 
 - [x] **A1. Install.** `pnpm add better-auth`. Done when: it is in `package.json`.
-- [x] **A2. Config.** In `wrangler.jsonc`: `"compatibility_flags": ["nodejs_compat"]` (Better Auth needs `node:async_hooks`/`node:crypto`), a `d1_databases` entry `{ "binding": "DB", "database_name": "jot-db", "database_id": "local" }` (real id comes in E1), and `assets.run_worker_first: ["/api/*"]`. The last one is required: the Google callback is a browser **navigation**, which the SPA fallback would otherwise answer with `index.html` before the Worker runs. Then `pnpm cf-typegen`. Done when: `pnpm check` passes.
+- [x] **A2. Config.** In `wrangler.jsonc`: `"compatibility_flags": ["nodejs_compat"]` (Better Auth needs `node:async_hooks`/`node:crypto`), a `d1_databases` entry `{ "binding": "DB", "database_name": "jot-db", "database_id": "local" }` (real id comes in E1), and `assets.run_worker_first: ["/api/*", "/parties/*"]`. Both are required: the Google callback is a browser **navigation**, and a WebSocket handshake is a GET, so the SPA fallback would otherwise answer either with `index.html` before the Worker (and its permission guard) runs. Then `pnpm cf-typegen`. Done when: `pnpm check` passes.
 - [x] **A3. Auth instance.** `worker/auth/auth.ts` exporting `createAuth(env, origin)`, built **per request** because bindings only exist on `env`: Google provider from `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, `secret` from `BETTER_AUTH_SECRET`, `baseURL` and `trustedOrigins` from the request origin (so localhost, workers.dev and the custom domain all work with no code change), D1 as the database, and a `databaseHooks.user.create.before` hook that rejects emails outside `ALLOWED_EMAILS` (trimmed, case-insensitive; empty or missing list rejects everyone). Done when: it type-checks. **Spike result: no extra package needed.** Better Auth 1.7.19 has a built-in D1 dialect that switches on when `database` is the D1 binding (its Kysely adapter detects `batch`/`exec`/`prepare`).
 - [x] **A4. Schema.** Generate Better Auth's SQL with its CLI into `migrations/0001_auth.sql`, write `migrations/0002_note_members.sql` from the model above, and add scripts `db:migrate` (`wrangler d1 migrations apply jot-db --local`) and `db:migrate:remote` (`--remote`). Done when: `pnpm db:migrate` applies both with no error.
 - [x] **A5. Mount.** In `worker/index.ts`, send `/api/auth/*` to `createAuth(env, origin).handler(request)` before `routePartykitRequest`. Done when: `pnpm check` passes.
@@ -91,6 +91,7 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 - [x] **B2. Session gate.** `useAuthUser()`: while loading show nothing flashy; session present gives the user; **session absent AND online** gives the login screen; a **network error** (offline) falls back to the last user id cached in `localStorage` so an offline reopen still works. Wrap every storage read in try/catch. Done when: it type-checks.
 - [x] **B3. Login screen.** One centered "Continue with Google" button calling `authClient.signIn.social({ provider: "google" })`. Done when: it renders when logged out.
 - [x] **B4. Account and sign out.** Sidebar footer: avatar or initial, name, a "Sign out" action. Sign out clears the cached user id and calls `authClient.signOut()`. Done when: it shows when logged in.
+- [x] **B4b. Sign out syncs, then clears this device (B6 in spirit).** Decided: variant B. Before signing out, `syncAllLocalData(userId)` (`src/sync/provider.ts`) opens a throwaway connection to this user's index and to every local note and waits for the server handshake (6 s each). If every room synced, sign out and clear silently. If some could not (offline, refused, e.g. another account's leftovers), ask once: "N notes could not be synced. Sign out and discard them?" (Cancel keeps you signed in). Clearing is deferred to the next page load (`wipeIfPending` in `src/main.tsx`, flag in `src/sync/localData.ts`) because the running app's own connections would block the delete; it removes every `jot-*` IndexedDB database. Session expiry or a refused socket never clears anything. Done when: signing out empties `jot-*` in DevTools > Application > IndexedDB.
 - [x] **B5. Checkpoint: login locally.** Log in with Google on `localhost:5173`, reload (stays logged in), sign out (back to login). Use `localhost`, not `127.0.0.1`: the redirect URI and cookie are host-specific. Done when: all three work.
 
 ### Step C: Per-user index
@@ -102,12 +103,12 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step D: Server permission checks (`worker/`)
 
-- [ ] **D1. `getUser(request, env)`.** Uses Better Auth's `api.getSession({ headers })`; returns the user or `null`, **also `null` when the email is no longer in `ALLOWED_EMAILS`** (the sign-up hook only covers new accounts, so removing someone must take effect here). Done when: it type-checks.
-- [ ] **D2. Gate in `onBeforeConnect`.** Pass `onBeforeConnect(req, lobby)` to `routePartykitRequest`: no user gives `401`; `lobby.party` is `index-room` and `lobby.name !== "index-" + user.id` gives `403`; `lobby.party` is `note-room`: run the claim-or-member check (D3). Also use `onBeforeRequest` so plain HTTP hits to `/parties/...` are covered. Done when: an unauthenticated WebSocket upgrade is refused.
-- [ ] **D3. Claim or member.** In one D1 batch: `INSERT OR IGNORE INTO note_members (note_id, user_id, role, created_at) VALUES (?, ?, 'owner', ?)`, then `SELECT 1 FROM note_members WHERE note_id = ? AND user_id = ?`. No row means the note is owned by someone else, so `403`. The unique owner index makes two simultaneous first connections safe. Done when: a second account gets `403` on the first account's note.
-- [ ] **D4. Origin check.** Reject WebSocket upgrades whose `Origin` is not the request's own origin (defense against cross-site WebSocket hijacking). Done when: a fake `Origin` header gets `403`.
-- [ ] **D5. Checkpoint: headless 401.** `curl -i -H "Upgrade: websocket" -H "Connection: Upgrade" -H "Sec-WebSocket-Key: x" -H "Sec-WebSocket-Version: 13" http://localhost:5173/parties/note-room/abc` returns `401`. Done when: it does.
-- [ ] **D6. Checkpoint: two accounts (manual).** Add a second Google test user and email to `ALLOWED_EMAILS`. Account A creates a note; account B (other browser) opens `?note=<A's id>` and gets no content (the socket is refused and its editor stays empty), while B's own notes still sync. Done when: A's text never appears for B.
+- [x] **D1. `getUser(request, env)`.** Uses Better Auth's `api.getSession({ headers })`; returns the user or `null`, **also `null` when the email is no longer in `ALLOWED_EMAILS`** (the sign-up hook only covers new accounts, so removing someone must take effect here). Done when: it type-checks.
+- [x] **D2. Gate in `onBeforeConnect`.** Pass `onBeforeConnect(req, lobby)` to `routePartykitRequest`: no user gives `401`; `lobby.party` is `index-room` and `lobby.name !== "index-" + user.id` gives `403`; `lobby.party` is `note-room`: run the claim-or-member check (D3). Also use `onBeforeRequest` so plain HTTP hits to `/parties/...` are covered. Done when: an unauthenticated WebSocket upgrade is refused.
+- [x] **D3. Claim or member.** In one D1 batch: `INSERT OR IGNORE INTO note_members (note_id, user_id, role, created_at) VALUES (?, ?, 'owner', ?)`, then `SELECT 1 FROM note_members WHERE note_id = ? AND user_id = ?`. No row means the note is owned by someone else, so `403`. The unique owner index makes two simultaneous first connections safe. Done when: a second account gets `403` on the first account's note.
+- [x] **D4. Origin check.** Reject WebSocket upgrades whose `Origin` is not the request's own origin (defense against cross-site WebSocket hijacking). Done when: a fake `Origin` header gets `403`.
+- [x] **D5. Checkpoint: headless 401.** `curl -i -H "Upgrade: websocket" -H "Connection: Upgrade" -H "Sec-WebSocket-Key: x" -H "Sec-WebSocket-Version: 13" http://localhost:5173/parties/note-room/abc` returns `401`. Done when: it does.
+- [x] **D6. Checkpoint: two accounts (manual).** Add a second Google test user and email to `ALLOWED_EMAILS`. Account A creates a note; account B (other browser) opens `?note=<A's id>` and gets no content (the socket is refused and its editor stays empty), while B's own notes still sync. Done when: A's text never appears for B.
 
 ### Step E: Deploy to workers.dev
 
@@ -134,7 +135,7 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ## Details and traps
 
-- **`run_worker_first` is mandatory for `/api/*`.** Without it the OAuth callback page returns `index.html` and login silently never completes. WebSockets and `fetch` already reach the Worker, which is why Phases 1–3 worked without it.
+- **`run_worker_first` is mandatory for `/api/*` and `/parties/*`.** Without the first, the OAuth callback returns `index.html` and login never completes. Without the second, `wrangler dev` (and possibly production) serves `index.html` for room GETs and the permission guard never runs. `pnpm dev` (Vite) hid this because it routes differently, so always verify the guard against `wrangler dev` or a deploy, not only `pnpm dev`.
 - **Build the auth instance per request** (needs `env`). Do not create it at module level.
 - **Do not lock yourself out offline.** A failed session lookup because the network is down is not "logged out". Only an explicit "no session" from the server shows the login screen.
 - **Never trust the client.** The user id in the room name is checked against the session server-side; the client's cached user id is only used for naming local storage.
@@ -147,4 +148,4 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 - **Reconnect loop:** a refused socket (401/403) makes `YProvider` retry with backoff. It is capped, so tolerated; the login gate (B2) handles a really expired session.
 - **D1 limits (free):** 5M reads and 100k writes per day, 5 GB total. Auth plus one `note_members` lookup per socket connection is tiny.
 - **Migrations are append-only:** D1 SQL files never get edited after `--remote` apply; add `0003_...`. Durable Object migrations likewise (`v1`, `v2` stay as they are).
-- **Sign out keeps IndexedDB.** Anyone who later opens the browser profile still has the cached notes. Acceptable for your own devices.
+- **Sign out clears IndexedDB** (B4b). Caveat: "synced" is y-websocket's handshake flag, so the guarantee is "the server answered after our state went out", not an end-to-end acknowledgement. Clearing happens only after that, or after you confirm discarding.
