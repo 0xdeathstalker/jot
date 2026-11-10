@@ -37,9 +37,9 @@ Small tasks, in order. Each one ends with a "done when" check, and leaves `pnpm 
 
 ### B. Client sync (no UI yet)
 
-- [ ] **B1. `src/sync/provider.ts`: create the provider.** A plain function that takes a note id and returns `{ doc, provider }` using `new YProvider(window.location.host, noteId, doc, { party: "note-room" })` (step 4). This is the only file importing `y-partyserver`. Done when: `pnpm check` passes.
-- [ ] **B2. Add the React hook** in the same file: creates the provider once per note id and calls `provider.disconnect()` on unmount, never `destroy()` (step 4). Done when: `pnpm check` passes.
-- [ ] **B3. Add reconnect listeners** in the hook: on `visibilitychange` (visible) and `window` `online`, call `provider.connect()` if `!provider.wsconnected`; remove the listeners on cleanup (step 4). Done when: `pnpm check` passes.
+- [x] **B1. `src/sync/provider.ts`: create the provider.** A plain function that takes a note id and returns `{ doc, provider }` using `new YProvider(window.location.host, noteId, doc, { party: "note-room" })` (step 4). This is the only file importing `y-partyserver`. Done when: `pnpm check` passes.
+- [x] **B2. Add the React hook** in the same file: creates the provider once per note id and calls `provider.disconnect()` on unmount, never `destroy()` (step 4). Done when: `pnpm check` passes.
+- [x] **B3. Add reconnect listeners** in the hook: on `visibilitychange` (visible) and `window` `online`, call `provider.connect()` if `!provider.wsconnected`; remove the listeners on cleanup (step 4). Done when: `pnpm check` passes.
 
 ### C. Editor and app shell
 
