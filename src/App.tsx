@@ -2,6 +2,9 @@ import { Add01Icon, Menu01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useCallback, useEffect, useState } from "react"
 
+import { AccountFooter } from "@/auth/AccountFooter"
+import { LoginScreen } from "@/auth/LoginScreen"
+import { type AuthUser, useAuthUser } from "@/auth/useAuthUser"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -12,7 +15,8 @@ import { useNoteSearch } from "@/features/notes/useNoteSearch"
 import { createNote, softDelete, togglePin, updateMeta, useNotes } from "@/sync/indexDoc"
 import { useIndexSession } from "@/sync/provider"
 
-function App() {
+// Signed-in app. Step C passes `user.id` to the index room.
+function NotesApp({ user }: { user: AuthUser }) {
   const { doc } = useIndexSession()
   const notes = useNotes(doc)
   const [query, setQuery] = useState("")
@@ -79,6 +83,7 @@ function App() {
             onDelete={handleDelete}
           />
         </ScrollArea>
+        <AccountFooter user={user} />
       </aside>
 
       <main className="flex-1 overflow-y-auto">
@@ -102,6 +107,13 @@ function App() {
       </main>
     </div>
   )
+}
+
+function App() {
+  const auth = useAuthUser()
+  if (auth.status === "loading") return null
+  if (auth.status === "signedOut") return <LoginScreen />
+  return <NotesApp user={auth.user} />
 }
 
 export default App

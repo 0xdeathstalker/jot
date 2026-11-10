@@ -83,15 +83,15 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 - [x] **A4. Schema.** Generate Better Auth's SQL with its CLI into `migrations/0001_auth.sql`, write `migrations/0002_note_members.sql` from the model above, and add scripts `db:migrate` (`wrangler d1 migrations apply jot-db --local`) and `db:migrate:remote` (`--remote`). Done when: `pnpm db:migrate` applies both with no error.
 - [x] **A5. Mount.** In `worker/index.ts`, send `/api/auth/*` to `createAuth(env, origin).handler(request)` before `routePartykitRequest`. Done when: `pnpm check` passes.
 - [x] **A6. Secrets locally.** Create `.dev.vars` (already gitignored via `.dev.vars*`) with `BETTER_AUTH_SECRET` (32+ random chars), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ALLOWED_EMAILS`, and a committed `.dev.vars.example` with the keys and no values. Done when: `pnpm dev` starts.
-- [ ] **A7. Checkpoint: Worker side.** (First half done and verified: `/api/auth/ok` returns `{"ok":true}` even with browser navigation headers, so `run_worker_first` works. The Google half waits for your OAuth client.) `curl http://localhost:5173/api/auth/ok` returns ok, and opening `/api/auth/sign-in/social` via the client in B5 reaches Google. Done when: the first works now.
+- [x] **A7. Checkpoint: Worker side.** (First half done and verified: `/api/auth/ok` returns `{"ok":true}` even with browser navigation headers, so `run_worker_first` works. The Google half waits for your OAuth client.) `curl http://localhost:5173/api/auth/ok` returns ok, and opening `/api/auth/sign-in/social` via the client in B5 reaches Google. Done when: the first works now.
 
 ### Step B: Client login
 
-- [ ] **B1. Client.** `src/auth/client.ts`: `createAuthClient` from `better-auth/react` (same origin, no `baseURL`). Done when: `pnpm check` passes.
-- [ ] **B2. Session gate.** `useAuthUser()`: while loading show nothing flashy; session present gives the user; **session absent AND online** gives the login screen; a **network error** (offline) falls back to the last user id cached in `localStorage` so an offline reopen still works. Wrap every storage read in try/catch. Done when: it type-checks.
-- [ ] **B3. Login screen.** One centered "Continue with Google" button calling `authClient.signIn.social({ provider: "google" })`. Done when: it renders when logged out.
-- [ ] **B4. Account and sign out.** Sidebar footer: avatar or initial, name, a "Sign out" action. Sign out clears the cached user id and calls `authClient.signOut()`. Done when: it shows when logged in.
-- [ ] **B5. Checkpoint: login locally.** Log in with Google on `localhost:5173`, reload (stays logged in), sign out (back to login). Use `localhost`, not `127.0.0.1`: the redirect URI and cookie are host-specific. Done when: all three work.
+- [x] **B1. Client.** `src/auth/client.ts`: `createAuthClient` from `better-auth/react` (same origin, no `baseURL`). Done when: `pnpm check` passes.
+- [x] **B2. Session gate.** `useAuthUser()`: while loading show nothing flashy; session present gives the user; **session absent AND online** gives the login screen; a **network error** (offline) falls back to the last user id cached in `localStorage` so an offline reopen still works. Wrap every storage read in try/catch. Done when: it type-checks.
+- [x] **B3. Login screen.** One centered "Continue with Google" button calling `authClient.signIn.social({ provider: "google" })`. Done when: it renders when logged out.
+- [x] **B4. Account and sign out.** Sidebar footer: avatar or initial, name, a "Sign out" action. Sign out clears the cached user id and calls `authClient.signOut()`. Done when: it shows when logged in.
+- [x] **B5. Checkpoint: login locally.** Log in with Google on `localhost:5173`, reload (stays logged in), sign out (back to login). Use `localhost`, not `127.0.0.1`: the redirect URI and cookie are host-specific. Done when: all three work.
 
 ### Step C: Per-user index
 
