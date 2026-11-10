@@ -77,9 +77,9 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step F: Search
 
-- [ ] **F1. Install.** `pnpm add minisearch` (MIT, no dependencies). Done when: it is in `package.json`.
-- [ ] **F2. Hook.** `useNoteSearch(notes, query)` in `src/features/notes/`: build a MiniSearch index over `title` (boost 2) and `preview`, with `prefix: true` and `fuzzy: 0.2`, rebuilt with `useMemo` when the notes array changes (small, so no incremental updates). Empty query returns the full sorted list. Done when: it returns ranked ids.
-- [ ] **F3. Wire it.** Search `Input` above the list, filtering the rows live. Pinned-first order applies only when the query is empty; with a query, rank order wins. Done when: typing narrows the list instantly and clearing restores it.
+- [x] **F1. Install.** `pnpm add minisearch` (MIT, no dependencies). Done when: it is in `package.json`.
+- [x] **F2. Hook.** `useNoteSearch(notes, query)` in `src/features/notes/`: build a MiniSearch index over `title` (boost 2) and `preview`, with `prefix: true` and `fuzzy: 0.2`, rebuilt with `useMemo` when the notes array changes (small, so no incremental updates). Empty query returns the full sorted list. Done when: it returns ranked ids.
+- [x] **F3. Wire it.** Search `Input` above the list, filtering the rows live. Pinned-first order applies only when the query is empty; with a query, rank order wins. Done when: typing narrows the list instantly and clearing restores it.
 
 ### Step G: Wrap-up
 

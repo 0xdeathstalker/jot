@@ -3,16 +3,20 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useCallback, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Editor } from "@/editor/Editor"
 import { NoteList } from "@/features/notes/NoteList"
 import { useNoteId } from "@/features/notes/useNoteId"
+import { useNoteSearch } from "@/features/notes/useNoteSearch"
 import { createNote, softDelete, togglePin, updateMeta, useNotes } from "@/sync/indexDoc"
 import { useIndexSession } from "@/sync/provider"
 
 function App() {
   const { doc } = useIndexSession()
   const notes = useNotes(doc)
+  const [query, setQuery] = useState("")
+  const visibleNotes = useNoteSearch(notes, query)
   const { noteId, openNote } = useNoteId()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -56,9 +60,19 @@ function App() {
           <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
           New note
         </Button>
+        <Input
+          type="search"
+          placeholder="Search notes"
+          aria-label="Search notes"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
         <ScrollArea className="min-h-0 flex-1">
+          {query.trim() && visibleNotes.length === 0 && (
+            <p className="px-3 py-2 text-sm text-muted-foreground">No matching notes</p>
+          )}
           <NoteList
-            notes={notes}
+            notes={visibleNotes}
             activeId={noteId}
             onOpen={handleOpen}
             onTogglePin={(id) => togglePin(doc, id)}
