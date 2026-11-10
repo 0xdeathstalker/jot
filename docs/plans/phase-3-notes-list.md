@@ -57,10 +57,10 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step C: App shell and navigation
 
-- [ ] **C1. Current note id.** `useNoteId()` in `src/features/notes/`: reads `?note=` (same `^[\w-]{1,64}$` check as today), exposes `openNote(id)` using `history.pushState`, and listens to `popstate`. Replaces `getNoteId()` in `App.tsx`. Done when: back/forward changes the open note.
-- [ ] **C2. Layout.** `App.tsx`: sidebar on the left (`aside`), editor on the right, fixed width on desktop. On narrow screens the sidebar is a toggled panel (a plain button, no sheet component). Keep `<Editor key={noteId} />`. Done when: both render side by side.
-- [ ] **C3. New note.** A "New note" button calls `createNote()` and `openNote(id)`. The id comes from `crypto.randomUUID()`. Done when: the click opens an empty editor and a row appears in the list.
-- [ ] **C4. Opening and empty states.** No `?note=`: open the newest note; empty list: show a short empty state with the New note button. A `?note=` id missing from the index (e.g. the old `test` note) still opens. Done when: all three cases behave.
+- [x] **C1. Current note id.** `useNoteId()` in `src/features/notes/`: reads `?note=` (same `^[\w-]{1,64}$` check as today), exposes `openNote(id)` using `history.pushState`, and listens to `popstate`. Replaces `getNoteId()` in `App.tsx`. Done when: back/forward changes the open note.
+- [x] **C2. Layout.** `App.tsx`: sidebar on the left (`aside`), editor on the right, fixed width on desktop. On narrow screens the sidebar is a toggled panel (a plain button, no sheet component). Keep `<Editor key={noteId} />`. Done when: both render side by side.
+- [x] **C3. New note.** A "New note" button calls `createNote()` and `openNote(id)`. The id comes from `crypto.randomUUID()`. Done when: the click opens an empty editor and a row appears in the list.
+- [x] **C4. Opening and empty states.** No `?note=`: open the newest note; empty list: show a short empty state with the New note button. A `?note=` id missing from the index (e.g. the old `test` note) still opens. Done when: all three cases behave.
 
 ### Step D: Sidebar list (`src/features/notes/`)
 
