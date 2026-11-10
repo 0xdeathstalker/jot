@@ -23,11 +23,11 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step A: Server persistence (`worker/`)
 
-- [ ] **A1. Imports and constants.** In `worker/rooms/note-room.ts` import `applyUpdate`, `encodeStateAsUpdate` from `yjs`. Add `const KEY = "doc"`. Done when: file compiles.
-- [ ] **A2. `onLoad`.** `const saved = this.ctx.storage.kv.get<Uint8Array>(KEY)`; if present, `applyUpdate(this.document, saved)`. Never replace the doc, only apply onto it. Done when: `pnpm check` passes.
-- [ ] **A3. `onSave`.** `this.ctx.storage.kv.put(KEY, encodeStateAsUpdate(this.document))`. Done when: `pnpm check` passes.
-- [ ] **A4. Save timing.** Add `static callbackOptions = { debounceWait: 1000, debounceMaxWait: 10000 }`. Done when: `pnpm check` passes.
-- [ ] **A5. Checkpoint: server restart.** Type in `/?note=test`, wait ~2 s, stop and restart `pnpm dev`, reload. Done when: the text is still there. (Local DO data lives in `.wrangler/state`.)
+- [x] **A1. Imports and constants.** In `worker/rooms/note-room.ts` import `applyUpdate`, `encodeStateAsUpdate` from `yjs`. Add `const KEY = "doc"`. Done when: file compiles.
+- [x] **A2. `onLoad`.** `const saved = this.ctx.storage.kv.get<Uint8Array>(KEY)`; if present, `applyUpdate(this.document, saved)`. Never replace the doc, only apply onto it. Done when: `pnpm check` passes.
+- [x] **A3. `onSave`.** `this.ctx.storage.kv.put(KEY, encodeStateAsUpdate(this.document))`. Done when: `pnpm check` passes.
+- [x] **A4. Save timing.** Add `static callbackOptions = { debounceWait: 1000, debounceMaxWait: 10000 }`. Done when: `pnpm check` passes.
+- [x] **A5. Checkpoint: server restart.** Type in `/?note=test`, wait ~2 s, stop and restart `pnpm dev`, reload. Done when: the text is still there. (Local DO data lives in `.wrangler/state`.)
 
 ### Step B: Client cache (`src/sync/provider.ts`)
 
