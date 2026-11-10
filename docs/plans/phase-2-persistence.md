@@ -31,10 +31,10 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step B: Client cache (`src/sync/provider.ts`)
 
-- [ ] **B1. Install.** `pnpm add y-indexeddb` (MIT, v9). Done when: it is in `package.json`.
-- [ ] **B2. Attach.** In `createNoteSession` add `const persistence = new IndexeddbPersistence(\`jot-note-${noteId}\`, doc)`and return it in`NoteSession`. Keep this the only file touching sync libraries. Done when: `pnpm check` passes.
-- [ ] **B3. Cleanup.** In the hook cleanup call `persistence.destroy()` next to `provider.disconnect()`. Keep `disconnect()`, not `destroy()`, on the provider (partykit #402). Done when: `pnpm check` passes.
-- [ ] **B4. Checkpoint: cache.** Type, delete `.wrangler/state` (server copy gone), restart `pnpm dev`, reload. Done when: the text is still there. DevTools > Application > IndexedDB shows `jot-note-test`, and the text re-syncs up to the server (confirm by opening a second profile or incognito window).
+- [x] **B1.** Install.** `pnpm add y-indexeddb` (MIT, v9). Done when: it is in `package.json`.
+- [x] **B2. Attach.** In the `useNoteSession` effect (not `createNoteSession`): `new IndexeddbPersistence(`jot-note-${noteId}`, doc)`. Created in the effect so React Strict Mode's cleanup + remount gets a live instance (a destroyed one stops saving). Only file touching sync libraries. Done when: `pnpm check` passes.
+- [x] **B3. Cleanup.** The effect cleanup calls `persistence.destroy()` next to `provider.disconnect()`. Keep `disconnect()`, not `destroy()`, on the provider (partykit #402). Done when: `pnpm check` passes.
+- [x] **B4. Checkpoint: cache.** Type, delete `.wrangler/state` (server copy gone), restart `pnpm dev`, reload. Done when: the text is still there. DevTools > Application > IndexedDB shows `jot-note-test`, and the text re-syncs up to the server (confirm by opening a second profile or incognito window).
 
 ### Step C: Offline merge (the phase's spec test)
 

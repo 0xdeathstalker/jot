@@ -1,5 +1,6 @@
 // The ONLY module that imports y-partyserver (docs/project-context.md §13 rule 5).
 import { useEffect, useState } from "react"
+import { IndexeddbPersistence } from "y-indexeddb"
 import YProvider from "y-partyserver/provider"
 import { Doc } from "yjs"
 
@@ -22,7 +23,10 @@ export function useNoteSession(noteId: string): NoteSession {
   const [session] = useState(() => createNoteSession(noteId))
 
   useEffect(() => {
-    const { provider } = session
+    const { doc, provider } = session
+    // Local copy: survives reloads and offline. Created here (not in createNoteSession) so
+    // Strict Mode's cleanup + remount gets a live one. The name is fixed: renaming orphans data.
+    const persistence = new IndexeddbPersistence(`jot-note-${noteId}`, doc)
     void provider.connect()
 
     // iOS has no background sync: reconnect when the app returns or the network is back.
@@ -38,8 +42,9 @@ export function useNoteSession(noteId: string): NoteSession {
       // disconnect(), not destroy(): destroy leaks a reconnect timer (partykit #402),
       // and disconnect lets React Strict Mode remount reconnect the same provider.
       provider.disconnect()
+      void persistence.destroy()
     }
-  }, [session])
+  }, [session, noteId])
 
   return session
 }
