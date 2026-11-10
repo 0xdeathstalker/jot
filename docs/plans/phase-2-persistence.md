@@ -38,10 +38,10 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step C: Offline merge (the phase's spec test)
 
-- [ ] **C1. Different spots.** Two tabs on `?note=test`. DevTools > Network > Offline in both. Type in different places in each, go online. Done when: both edits are in both tabs, and a reload keeps them.
-- [ ] **C2. Same spot.** Same as C1 but in the same paragraph. Done when: both tabs converge to identical text and nothing is lost (order may vary).
-- [ ] **C3. Formatting offline.** Apply bold/heading in one offline tab and type in the other. Done when: both merge.
-- [ ] **C4. Undo still scoped.** After a merge, `Ctrl+Z` undoes only your own edits. Done when: the other tab's text stays.
+- [x] **C1. Different spots.** Two tabs on `?note=test`. DevTools > Network > Offline in both. Type in different places in each, go online. Done when: both edits are in both tabs, and a reload keeps them.
+- [x] **C2. Same spot.** Same as C1 but in the same paragraph. Done when: both tabs converge to identical text and nothing is lost (order may vary).
+- [x] **C3. Formatting offline.** Apply bold/heading in one offline tab and type in the other. Done when: both merge.
+- [x] **C4. Undo still scoped.** After a merge, `Ctrl+Z` undoes only your own edits. Done when: the other tab's text stays.
 
 ### Step D: Wrap-up
 
