@@ -43,10 +43,10 @@ Small tasks, in order. Each one ends with a "done when" check, and leaves `pnpm 
 
 ### C. Editor and app shell
 
-- [ ] **C1. `src/editor/Editor.tsx`, minimal.** `useEditor` with `StarterKit.configure({ undoRedo: false })` and `Collaboration.configure({ document: provider.doc })`, rendered with `EditorContent`. No Tiptap `content` option (step 5). Done when: `pnpm check` passes.
-- [ ] **C2. `src/App.tsx`: read `?note=`**, default `test`, render `<Editor key={noteId} noteId={noteId} />` (step 6). Done when: the page loads at `/` and at `/?note=test` with no console errors.
-- [ ] **C3. Editor styles** on `.ProseMirror` in `src/styles/index.css`: headings, lists, blockquote, code, font size at least 16px (step 5). Done when: typing `# ` or `- ` shows styled heading or list.
-- [ ] **C4. Checkpoint: two-tab sync.** Run verify items 1–3 from step 8. Done when: text typed in one tab shows in the other within about a second, a WebSocket to `/parties/note-room/test` is open in both, and `?note=other` stays separate.
+- [x] **C1. `src/editor/Editor.tsx`, minimal.** `useEditor` with `StarterKit.configure({ undoRedo: false })` and `Collaboration.configure({ document: provider.doc })`, rendered with `EditorContent`. No Tiptap `content` option (step 5). Done when: `pnpm check` passes.
+- [x] **C2. `src/App.tsx`: read `?note=`**, default `test`, render `<Editor key={noteId} noteId={noteId} />` (step 6). Done when: the page loads at `/` and at `/?note=test` with no console errors.
+- [x] **C3. Editor styles** on `.ProseMirror` in `src/styles/index.css`: headings, lists, blockquote, code, font size at least 16px (step 5). Done when: typing `# ` or `- ` shows styled heading or list.
+- [x] **C4. Checkpoint: two-tab sync.** Run verify items 1–3 from step 8. Done when: text typed in one tab shows in the other within about a second, a WebSocket to `/parties/note-room/test` is open in both, and `?note=other` stays separate.
   - If the WebSocket gets the SPA page instead of connecting, add `run_worker_first: ["/parties/*"]` to `wrangler.jsonc` and run `pnpm cf-typegen`.
 
 ### D. Toolbar
