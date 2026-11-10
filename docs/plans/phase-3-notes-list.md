@@ -73,7 +73,7 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 - [x] **E1. Helper.** Pure function `getTitleAndPreview(editor.getText())`: title = first non-empty line, trimmed, max 100 chars; preview = text after the title, whitespace collapsed, first 200 chars. Done when: a tiny self-check script or `demo()` covers an empty doc, a one-line doc and a long doc.
 - [x] **E2. Write on local edits only.** In `Editor.tsx` use `onUpdate`, **debounced ~500 ms**, skip transactions that came from Yjs (`isChangeOrigin` from `@tiptap/y-tiptap`) so remote edits do not echo, and skip the write when title and preview are unchanged. Also bump `updatedAt` when it writes. Done when: typing updates the sidebar row and a remote-only change causes no index write.
-- [ ] **E3. Checkpoint: two tabs.** Tab A types a first line; tab B's sidebar row shows it. Done when: it appears in under ~2 s.
+- [x] **E3. Checkpoint: two tabs.** Tab A types a first line; tab B's sidebar row shows it. Done when: it appears in under ~2 s.
 
 ### Step F: Search
 
@@ -83,7 +83,7 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step G: Wrap-up
 
-- [ ] **G1. Checkpoint: cross-device and offline (manual).** Two browsers (one normal, one incognito, so they share nothing but the server): create a note in one, it appears in the other; take one offline (stop `pnpm dev`), create and pin there, restart, both agree; soft-delete in one, it disappears in the other and stays out after a reload. Done when: all pass.
+- [x] **G1. Checkpoint: cross-device and offline (manual).** Two browsers (one normal, one incognito, so they share nothing but the server): create a note in one, it appears in the other; take one offline (stop `pnpm dev`), create and pin there, restart, both agree; soft-delete in one, it disappears in the other and stays out after a reload. Done when: all pass.
 - [x] **G2. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass.
 - [x] **G3. Docs.** Tick Phase 3 in `docs/project-context.md`; record the `index-default` placeholder and its Phase 4 migration, the `IndexRoom`/`v2` choice, first-line titles (so no rename action), and `?note=` navigation. Update §7 (index room name no longer TBD). Done when: no "TBD" index naming remains.
 - [x] **G4. Commit** in the split: `feat: IndexRoom durable object` (A), `feat: index doc store` (B), `feat: notes sidebar` (C–D), `feat: title/preview sync and search` (E–F), `docs: update project context for phase 3`. Done when: the pre-commit hook passes on each.
