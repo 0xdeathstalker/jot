@@ -47,7 +47,7 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 - [x] **D1. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass.
 - [x] **D2. Docs.** Tick the Phase 2 boxes in `docs/project-context.md` and note the KV key, the `jot-note-` prefix, and "render immediately". Done when: nothing in the file still calls persistence future work.
-- [ ] **D3. Commit** as `feat: persist NoteRoom state in DO storage` (A), `feat: y-indexeddb offline cache` (B), `docs: update project context for phase 2` (D). Done when: the pre-commit hook passes on each.
+- [x] **D3. Commit** as `feat: persist NoteRoom state in DO storage` (A), `feat: y-indexeddb offline cache` (B), `docs: update project context for phase 2` (D). Done when: the pre-commit hook passes on each.
 
 ## Details and traps
 
