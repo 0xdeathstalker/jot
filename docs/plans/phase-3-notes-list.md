@@ -1,6 +1,6 @@
 # Plan: Phase 3 – Notes list
 
-Status: ready, decisions made, not started
+Status: done except manual checks E3 and G1
 Source: `docs/project-context.md` §7 (data model), §10 Phase 3, `docs/plans/phase-1-sync.md` ("Changing the room naming later").
 
 Goal: a sidebar lists all your notes, synced across devices and usable offline. You can create a note, pin it, soft-delete it, and search it. The list lives in one per-user "index" Y.Doc, separate from the note bodies.
@@ -84,9 +84,9 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 ### Step G: Wrap-up
 
 - [ ] **G1. Checkpoint: cross-device and offline (manual).** Two browsers (one normal, one incognito, so they share nothing but the server): create a note in one, it appears in the other; take one offline (stop `pnpm dev`), create and pin there, restart, both agree; soft-delete in one, it disappears in the other and stays out after a reload. Done when: all pass.
-- [ ] **G2. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass.
-- [ ] **G3. Docs.** Tick Phase 3 in `docs/project-context.md`; record the `index-default` placeholder and its Phase 4 migration, the `IndexRoom`/`v2` choice, first-line titles (so no rename action), and `?note=` navigation. Update §7 (index room name no longer TBD). Done when: no "TBD" index naming remains.
-- [ ] **G4. Commit** in the split: `feat: IndexRoom durable object` (A), `feat: index doc store` (B), `feat: notes sidebar` (C–D), `feat: title/preview sync and search` (E–F), `docs: update project context for phase 3`. Done when: the pre-commit hook passes on each.
+- [x] **G2. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass.
+- [x] **G3. Docs.** Tick Phase 3 in `docs/project-context.md`; record the `index-default` placeholder and its Phase 4 migration, the `IndexRoom`/`v2` choice, first-line titles (so no rename action), and `?note=` navigation. Update §7 (index room name no longer TBD). Done when: no "TBD" index naming remains.
+- [x] **G4. Commit** in the split: `feat: IndexRoom durable object` (A), `feat: index doc store` (B), `feat: notes sidebar` (C–D), `feat: title/preview sync and search` (E–F), `docs: update project context for phase 3`. Done when: the pre-commit hook passes on each.
 
 ## Details and traps
 

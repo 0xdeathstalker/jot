@@ -165,10 +165,11 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 ### Client-side (Yjs)
 
 - **One Y.Doc per note.** Room name: plain `<noteId>` (URL `/parties/note-room/<noteId>`). Holds the rich text (a `Y.XmlFragment` bound to TipTap).
-- **One "index" Y.Doc per user.** Room name: TBD in Phase 3 (must not collide with note IDs; renaming a room orphans stored data). Holds a `Y.Map` of note metadata:
+- **One "index" Y.Doc per user.** Party `index-room` (class `IndexRoom`, migration `v2`), room `index-default` until Phase 4, IndexedDB `jot-index-default`. These names are permanent: Phase 4 copies the doc into `index-<userId>` instead of renaming in place. A `Y.Map` named `notes`, one nested `Y.Map` per note (so concurrent edits to different fields both survive):
   ```ts
-  { [noteId]: { title: string, createdAt: number, updatedAt: number, pinned: boolean, deleted: boolean } }
+  { [noteId]: { title: string, preview: string, createdAt: number, updatedAt: number, pinned: boolean, deleted: boolean } }
   ```
+  The title is the first line of the note and the preview its next ~200 characters, both written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview.
 - IDs are generated on the client with `crypto.randomUUID()`, so notes can be created offline.
 
 ### Server-side
@@ -233,8 +234,8 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 
 ### Phase 3: Notes list
 
-- [ ] Per-user index doc (create, rename, pin, soft delete)
-- [ ] Sidebar + MiniSearch
+- [x] Per-user index doc (create, pin, soft delete; "rename" = edit the first line)
+- [x] Sidebar + MiniSearch (title + preview). Navigation stays `?note=<id>` via `history.pushState`, no router
 
 ### Phase 4: Auth and deploy
 
