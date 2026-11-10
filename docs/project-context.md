@@ -164,8 +164,8 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 
 ### Client-side (Yjs)
 
-- **One Y.Doc per note.** Room name: `note:<noteId>`. Holds the rich text (a `Y.XmlFragment` bound to TipTap).
-- **One "index" Y.Doc per user.** Room name: `index:<userId>`. Holds a `Y.Map` of note metadata:
+- **One Y.Doc per note.** Room name: plain `<noteId>` (URL `/parties/note-room/<noteId>`). Holds the rich text (a `Y.XmlFragment` bound to TipTap).
+- **One "index" Y.Doc per user.** Room name: TBD in Phase 3 (must not collide with note IDs; renaming a room orphans stored data). Holds a `Y.Map` of note metadata:
   ```ts
   { [noteId]: { title: string, createdAt: number, updatedAt: number, pinned: boolean, deleted: boolean } }
   ```
@@ -221,9 +221,9 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 
 ### Phase 1: Prove sync works ⚠️ the riskiest part
 
-- [ ] TipTap editor bound to a Y.Doc (disable StarterKit's undo/redo)
-- [ ] NoteRoom DO (`YServer`) with hibernation on
-- [ ] Two browser tabs on `?note=test` stay in sync
+- [x] TipTap editor bound to a Y.Doc (disable StarterKit's undo/redo)
+- [x] NoteRoom DO (`YServer`) with hibernation on
+- [x] Two browser tabs on `?note=test` stay in sync
 
 ### Phase 2: Offline and persistence
 

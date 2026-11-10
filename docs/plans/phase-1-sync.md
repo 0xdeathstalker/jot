@@ -60,10 +60,10 @@ Small tasks, in order. Each one ends with a "done when" check, and leaves `pnpm 
 
 ### E. Wrap-up
 
-- [ ] **E1. Checkpoint: reconnect and undo.** Run verify items 4–5 from step 8. Done when: tabs recover after a `pnpm dev` restart, and `Ctrl+Z` undoes only your own text.
-- [ ] **E2. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all three pass.
-- [ ] **E3. Docs.** Update `docs/project-context.md` (Phase 1 boxes, §7 plain room IDs, index-doc naming deferred to Phase 3) (step 9). Done when: no `note:` room names remain in the file.
-- [ ] **E4. Commit** in the split from step 11. Done when: pre-commit hook passes on each commit.
+- [x] **E1. Checkpoint: reconnect and undo.** Run verify items 4–5 from step 8. Done when: tabs recover after a `pnpm dev` restart, and `Ctrl+Z` undoes only your own text.
+- [x] **E2. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all three pass.
+- [x] **E3. Docs.** Update `docs/project-context.md` (Phase 1 boxes, §7 plain room IDs, index-doc naming deferred to Phase 3) (step 9). Done when: no `note:` room names remain in the file.
+- [x] **E4. Commit** in the split from step 11. Done when: pre-commit hook passes on each commit.
 
 Order notes: A and B can be built before any UI exists. C4 is the first real test of the whole pipeline, so fix problems there before starting D.
 
