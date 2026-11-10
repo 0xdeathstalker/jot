@@ -64,10 +64,10 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step D: Sidebar list (`src/features/notes/`)
 
-- [ ] **D1. shadcn parts.** `pnpm dlx shadcn@latest add input scroll-area dropdown-menu`. Done when: files exist under `src/components/ui/`; do not hand-edit them.
-- [ ] **D2. List item.** `NoteList` and `NoteItem`: title (or "Untitled" when empty), one-line preview, current note highlighted, click opens it. Done when: rows render from `useNotes()`.
-- [ ] **D3. Actions.** Per-row menu (dropdown) with Pin/Unpin and Delete; pinned rows show a pin icon. Delete calls `softDelete` only and never removes the Y.Map key. If the open note is deleted, open the next one or the empty state. Done when: both actions work and survive a reload.
-- [ ] **D4. No `fetch` in `src/features/notes/`.** The lint rule already enforces it. Done when: `pnpm lint` is clean.
+- [x] **D1. shadcn parts.** `pnpm dlx shadcn@latest add input scroll-area dropdown-menu`. Done when: files exist under `src/components/ui/`; do not hand-edit them.
+- [x] **D2. List item.** `NoteList` and `NoteItem`: title (or "Untitled" when empty), one-line preview, current note highlighted, click opens it. Done when: rows render from `useNotes()`.
+- [x] **D3. Actions.** Per-row menu (dropdown) with Pin/Unpin and Delete; pinned rows show a pin icon. Delete calls `softDelete` only and never removes the Y.Map key. If the open note is deleted, open the next one or the empty state. Done when: both actions work and survive a reload.
+- [x] **D4. No `fetch` in `src/features/notes/`.** The lint rule already enforces it. Done when: `pnpm lint` is clean.
 
 ### Step E: Title and preview from the editor
 

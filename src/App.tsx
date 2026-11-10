@@ -3,9 +3,11 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Editor } from "@/editor/Editor"
+import { NoteList } from "@/features/notes/NoteList"
 import { useNoteId } from "@/features/notes/useNoteId"
-import { createNote, useNotes } from "@/sync/indexDoc"
+import { createNote, softDelete, togglePin, useNotes } from "@/sync/indexDoc"
 import { useIndexSession } from "@/sync/provider"
 
 function App() {
@@ -25,6 +27,17 @@ function App() {
     setSidebarOpen(false)
   }
 
+  const handleOpen = (id: string) => {
+    openNote(id)
+    setSidebarOpen(false)
+  }
+
+  // Soft delete. If it was the open note, clear the URL: the effect above then opens the next one.
+  const handleDelete = (id: string) => {
+    softDelete(doc, id)
+    if (id === noteId) openNote(null, { replace: true })
+  }
+
   return (
     <div className="flex h-dvh">
       {/* Phone: slides over the editor. Desktop: fixed column. */}
@@ -35,6 +48,15 @@ function App() {
           <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
           New note
         </Button>
+        <ScrollArea className="min-h-0 flex-1">
+          <NoteList
+            notes={notes}
+            activeId={noteId}
+            onOpen={handleOpen}
+            onTogglePin={(id) => togglePin(doc, id)}
+            onDelete={handleDelete}
+          />
+        </ScrollArea>
       </aside>
 
       <main className="flex-1 overflow-y-auto">

@@ -18,8 +18,9 @@ function subscribe(onChange: () => void) {
 export function useNoteId() {
   const noteId = useSyncExternalStore(subscribe, readNoteId)
 
-  const openNote = useCallback((id: string, options?: { replace?: boolean }) => {
-    const url = `?note=${encodeURIComponent(id)}`
+  // `null` clears the open note (back to the bare `/`).
+  const openNote = useCallback((id: string | null, options?: { replace?: boolean }) => {
+    const url = id ? `?note=${encodeURIComponent(id)}` : window.location.pathname
     if (options?.replace) window.history.replaceState(null, "", url)
     else window.history.pushState(null, "", url)
     window.dispatchEvent(new PopStateEvent("popstate"))
