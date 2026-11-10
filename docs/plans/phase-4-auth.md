@@ -95,10 +95,10 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step C: Per-user index
 
-- [ ] **C1. Index session takes the user.** `useIndexSession(userId)` in `src/sync/provider.ts`: room `index-${userId}`, IndexedDB `jot-index-${userId}`. These become the permanent names; the Phase 3 placeholders stop being used. Done when: `pnpm check` passes.
-- [ ] **C2. Wire.** `App` renders the app only with a user and passes `user.id`. Done when: the sidebar loads for the logged-in user.
-- [ ] **C3. Carry over dev notes.** On first login on a device, if IndexedDB `jot-index-default` holds notes and the user's index is empty, merge it in (`Y.applyUpdate(newDoc, encodeStateAsUpdate(oldDoc))`), then set a `localStorage` flag so it runs once. This is only for your existing dev notes; note bodies are untouched because their rooms are unchanged. Done when: your old notes show in the new index. Skip this task if you do not care about the dev notes.
-- [ ] **C4. Checkpoint.** Create a note, reload, sign out and back in: the list is the same. Done when: it is.
+- [x] **C1. Index session takes the user.** `useIndexSession(userId)` in `src/sync/provider.ts`: room `index-${userId}`, IndexedDB `jot-index-${userId}`. These become the permanent names; the Phase 3 placeholders stop being used. Done when: `pnpm check` passes.
+- [x] **C2. Wire.** `App` renders the app only with a user and passes `user.id`. Done when: the sidebar loads for the logged-in user.
+- [x] **C3. Carry over dev notes.** On first login on a device, if IndexedDB `jot-index-default` holds notes and the user's index is empty, merge it in (`Y.applyUpdate(newDoc, encodeStateAsUpdate(oldDoc))`), then set a `localStorage` flag so it runs once. This is only for your existing dev notes; note bodies are untouched because their rooms are unchanged. Done when: your old notes show in the new index. Skip this task if you do not care about the dev notes.
+- [x] **C4. Checkpoint.** Create a note, reload, sign out and back in: the list is the same. Done when: it is.
 
 ### Step D: Server permission checks (`worker/`)
 

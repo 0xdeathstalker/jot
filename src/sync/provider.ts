@@ -4,6 +4,8 @@ import { IndexeddbPersistence } from "y-indexeddb"
 import YProvider from "y-partyserver/provider"
 import { Doc } from "yjs"
 
+import { carryOverLegacyIndex } from "@/sync/legacyIndex"
+
 export type RoomSession = { doc: Doc; provider: YProvider }
 
 // `party` is the kebab-case of the Durable Object binding (NoteRoom -> note-room).
@@ -55,12 +57,19 @@ export function useNoteSession(noteId: string): RoomSession {
   return useRoomSession({ party: "note-room", room: noteId, idbName: `jot-note-${noteId}` })
 }
 
-// The note list. `index-default` is a Phase 3 placeholder: Phase 4 migrates it to
-// `index-<userId>` by copying the doc, never by renaming in place.
-export function useIndexSession(): RoomSession {
-  return useRoomSession({
+// One note list per user: /parties/index-room/index-<userId>, IndexedDB jot-index-<userId>.
+// These names are permanent. The Phase 3 placeholder `index-default` is carried over once per
+// device (legacyIndex.ts) and the server no longer allows it (step D).
+export function useIndexSession(userId: string): RoomSession {
+  const session = useRoomSession({
     party: "index-room",
-    room: "index-default",
-    idbName: "jot-index-default",
+    room: `index-${userId}`,
+    idbName: `jot-index-${userId}`,
   })
+
+  useEffect(() => {
+    void carryOverLegacyIndex(session.doc)
+  }, [session.doc])
+
+  return session
 }

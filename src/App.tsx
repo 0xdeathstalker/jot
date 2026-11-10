@@ -15,9 +15,9 @@ import { useNoteSearch } from "@/features/notes/useNoteSearch"
 import { createNote, softDelete, togglePin, updateMeta, useNotes } from "@/sync/indexDoc"
 import { useIndexSession } from "@/sync/provider"
 
-// Signed-in app. Step C passes `user.id` to the index room.
+// Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
 function NotesApp({ user }: { user: AuthUser }) {
-  const { doc } = useIndexSession()
+  const { doc } = useIndexSession(user.id)
   const notes = useNotes(doc)
   const [query, setQuery] = useState("")
   const visibleNotes = useNoteSearch(notes, query)
@@ -113,7 +113,7 @@ function App() {
   const auth = useAuthUser()
   if (auth.status === "loading") return null
   if (auth.status === "signedOut") return <LoginScreen />
-  return <NotesApp user={auth.user} />
+  return <NotesApp key={auth.user.id} user={auth.user} />
 }
 
 export default App
