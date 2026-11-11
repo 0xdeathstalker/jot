@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 import { AccountFooter } from "@/auth/AccountFooter"
 import { LoginScreen } from "@/auth/LoginScreen"
 import { type AuthUser, useAuthUser } from "@/auth/useAuthUser"
+import { InstallHint } from "@/components/InstallHint"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -109,6 +110,8 @@ function NotesApp({ user }: { user: AuthUser }) {
           )}
         </div>
       </main>
+
+      <InstallHint />
     </div>
   )
 }

@@ -58,9 +58,9 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step E: iPhone install hint
 
-- [ ] **E1. Detection.** A tiny helper `isIosBrowser()`: iPhone/iPad (including iPadOS, which reports "Macintosh" with touch) **and** not already installed (`navigator.standalone` false and `display-mode: standalone` false). Done when: it is true only in a regular iOS browser tab.
-- [ ] **E2. Hint component.** A small card at the bottom of the screen: "Install Jot: tap the Share button, then Add to Home Screen", the share icon (`Share01Icon`), and a close button. Dismissal is saved in `localStorage` (wrapped in try/catch). Shown only inside the signed-in app, never on the login screen. Done when: it appears once on iPhone Safari and stays dismissed.
-- [ ] **E3. Checkpoint (manual).** Done when: the hint shows in Safari, does not show in the installed app, and does not show on desktop.
+- [x] **E1. Detection.** A tiny helper `isIosBrowser()`: iPhone/iPad (including iPadOS, which reports "Macintosh" with touch) **and** not already installed (`navigator.standalone` false and `display-mode: standalone` false). Done when: it is true only in a regular iOS browser tab.
+- [x] **E2. Hint component.** A small card at the bottom of the screen: "Install Jot: tap the Share button, then Add to Home Screen", the share icon (`Share01Icon`), and a close button. Dismissal is saved in `localStorage` (wrapped in try/catch). Shown only inside the signed-in app, never on the login screen. Done when: it appears once on iPhone Safari and stays dismissed.
+- [x] **E3. Checkpoint (manual).** Done when: the hint shows in Safari, does not show in the installed app, and does not show on desktop.
 
 ### Step F: Wrap-up
 
