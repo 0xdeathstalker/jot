@@ -27,6 +27,10 @@
       "migrations_dir": "migrations",
     },
   ],
+  // Custom domain. Cloudflare creates the DNS record and certificate itself on deploy, and refuses
+  // if the hostname already has a DNS record (delete any old `jot` record in the dashboard first).
+  // workers.dev stays reachable as well.
+  "routes": [{ "pattern": "jot.deathstalker.dev", "custom_domain": true }],
   "observability": {
     "enabled": true,
   },

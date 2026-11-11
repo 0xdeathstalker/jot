@@ -121,10 +121,10 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step F: Custom domain (separate, you run)
 
-- [ ] **F1. DNS move.** Add `deathstalker.dev` to Cloudflare and **review every imported DNS record before switching nameservers**, then change them at your registrar. This affects any other site on that domain, so do it deliberately. Done when: Cloudflare shows the zone Active.
-- [ ] **F2. Attach.** Add `"routes": [{ "pattern": "jot.deathstalker.dev", "custom_domain": true }]` to `wrangler.jsonc`. Done when: the config validates.
-- [ ] **F3. Google URI.** Add `https://jot.deathstalker.dev/api/auth/callback/google`. Done when: saved. (No code change: `baseURL` comes from the request.)
-- [ ] **F4. Deploy and test.** Done when: login and sync work on the custom domain.
+- [x] **F1. DNS check (replaces "DNS move").** `deathstalker.dev` already uses Cloudflare nameservers, so no nameserver move is needed and other sites are untouched. `jot.deathstalker.dev` answers with a Vercel `DEPLOYMENT_NOT_FOUND`, but the dashboard has no record named `jot`: any unknown subdomain (checked with a random one) gets the same answer, so a wildcard `*` record points at Vercel. **Leave the wildcard alone** (it serves your other hostnames). A Workers custom domain only refuses a hostname that has its own exact record, and an explicit `jot` record created by the deploy overrides the wildcard. Done when: no `jot` record exists in DNS > Records.
+- [x] **F2. Attach.** Add `"routes": [{ "pattern": "jot.deathstalker.dev", "custom_domain": true }]` to `wrangler.jsonc`. Done when: the config validates.
+- [x] **F3. Google URI.** Add `https://jot.deathstalker.dev/api/auth/callback/google`. Done when: saved. (No code change: `baseURL` comes from the request.)
+- [x] **F4. Deploy and test.** Done when: login and sync work on the custom domain.
 
 ### Step G: Wrap-up
 
