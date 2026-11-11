@@ -1,20 +1,21 @@
 import type { Lobby } from "partyserver"
 
-import { isEmailAllowed } from "./allowlist.ts"
 import { createAuth } from "./auth.ts"
+import { isActiveUser } from "./invites.ts"
 
 // The Worker checks every room connection (docs/project-context.md section 8): never trust the client.
 const ROOM_NAME = /^[\w-]{1,100}$/
 
 type User = { id: string; email: string }
 
-// Returns the signed-in user, or null. Also null when the email left ALLOWED_EMAILS: the sign-up
-// hook only covers new accounts, so removing someone has to take effect here.
+// Returns the signed-in user, or null. Also null when they are not active (not on ALLOWED_EMAILS
+// and not invited): the sign-up hook only covers new accounts, so removing someone has to take
+// effect here.
 async function getUser(request: Request, env: Env): Promise<User | null> {
   const origin = new URL(request.url).origin
   const session = await createAuth(env, origin).api.getSession({ headers: request.headers })
   const user = session?.user
-  if (!user || !isEmailAllowed(user.email, env.ALLOWED_EMAILS)) return null
+  if (!user || !(await isActiveUser(env, user))) return null
   return { id: user.id, email: user.email }
 }
 

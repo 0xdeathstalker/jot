@@ -57,7 +57,7 @@ Record each result under its task, as the Phase 5 plan did.
 
 ### Step B: Data and rules on the server
 
-- [ ] **B1. Migration `0003_sharing.sql`** (new file, never edit 0001/0002):
+- [x] **B1. Migration `0003_sharing.sql`** (new file, never edit 0001/0002): **Done:** `migrations/0003_sharing.sql` written and applied locally (the real database still needs `pnpm db:migrate:remote` before deploy, step J2).
 
   ```sql
   CREATE TABLE note_invites (
@@ -93,9 +93,9 @@ Record each result under its task, as the Phase 5 plan did.
 
   Apply with `pnpm db:migrate` (local) and `pnpm db:migrate:remote` (before deploy). Done when: the tables exist locally.
 
-- [ ] **B2. Who counts as an active user.** In `worker/auth/gate.ts` split `getUser` into "signed in" and "active": active = email in `ALLOWED_EMAILS` **or** a row in `invited_users`. Every room and every API route except `/api/join/accept` requires active. Active users can claim new note ids and open `index-<userId>` as today. Membership in a shared note does **not** make someone active. Done when: a signed-in stranger gets 401 on every room, and an invited user behaves like an original one.
-- [ ] **B3. `canOpenNote` returns the role** (`owner` / `editor` / `viewer` / null) from the same query, and `guardRoom` forwards it as `x-jot-role` (A1). Done when: still one D1 read for a repeat visit.
-- [ ] **B4. Sign-up hook** per the A3 result: allowed if the email is on `ALLOWED_EMAILS` or the `jot-invite` cookie holds a live join token whose inviter still has a free place; if the fallback is used, allow the sign-up but the account stays inactive (B2). Done when: a stranger without a join link cannot become active.
+- [x] **B2. Who counts as an active user.** In `worker/auth/gate.ts` split `getUser` into "signed in" and "active": active = email in `ALLOWED_EMAILS` **or** a row in `invited_users`. Every room and every API route except `/api/join/accept` requires active. Active users can claim new note ids and open `index-<userId>` as today. Membership in a shared note does **not** make someone active. Done when: a signed-in stranger gets 401 on every room, and an invited user behaves like an original one. **Done:** `worker/auth/invites.ts` has `isActiveUser`; `gate.ts` uses it for every room. Tested on `wrangler dev`: a stranger gets 401 and claims nothing, an invited user can claim and open their own note (becomes owner), an original user is unaffected.
+- [x] **B3. `canOpenNote` returns the role** (`owner` / `editor` / `viewer` / null) from the same query, and `guardRoom` forwards it as `x-jot-role` (A1). Done when: still one D1 read for a repeat visit. **Done in A1:** `canOpenNote` returns the role from the same query and `guardRoom` forwards it.
+- [x] **B4. Sign-up hook** per the A3 result: allowed if the email is on `ALLOWED_EMAILS` or the `jot-invite` cookie holds a live join token whose inviter still has a free place; if the fallback is used, allow the sign-up but the account stays inactive (B2). Done when: a stranger without a join link cannot become active. **Done:** `auth.ts` `user.create.before` allows an allowlisted email or a live join token from the `jot-invite` cookie (`canJoin`); `after` records the join with one atomic statement (`recordJoin`), so two people cannot take the last place. Tested against the local D1 (valid, unknown, expired, revoked, maker left the allowlist, 3 places then refused, race for the last place). Not yet proven end to end: the cookie arriving through a real Google callback. That is checked in E4 (local sign-in with a non-allowlisted account); if it fails, the inert-account fallback applies.
 
 ### Step C: Share API (`worker/share.ts`, routed from `worker/index.ts` under `/api/share/`)
 
