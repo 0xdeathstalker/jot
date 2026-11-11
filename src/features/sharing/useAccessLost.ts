@@ -9,7 +9,12 @@ import { type RoomSession, stopSyncing, useConnectionClosed } from "@/sync/provi
 //  - the socket keeps failing and the server's list of notes shared with us no longer has this one
 //    (we were away, so the refused reconnect is all we see).
 // A dropped network is not mistaken for this: nothing is checked while offline.
-export function useAccessLost(session: RoomSession, noteId: string, shared: boolean) {
+export function useAccessLost(
+  session: RoomSession,
+  noteId: string,
+  shared: boolean,
+  onRoleChanged?: () => void,
+) {
   const [lost, setLost] = useState(false)
   const checking = useRef(false)
 
@@ -22,7 +27,7 @@ export function useAccessLost(session: RoomSession, noteId: string, shared: bool
     (code: number) => {
       if (!shared) return
       if (code === 4403) return markLost()
-      if (code === 4401) return // role changed: the provider reconnects with the new role
+      if (code === 4401) return onRoleChanged?.() // role changed: the provider reconnects by itself
       if (!navigator.onLine || checking.current) return
       checking.current = true
       void sharedWithMe()
@@ -33,7 +38,7 @@ export function useAccessLost(session: RoomSession, noteId: string, shared: bool
           checking.current = false
         })
     },
-    [shared, noteId, markLost],
+    [shared, noteId, markLost, onRoleChanged],
   )
 
   useConnectionClosed(session, onClosed)

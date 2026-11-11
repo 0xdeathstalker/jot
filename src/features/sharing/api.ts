@@ -40,6 +40,11 @@ export const makeShareLink = (noteId: string, role: LinkRole) =>
 export const turnOffShareLink = (noteId: string, role: LinkRole) =>
   call<{ ok: true }>("DELETE", `${note(noteId)}/invite/${role}`)
 export const unshareNote = (noteId: string) => call<{ ok: true }>("DELETE", note(noteId))
+// The owner raises or lowers someone's role.
+export const changeMemberRole = (noteId: string, userId: string, role: LinkRole) =>
+  call<{ role: LinkRole }>("PATCH", `${note(noteId)}/members/${encodeURIComponent(userId)}`, {
+    role,
+  })
 // The owner removes someone, or pass your own id to leave a note.
 export const removeMember = (noteId: string, userId: string) =>
   call<{ ok: true }>("DELETE", `${note(noteId)}/members/${encodeURIComponent(userId)}`)

@@ -25,16 +25,25 @@ type Props = {
   followRemote?: boolean
   // After access was lost: remove the note from the list and from this device.
   onRemoveLost?: () => void
+  // The owner changed our role: the caller reads the new one and updates the list.
+  onRoleChanged?: () => void
 }
 
 // Content comes from the Y.Doc, never from Tiptap's `content` option.
 // undoRedo is off: Collaboration brings its own undo/redo (same shortcuts).
 // Keep the default Collaboration `field`; changing it later orphans existing notes.
-export function Editor({ noteId, onMetaChange, role, followRemote, onRemoveLost }: Props) {
+export function Editor({
+  noteId,
+  onMetaChange,
+  role,
+  followRemote,
+  onRemoveLost,
+  onRoleChanged,
+}: Props) {
   const session = useNoteSession(noteId)
   const { doc } = session
   const readOnly = role === "viewer"
-  const lost = useAccessLost(session, noteId, role !== undefined)
+  const lost = useAccessLost(session, noteId, role !== undefined, onRoleChanged)
 
   const editor = useEditor({
     editable: !readOnly,

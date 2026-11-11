@@ -62,6 +62,13 @@ export function addSharedNote(doc: Doc, id: string, role: SharedRole) {
   getNotes(doc).set(id, new YMap<unknown>(Object.entries(meta)))
 }
 
+// Someone else owns this note and our access changed (raised or lowered). Ignores unknown notes
+// and unchanged roles.
+export function setNoteRole(doc: Doc, id: string, role: SharedRole) {
+  const note = getNotes(doc).get(id)
+  if (note && note.get("role") !== role) note.set("role", role)
+}
+
 // The owner made a share link for this note.
 export function markShared(doc: Doc, id: string) {
   const note = getNotes(doc).get(id)

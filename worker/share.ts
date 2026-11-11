@@ -40,6 +40,7 @@ const revokeLinks = (env: Env, noteId: string, now: number, role?: InviteRole) =
 //   DELETE /:noteId                    stop sharing: remove everyone, revoke links (owner)
 //   POST   /:noteId/invite             { role } make a link (owner)
 //   DELETE /:noteId/invite/:role       turn a link off (owner)
+//   PATCH  /:noteId/members/:userId    { role } raise or lower someone (owner)
 //   DELETE /:noteId/members/:userId    remove someone (owner), or yourself to leave
 export async function handleShare(request: Request, env: Env): Promise<Response> {
   if (!writeAllowed(request)) return fail(403, "bad_origin")
@@ -172,6 +173,22 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
   if (b === "invite" && isInviteRole(c) && !d && method === "DELETE") {
     await revokeLinks(env, noteId, now, c).run()
     return json({ ok: true })
+  }
+
+  if (b === "members" && c && !d && method === "PATCH") {
+    const { role } = await readJson(request)
+    if (!isInviteRole(role)) return fail(400, "bad_role")
+    const current = await roleOn(env, noteId, c)
+    if (current === null) return fail(404, "not_found")
+    if (current === "owner") return fail(400, "owner_cannot_change")
+    if (current !== role) {
+      await env.DB.prepare("UPDATE note_members SET role = ? WHERE note_id = ? AND user_id = ?")
+        .bind(role, noteId, c)
+        .run()
+      // Their open connections still carry the old role: close them, they reconnect with the new one.
+      await kickUser(env, noteId, c, 4401, "role changed")
+    }
+    return json({ role })
   }
 
   if (b === "members" && c && !d && method === "DELETE") {

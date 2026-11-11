@@ -15,6 +15,7 @@ import { useNoteId } from "@/features/notes/useNoteId"
 import { useNoteSearch } from "@/features/notes/useNoteSearch"
 import { type InviteLink, readInviteLink } from "@/features/sharing/inviteLink"
 import { JoinPage } from "@/features/sharing/JoinPage"
+import { refreshRoles } from "@/features/sharing/refreshRoles"
 import { ShareDialog } from "@/features/sharing/ShareDialog"
 import { ShareLinkPage } from "@/features/sharing/ShareLinkPage"
 import {
@@ -50,6 +51,11 @@ function NotesApp({
 
   // Signed in: ask the browser to keep this device's notes (see localData.ts).
   useEffect(requestDurableStorage, [])
+
+  // Owners can change our role on shared notes while we are away: read the current ones.
+  useEffect(() => {
+    void refreshRoles(doc)
+  }, [doc])
 
   // No ?note= in the URL: open the newest note once the list is known.
   // (Not while a share link is being opened: that page replaces the URL with the shared note.)
@@ -163,6 +169,7 @@ function NotesApp({
               role={currentNote?.role}
               followRemote={!!(currentNote?.role || currentNote?.shared)}
               onRemoveLost={() => handleRemoveLost(noteId)}
+              onRoleChanged={() => void refreshRoles(doc)}
             />
           ) : (
             <p className="text-muted-foreground">No notes yet. Create one with “New note”.</p>

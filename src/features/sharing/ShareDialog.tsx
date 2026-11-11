@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   type ApiResult,
+  changeMemberRole,
   getShareInfo,
   type LinkRole,
   makeShareLink,
@@ -177,9 +178,22 @@ export function ShareDialog({ noteId, onLinkMade }: { noteId: string; onLinkMade
                       <span className="min-w-0 flex-1 truncate" title={member.email}>
                         {member.name || member.email}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {member.role === "editor" ? "Can edit" : "Can view"}
-                      </span>
+                      <ToggleGroup
+                        value={[member.role]}
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        aria-label={`Access for ${member.name || member.email}`}
+                        onValueChange={(value) => {
+                          const next = value[0]
+                          if ((next === "editor" || next === "viewer") && next !== member.role) {
+                            void act(() => changeMemberRole(noteId, member.userId, next))
+                          }
+                        }}
+                      >
+                        <ToggleGroupItem value="viewer">View</ToggleGroupItem>
+                        <ToggleGroupItem value="editor">Edit</ToggleGroupItem>
+                      </ToggleGroup>
                       <Button
                         size="xs"
                         variant="ghost"
