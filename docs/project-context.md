@@ -241,7 +241,7 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 
 - [ ] Login (magic link or OAuth) → JWT; consider generating a throwaway Better-T-Stack project to borrow its Better Auth + D1 + Drizzle setup
 - [ ] The Worker verifies the JWT and note ownership before connecting
-- [ ] Move DNS to Cloudflare, attach `jot.deathstalker.dev`, `pnpm deploy`
+- [ ] Move DNS to Cloudflare, attach `jot.deathstalker.dev`, `pnpm run deploy`
 
 ### Phase 5: PWA polish
 

@@ -16,13 +16,14 @@
     //  - /parties/*: a WebSocket handshake is a GET, so it would skip the permission guard.
     "run_worker_first": ["/api/*", "/parties/*"],
   },
-  // Auth tables + note_members. "local" is fine for `pnpm dev`; the real id comes from
-  // `wrangler d1 create jot-db` (docs/plans/phase-4-auth.md, E1).
+  // Auth tables + note_members. `pnpm dev` uses a local copy in .wrangler/state; the id below is
+  // the real database created by `wrangler d1 create jot-db` (docs/plans/phase-4-auth.md, E1).
+  // Keep the binding name `DB`: the Worker code reads env.DB.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "jot-db",
-      "database_id": "local",
+      "database_id": "c6caa0ba-8c79-427c-bf59-663acaeacb06",
       "migrations_dir": "migrations",
     },
   ],
@@ -35,13 +36,25 @@
   // Never edit an existing migration ("v1", "v2"): add a new tag (v3, ...) for any class change.
   "durable_objects": {
     "bindings": [
-      { "name": "NoteRoom", "class_name": "NoteRoom" },
-      { "name": "IndexRoom", "class_name": "IndexRoom" },
+      {
+        "name": "NoteRoom",
+        "class_name": "NoteRoom",
+      },
+      {
+        "name": "IndexRoom",
+        "class_name": "IndexRoom",
+      },
     ],
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["NoteRoom"] },
-    { "tag": "v2", "new_sqlite_classes": ["IndexRoom"] },
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["NoteRoom"],
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["IndexRoom"],
+    },
   ],
   /**
    * Smart Placement

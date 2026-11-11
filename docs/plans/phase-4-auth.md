@@ -112,12 +112,12 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step E: Deploy to workers.dev
 
-- [ ] **E1. D1 database (you run).** `pnpm exec wrangler login` if needed, then `pnpm exec wrangler d1 create jot-db`. Paste the returned `database_id` into `wrangler.jsonc`. This creates a free resource in your Cloudflare account. Done when: the id replaces `"local"`.
-- [ ] **E2. Remote schema.** `pnpm db:migrate:remote`. Done when: it lists both migrations as applied.
-- [ ] **E3. Secrets (you run).** `pnpm exec wrangler secret put BETTER_AUTH_SECRET`, then `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ALLOWED_EMAILS`. Secrets never go in `wrangler.jsonc`. Done when: `wrangler secret list` shows all four.
-- [ ] **E4. Google redirect URI.** Add `https://jot.<account>.workers.dev/api/auth/callback/google` in the Cloud Console. Done when: it is saved.
-- [ ] **E5. Deploy.** `pnpm check && pnpm deploy`. The first deploy applies migration `v2` (the `IndexRoom` class, already in `wrangler.jsonc`) and `v1`. Done when: the URL loads.
-- [ ] **E6. Checkpoint: real devices.** Log in on the laptop and on your **phone over HTTPS**; a note created on one appears on the other within about a second, and editing offline then reconnecting merges. This is the cross-device test we could not do on localhost. Done when: all pass.
+- [x] **E1. D1 database (you run).** `pnpm exec wrangler login` if needed, then `pnpm exec wrangler d1 create jot-db`. Paste the returned `database_id` into `wrangler.jsonc`. This creates a free resource in your Cloudflare account. Done when: the id replaces `"local"`.
+- [x] **E2. Remote schema.** `pnpm db:migrate:remote`. Done when: it lists both migrations as applied.
+- [x] **E3. Secrets (you run).** `pnpm exec wrangler secret put BETTER_AUTH_SECRET`, then `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ALLOWED_EMAILS`. Secrets never go in `wrangler.jsonc`. Done when: `wrangler secret list` shows all four.
+- [x] **E4. Google redirect URI.** Add `https://jot.<account>.workers.dev/api/auth/callback/google` in the Cloud Console. Done when: it is saved.
+- [x] **E5. Deploy.** `pnpm check && pnpm run deploy` (not `pnpm deploy`: that is a built-in pnpm command that would not run our script). The first deploy applies migration `v2` (the `IndexRoom` class, already in `wrangler.jsonc`) and `v1`. Done when: the URL loads.
+- [x] **E6. Checkpoint: real devices.** Log in on the laptop and on your **phone over HTTPS**; a note created on one appears on the other within about a second, and editing offline then reconnecting merges. This is the cross-device test we could not do on localhost. Done when: all pass.
 
 ### Step F: Custom domain (separate, you run)
 

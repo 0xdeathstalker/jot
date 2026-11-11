@@ -62,7 +62,7 @@ _Available from Phase 1 onwards._
 
 ```bash
 pnpm exec wrangler login     # first time only
-pnpm deploy
+pnpm run deploy
 ```
 
 This builds the app and deploys a single Worker that serves both the PWA and the sync server. It's live at `https://jot.<your-account>.workers.dev`.
@@ -106,7 +106,7 @@ pnpm dlx shadcn@latest add <component>
 | `pnpm dev`        | Run the app + Worker locally                                  |
 | `pnpm build`      | Type-check and build for production                           |
 | `pnpm preview`    | Build and preview the production bundle locally               |
-| `pnpm deploy`     | Build and deploy to Cloudflare                                |
+| `pnpm run deploy` | Build and deploy to Cloudflare                                |
 | `pnpm lint`       | Lint with oxlint                                              |
 | `pnpm lint:fix`   | Lint and apply safe fixes                                     |
 | `pnpm format`     | Check formatting (oxfmt), writes nothing                      |
