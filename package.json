@@ -12,6 +12,7 @@
     "cf-typegen": "wrangler types",
     "db:migrate": "wrangler d1 migrations apply jot-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply jot-db --remote",
+    "pwa:icons": "pwa-assets-generator",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt --check",
@@ -50,6 +51,7 @@
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vite-pwa/assets-generator": "^2.0.0",
     "@vitejs/plugin-react": "^6.1.2",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
@@ -57,6 +59,9 @@
     "oxlint": "^1.89.0",
     "typescript": "~7.0.2",
     "vite": "^8.3.5",
+    "vite-plugin-pwa": "^2.0.0",
+    "workbox-build": "^7.4.1",
+    "workbox-window": "^7.4.1",
     "wrangler": "^4.158.0"
   },
   "lint-staged": {
