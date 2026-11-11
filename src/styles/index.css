@@ -127,6 +127,11 @@
   html {
     @apply font-sans;
   }
+  /* iOS: no rubber-band bounce of the whole page (the note list and editor scroll themselves). */
+  html,
+  body {
+    overscroll-behavior: none;
+  }
 }
 
 /* Tiptap content. Tailwind preflight strips heading/list styles, so restore them here.

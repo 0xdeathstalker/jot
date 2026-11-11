@@ -47,3 +47,10 @@ export async function wipeIfPending() {
     // ignored
   }
 }
+
+// Asks the browser not to evict our IndexedDB when it is short on space. Only a request: Safari
+// and Chrome decide for themselves (installed apps and frequent use help), and the server copy is
+// the safety net either way.
+export function requestDurableStorage() {
+  void navigator.storage?.persist?.().catch(() => {})
+}

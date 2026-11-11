@@ -13,6 +13,7 @@ import { NoteList } from "@/features/notes/NoteList"
 import { useNoteId } from "@/features/notes/useNoteId"
 import { useNoteSearch } from "@/features/notes/useNoteSearch"
 import { createNote, softDelete, togglePin, updateMeta, useNotes } from "@/sync/indexDoc"
+import { requestDurableStorage } from "@/sync/localData"
 import { useIndexSession } from "@/sync/provider"
 
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
@@ -23,6 +24,9 @@ function NotesApp({ user }: { user: AuthUser }) {
   const visibleNotes = useNoteSearch(notes, query)
   const { noteId, openNote } = useNoteId()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Signed in: ask the browser to keep this device's notes (see localData.ts).
+  useEffect(requestDurableStorage, [])
 
   // No ?note= in the URL: open the newest note once the list is known.
   const newestId = notes[0]?.id
@@ -55,10 +59,10 @@ function NotesApp({ user }: { user: AuthUser }) {
   }
 
   return (
-    <div className="flex h-dvh">
+    <div className="flex h-dvh pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
       {/* Phone: slides over the editor. Desktop: fixed column. */}
       <aside
-        className={`fixed inset-y-0 left-0 z-20 w-64 shrink-0 flex-col gap-2 border-r bg-background p-2 md:static md:flex ${sidebarOpen ? "flex" : "hidden"}`}
+        className={`fixed inset-y-0 left-0 z-20 w-64 shrink-0 flex-col gap-2 border-r bg-background p-2 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))] md:static md:flex ${sidebarOpen ? "flex" : "hidden"}`}
       >
         <Button onClick={handleNew}>
           <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
@@ -86,7 +90,7 @@ function NotesApp({ user }: { user: AuthUser }) {
         <AccountFooter user={user} />
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-3xl p-4">
           <Button
             variant="ghost"

@@ -39,10 +39,14 @@ function useRoomSession(options: RoomOptions): RoomSession {
     }
     document.addEventListener("visibilitychange", reconnect)
     window.addEventListener("online", reconnect)
+    // iOS restores pages from the back/forward cache with a dead socket and may not fire
+    // visibilitychange.
+    window.addEventListener("pageshow", reconnect)
 
     return () => {
       document.removeEventListener("visibilitychange", reconnect)
       window.removeEventListener("online", reconnect)
+      window.removeEventListener("pageshow", reconnect)
       // disconnect(), not destroy(): destroy leaks a reconnect timer (partykit #402),
       // and disconnect lets React Strict Mode remount reconnect the same provider.
       provider.disconnect()

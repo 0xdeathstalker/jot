@@ -51,10 +51,10 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step D: iOS fixes (`src/`)
 
-- [ ] **D1. Safe areas.** Pad the sidebar and main areas with `env(safe-area-inset-top/bottom/left/right)` so the notch and home bar never cover content; add `overscroll-behavior: none` to `html` and `body`. Done when: nothing sits under the notch in an installed iPhone app.
-- [ ] **D2. Inputs 16 px or larger.** The shadcn `Input` is already `text-base md:text-sm` (16 px on phones) and the editor text is 1rem. Audit every input/textarea added since; Safari zooms in on anything smaller. Done when: focusing the search box on iPhone does not zoom.
-- [ ] **D3. Reconnect after restore.** `provider.ts` reconnects on `visibilitychange` and `online`; add a `pageshow` listener for pages restored from the back/forward cache, where iOS leaves a dead socket and may not fire `visibilitychange`. Done when: it type-checks.
-- [ ] **D4. Ask for durable storage.** Once signed in, call `navigator.storage?.persist?.()` once. It is a request, not a guarantee; harmless where unsupported. Done when: it is called after login without errors.
+- [x] **D1. Safe areas.** Pad the sidebar and main areas with `env(safe-area-inset-top/bottom/left/right)` so the notch and home bar never cover content; add `overscroll-behavior: none` to `html` and `body`. Done when: nothing sits under the notch in an installed iPhone app.
+- [x] **D2. Inputs 16 px or larger.** The shadcn `Input` is already `text-base md:text-sm` (16 px on phones) and the editor text is 1rem. Audit every input/textarea added since; Safari zooms in on anything smaller. Done when: focusing the search box on iPhone does not zoom.
+- [x] **D3. Reconnect after restore.** `provider.ts` reconnects on `visibilitychange` and `online`; add a `pageshow` listener for pages restored from the back/forward cache, where iOS leaves a dead socket and may not fire `visibilitychange`. Done when: it type-checks.
+- [x] **D4. Ask for durable storage.** Once signed in, call `navigator.storage?.persist?.()` once. It is a request, not a guarantee; harmless where unsupported. Done when: it is called after login without errors.
 
 ### Step E: iPhone install hint
 
