@@ -6,17 +6,20 @@ import { isActiveUser } from "./invites.ts"
 // The Worker checks every room connection (docs/project-context.md section 8): never trust the client.
 const ROOM_NAME = /^[\w-]{1,100}$/
 
-type User = { id: string; email: string }
+export type User = { id: string; email: string }
 
-// Returns the signed-in user, or null. Also null when they are not active (not on ALLOWED_EMAILS
-// and not invited): the sign-up hook only covers new accounts, so removing someone has to take
-// effect here.
-async function getUser(request: Request, env: Env): Promise<User | null> {
+// The signed-in user (valid session cookie), active or not.
+export async function getSignedInUser(request: Request, env: Env): Promise<User | null> {
   const origin = new URL(request.url).origin
   const session = await createAuth(env, origin).api.getSession({ headers: request.headers })
-  const user = session?.user
-  if (!user || !(await isActiveUser(env, user))) return null
-  return { id: user.id, email: user.email }
+  return session?.user ? { id: session.user.id, email: session.user.email } : null
+}
+
+// The signed-in user, or null. Also null when they are not active (not on ALLOWED_EMAILS and not
+// invited): the sign-up hook only covers new accounts, so removing someone has to take effect here.
+export async function getUser(request: Request, env: Env): Promise<User | null> {
+  const user = await getSignedInUser(request, env)
+  return user && (await isActiveUser(env, user)) ? user : null
 }
 
 export type Role = "owner" | "editor" | "viewer"
