@@ -15,18 +15,36 @@ import { useNoteId } from "@/features/notes/useNoteId"
 import { useNoteSearch } from "@/features/notes/useNoteSearch"
 import { type InviteLink, readInviteLink } from "@/features/sharing/inviteLink"
 import { JoinPage } from "@/features/sharing/JoinPage"
+import { ShareDialog } from "@/features/sharing/ShareDialog"
 import { ShareLinkPage } from "@/features/sharing/ShareLinkPage"
-import { createNote, softDelete, togglePin, updateMeta, useNotes } from "@/sync/indexDoc"
+import {
+  createNote,
+  markShared,
+  softDelete,
+  togglePin,
+  updateMeta,
+  useNotes,
+} from "@/sync/indexDoc"
 import { requestDurableStorage } from "@/sync/localData"
 import { useIndexSession } from "@/sync/provider"
 
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
-function NotesApp({ user, shareToken }: { user: AuthUser; shareToken: string | null }) {
+function NotesApp({
+  user,
+  shareToken,
+  onShareDone,
+}: {
+  user: AuthUser
+  shareToken: string | null
+  onShareDone: () => void
+}) {
   const { doc } = useIndexSession(user.id)
   const notes = useNotes(doc)
   const [query, setQuery] = useState("")
   const visibleNotes = useNoteSearch(notes, query)
   const { noteId, openNote } = useNoteId()
+  // Only the owner can share (a note with a `role` belongs to someone else).
+  const ownedNote = notes.find((note) => note.id === noteId && !note.role)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Signed in: ask the browser to keep this device's notes (see localData.ts).
@@ -39,7 +57,15 @@ function NotesApp({ user, shareToken }: { user: AuthUser; shareToken: string | n
     if (!noteId && newestId && !shareToken) openNote(newestId, { replace: true })
   }, [noteId, newestId, shareToken, openNote])
 
-  const openSharedNote = useCallback((id: string) => openNote(id, { replace: true }), [openNote])
+  // The link page is finished: show the note, and stop treating this visit as a link visit (the
+  // address bar already changed, but this page was opened with the token, so forget it here too).
+  const openSharedNote = useCallback(
+    (id: string) => {
+      openNote(id, { replace: true })
+      onShareDone()
+    },
+    [openNote, onShareDone],
+  )
 
   const handleNew = () => {
     openNote(createNote(doc))
@@ -99,15 +125,25 @@ function NotesApp({ user, shareToken }: { user: AuthUser; shareToken: string | n
 
       <main className="flex-1 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-3xl p-4">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="mb-2 md:hidden"
-            aria-label="Show notes"
-            onClick={() => setSidebarOpen((open) => !open)}
-          >
-            <HugeiconsIcon icon={Menu01Icon} />
-          </Button>
+          <div className="mb-2 flex items-center">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="md:hidden"
+              aria-label="Show notes"
+              onClick={() => setSidebarOpen((open) => !open)}
+            >
+              <HugeiconsIcon icon={Menu01Icon} />
+            </Button>
+            {ownedNote && !shareToken && (
+              <div className="ml-auto">
+                <ShareDialog
+                  noteId={ownedNote.id}
+                  onLinkMade={() => markShared(doc, ownedNote.id)}
+                />
+              </div>
+            )}
+          </div>
 
           {shareToken ? (
             <ShareLinkPage token={shareToken} doc={doc} onOpen={openSharedNote} />
@@ -127,7 +163,8 @@ function NotesApp({ user, shareToken }: { user: AuthUser; shareToken: string | n
 function App() {
   const auth = useAuthUser()
   // /join/<token> or /share/<token>, read once: it is the address the page was opened at.
-  const [invite] = useState<InviteLink | null>(readInviteLink)
+  const [invite, setInvite] = useState<InviteLink | null>(readInviteLink)
+  const clearInvite = useCallback(() => setInvite(null), [])
   if (auth.status === "loading") return null
   if (auth.status === "signedOut") return <LoginScreen invite={invite} />
   if (invite?.kind === "join") return <JoinPage token={invite.token} />
@@ -136,6 +173,7 @@ function App() {
       key={auth.user.id}
       user={auth.user}
       shareToken={invite?.kind === "share" ? invite.token : null}
+      onShareDone={clearInvite}
     />
   )
 }

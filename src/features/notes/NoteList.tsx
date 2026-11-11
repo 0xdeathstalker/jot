@@ -42,6 +42,11 @@ export function NoteList({ notes, activeId, onOpen, onTogglePin, onDelete }: Pro
             >
               {note.pinned && <HugeiconsIcon icon={PinIcon} className="size-3 shrink-0" />}
               <span className="truncate">{note.title || "Untitled"}</span>
+              {(note.shared || note.role) && (
+                <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] font-normal text-muted-foreground not-italic">
+                  {note.role === "viewer" ? "View only" : "Shared"}
+                </span>
+              )}
             </span>
             {note.preview && (
               <span className="truncate text-xs text-muted-foreground">{note.preview}</span>
