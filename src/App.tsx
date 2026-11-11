@@ -13,6 +13,7 @@ import { Editor } from "@/editor/Editor"
 import { NoteList } from "@/features/notes/NoteList"
 import { useNoteId } from "@/features/notes/useNoteId"
 import { useNoteSearch } from "@/features/notes/useNoteSearch"
+import { removeMember, unshareNote } from "@/features/sharing/api"
 import { type InviteLink, readInviteLink } from "@/features/sharing/inviteLink"
 import { JoinPage } from "@/features/sharing/JoinPage"
 import { refreshRoles } from "@/features/sharing/refreshRoles"
@@ -52,10 +53,16 @@ function NotesApp({
   // Signed in: ask the browser to keep this device's notes (see localData.ts).
   useEffect(requestDurableStorage, [])
 
-  // Owners can change our role on shared notes while we are away: read the current ones.
+  // Owners can change our role on shared notes, or remove us, while we are away: read the current
+  // state from the server. Runs again when the set of notes shared with us changes, which also
+  // covers the list finishing loading from this device after the first render.
+  const sharedKey = notes
+    .filter((note) => note.role)
+    .map((note) => note.id)
+    .join(",")
   useEffect(() => {
     void refreshRoles(doc)
-  }, [doc])
+  }, [doc, sharedKey])
 
   // No ?note= in the URL: open the newest note once the list is known.
   // (Not while a share link is being opened: that page replaces the URL with the shared note.)
@@ -96,11 +103,39 @@ function NotesApp({
   const handleRemoveLost = (id: string) => {
     softDelete(doc, id)
     deleteLocalNote(id)
-    openNote(null, { replace: true })
+    if (id === noteId) openNote(null, { replace: true })
   }
 
   // Soft delete. If it was the open note, clear the URL: the effect above then opens the next one.
-  const handleDelete = (id: string) => {
+  // Shared notes need the server: leaving removes our place, and deleting your own shared note
+  // takes everyone else's access away first (the data itself is never hard-deleted).
+  const handleDelete = async (id: string) => {
+    const note = notes.find((n) => n.id === id)
+    if (note?.noAccess) return handleRemoveLost(id) // nothing to tell the server
+
+    const needsServer = async (
+      action: () => Promise<{ ok: boolean; status?: number; error?: string }>,
+    ) => {
+      const result = await action()
+      // 404: the server has no record (never synced, or already gone): nothing to undo there.
+      if (result.ok || result.status === 404) return true
+      window.alert(
+        result.error === "offline"
+          ? "Go online to do this with a shared note."
+          : "That did not work. Try again.",
+      )
+      return false
+    }
+
+    if (note?.role) {
+      if (!window.confirm("Leave this note? You will lose access to it.")) return
+      if (await needsServer(() => removeMember(id, user.id))) handleRemoveLost(id)
+      return
+    }
+    if (note?.shared) {
+      if (!window.confirm("This note is shared. Deleting it removes access for everyone.")) return
+      if (!(await needsServer(() => unshareNote(id)))) return
+    }
     softDelete(doc, id)
     if (id === noteId) openNote(null, { replace: true })
   }
@@ -131,7 +166,7 @@ function NotesApp({
             activeId={noteId}
             onOpen={handleOpen}
             onTogglePin={(id) => togglePin(doc, id)}
-            onDelete={handleDelete}
+            onDelete={(id) => void handleDelete(id)}
           />
         </ScrollArea>
         <AccountFooter user={user} />
@@ -170,6 +205,7 @@ function NotesApp({
               followRemote={!!(currentNote?.role || currentNote?.shared)}
               onRemoveLost={() => handleRemoveLost(noteId)}
               onRoleChanged={() => void refreshRoles(doc)}
+              noAccess={currentNote?.noAccess}
             />
           ) : (
             <p className="text-muted-foreground">No notes yet. Create one with “New note”.</p>

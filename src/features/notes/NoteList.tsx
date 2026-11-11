@@ -42,9 +42,9 @@ export function NoteList({ notes, activeId, onOpen, onTogglePin, onDelete }: Pro
             >
               {note.pinned && <HugeiconsIcon icon={PinIcon} className="size-3 shrink-0" />}
               <span className="truncate">{note.title || "Untitled"}</span>
-              {(note.shared || note.role) && (
+              {(note.shared || note.role || note.noAccess) && (
                 <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] font-normal text-muted-foreground not-italic">
-                  {note.role === "viewer" ? "View only" : "Shared"}
+                  {note.noAccess ? "No access" : note.role === "viewer" ? "View only" : "Shared"}
                 </span>
               )}
             </span>
@@ -73,7 +73,7 @@ export function NoteList({ notes, activeId, onOpen, onTogglePin, onDelete }: Pro
               </DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onClick={() => onDelete(note.id)}>
                 <HugeiconsIcon icon={Delete02Icon} />
-                Delete
+                {note.role ? "Leave note" : "Delete"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -14,6 +14,7 @@ export type NoteMeta = {
   // Sharing (Phase 6). UI hints only: the server decides access from D1.
   role?: SharedRole // set when someone else owns the note; absent means you own it
   shared?: boolean // you own it and have made a share link
+  noAccess?: boolean // someone else owns it and has removed you (learned from the server)
 }
 export type SharedRole = "editor" | "viewer"
 export type Note = NoteMeta & { id: string }
@@ -46,6 +47,7 @@ export function addSharedNote(doc: Doc, id: string, role: SharedRole) {
     doc.transact(() => {
       existing.set("deleted", false)
       existing.set("role", role)
+      existing.set("noAccess", false)
     })
     return
   }
@@ -62,11 +64,23 @@ export function addSharedNote(doc: Doc, id: string, role: SharedRole) {
   getNotes(doc).set(id, new YMap<unknown>(Object.entries(meta)))
 }
 
-// Someone else owns this note and our access changed (raised or lowered). Ignores unknown notes
-// and unchanged roles.
-export function setNoteRole(doc: Doc, id: string, role: SharedRole) {
-  const note = getNotes(doc).get(id)
-  if (note && note.get("role") !== role) note.set("role", role)
+// Brings our list in line with what the server says we may open (`mine`: the notes shared with us,
+// with our current role). Notes we own are never touched. A shared note missing from `mine` is
+// marked noAccess; one that is back, or whose role changed, is corrected.
+export function reconcileShared(doc: Doc, mine: { noteId: string; role: SharedRole }[]) {
+  const roles = new Map(mine.map((entry) => [entry.noteId, entry.role]))
+  doc.transact(() => {
+    getNotes(doc).forEach((note, id) => {
+      if (note.get("deleted") || !note.get("role")) return
+      const role = roles.get(id)
+      if (!role) {
+        if (!note.get("noAccess")) note.set("noAccess", true)
+        return
+      }
+      if (note.get("role") !== role) note.set("role", role)
+      if (note.get("noAccess")) note.set("noAccess", false)
+    })
+  })
 }
 
 // The owner made a share link for this note.
@@ -112,6 +126,7 @@ function readNotes(notes: NotesMap): Note[] {
       deleted: false,
       role: (note.get("role") as SharedRole | undefined) ?? undefined,
       shared: !!note.get("shared") || undefined,
+      noAccess: !!note.get("noAccess") || undefined,
     })
   })
   return list.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)

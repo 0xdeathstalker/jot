@@ -8,7 +8,7 @@ import { getTitleAndPreview } from "@/features/notes/noteMeta"
 import { NoAccess } from "@/features/sharing/NoAccess"
 import { useAccessLost } from "@/features/sharing/useAccessLost"
 import type { SharedRole } from "@/sync/indexDoc"
-import { useNoteSession } from "@/sync/provider"
+import { stopSyncing, useNoteSession } from "@/sync/provider"
 
 const META_DEBOUNCE_MS = 500
 
@@ -27,6 +27,8 @@ type Props = {
   onRemoveLost?: () => void
   // The owner changed our role: the caller reads the new one and updates the list.
   onRoleChanged?: () => void
+  // The server said we are no longer a member (learned before opening: no socket is kept).
+  noAccess?: boolean
 }
 
 // Content comes from the Y.Doc, never from Tiptap's `content` option.
@@ -39,11 +41,15 @@ export function Editor({
   followRemote,
   onRemoveLost,
   onRoleChanged,
+  noAccess,
 }: Props) {
   const session = useNoteSession(noteId)
   const { doc } = session
   const readOnly = role === "viewer"
-  const lost = useAccessLost(session, noteId, role !== undefined, onRoleChanged)
+  const lost = useAccessLost(session, noteId, role !== undefined, onRoleChanged) || !!noAccess
+  useEffect(() => {
+    if (noAccess) stopSyncing(session) // do not keep knocking on a door that is closed
+  }, [noAccess, session])
 
   const editor = useEditor({
     editable: !readOnly,
