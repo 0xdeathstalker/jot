@@ -1,6 +1,6 @@
 # Plan: Phase 6 – Sharing
 
-Status: in progress (step A done)
+Status: in progress (steps A to G built; H0 and H onward to do)
 Source: `docs/project-context.md` §7 (data), §8 (sharing and permissions), §10 Phase 6, `docs/plans/phase-4-auth.md` (guard, claim-or-member, allowlist).
 
 Goal: an existing Jot user can (1) invite up to 3 friends to Jot with one join link, and (2) share a note with up to 2 other people with a share link. Both are plain links sent through any chat app, no email. Editors type together live and see each other's cursors. Viewers can read but never change anything, and the **server** enforces that.
@@ -24,6 +24,7 @@ Goal: an existing Jot user can (1) invite up to 3 friends to Jot with one join l
 | Link behavior               | **Reusable until revoked.** One link per note and role, expires after 7 days, the owner can turn it off or make a new one (a new one replaces the old)                                                    |
 | Owner deletes a shared note | **Everyone loses access.** The data stays in storage (soft delete, never hard-deleted)                                                                                                                    |
 | Who can share               | **Owner only.** Editors edit the text; they cannot create links or remove people                                                                                                                          |
+| Changing a role             | **The owner can raise or lower a person's role from the Share dialog** (step H0). A share link can still only raise a role, never lower it                                                                |
 
 Defaults I chose without asking (change them if you disagree):
 
@@ -36,7 +37,7 @@ Defaults I chose without asking (change them if you disagree):
 
 ## Out of scope
 
-Email invites, per-person invites by email address, changing a member's role after joining (they accept a different-role link instead, which only ever upgrades), invited users inviting others, a global user cap, per-user note limits, comments, version history, "who is online" avatar list, note transfer between owners, public read-only links for people without Google.
+Email invites, per-person invites by email address, invited users inviting others, a global user cap, per-user note limits, comments, version history, "who is online" avatar list, note transfer between owners, public read-only links for people without Google.
 
 ## New packages (flagged per CLAUDE.md; MIT and free)
 
@@ -134,9 +135,19 @@ All routes: same-origin check (`Origin` must equal the request origin, like the 
 
 ### Step G: Viewer and removed states
 
-- [ ] **G1. Viewer mode.** `Editor` gets `editable: false` for viewers; toolbar disabled; a slim "View only" banner. The server enforces regardless of this. Done when: a viewer cannot type or paste.
-- [ ] **G2. Refused connection.** When the socket for a note we do not own is refused (403) or closed with 4403, show "You no longer have access to this note" with **Remove from my list**, which soft-deletes the entry and deletes that note's local IndexedDB database (`jot-note-<id>`). Done when: removing a member in one browser shows this in the other.
-- [ ] **G3. Shared notes keep their title fresh for the people they are shared with.** Today title and preview are written to the index only from local edits. For a note with `role` set, also update the entry from the doc on first sync and on remote changes while the note is open. Done when: B's list shows A's title after B opens the note.
+- [x] **G1. Viewer mode.** `Editor` gets `editable: false` for viewers; toolbar disabled; a slim "View only" banner. The server enforces regardless of this. Done when: a viewer cannot type or paste. **Done in code:** `Editor` takes `role`; for `"viewer"` it is `editable: false` (kept in step with the role), the toolbar buttons are disabled, and a "View only" banner shows. The server drops viewer edits regardless (D2).
+- [x] **G2. Refused connection.** When the socket for a note we do not own is refused (403) or closed with 4403, show "You no longer have access to this note" with **Remove from my list**, which soft-deletes the entry and deletes that note's local IndexedDB database (`jot-note-<id>`). Done when: removing a member in one browser shows this in the other. **Done in code:** `useAccessLost` (`src/features/sharing/`) for notes someone else owns. It reacts to the server closing our socket with 4403, or, when we were away, to repeated socket failures plus the note missing from `GET /api/share/mine` (nothing is checked while offline). It then calls `stopSyncing` (the provider otherwise retries forever) and the editor shows `NoAccess` with **Remove from my list**, which soft-deletes the entry and deletes `jot-note-<id>` from this device. Headless check with a real `YProvider` and the member's cookie: removal gives a `connection-close` with code 4403, the provider keeps retrying until `disconnect()`, and the note is gone from `/mine`.
+- [x] **G3. Shared notes keep their title fresh for the people they are shared with.** Today title and preview are written to the index only from local edits. For a note with `role` set, also update the entry from the doc on first sync and on remote changes while the note is open. Done when: B's list shows A's title after B opens the note. **Done in code:** the editor passes `followRemote` for shared notes (ones with a `role`, or owned with `shared`), so their title and preview also follow other people's edits, not only our own typing. `updateMeta` skips unchanged values, so nothing loops.
+- [ ] **G4. Checkpoint (manual, yours): two accounts on `pnpm dev`.** (1) Owner shares a note with **Can view**; the second account opens the link: the banner says "View only", the toolbar is greyed, typing does nothing, and the owner's edits appear live. (2) Owner makes a **Can edit** link; the second account opens it (role upgrades): it can type and the owner sees it. (3) Change the first line as the owner: the second account's list shows the new title after opening the note (and the owner's list follows the editor's first-line change). (4) Owner removes the second account while it has the note open: it shows "You no longer have access" within a few seconds; **Remove from my list** drops it. (5) Remove again while the second account is closed, then open the app: opening that note shows the same message. Done when: all five behave.
+
+### Step H0: Change a person's role (added after step G)
+
+Today the owner can only remove someone and send a new link to lower their role. This adds a proper control in the Share dialog.
+
+- [ ] **H0a. Server route.** `PATCH /api/share/:noteId/members/:userId` with `{ role: "editor" | "viewer" }` in `worker/share.ts`: owner only; the target must be a non-owner member (404 otherwise, 400 for the owner or a bad role); update the `note_members` row, then `kickUser(env, noteId, userId, 4401, "role changed")` so their open connections reconnect with the new role. Same `Origin` and session rules as the other routes. Done when: raising and lowering both work and a non-owner gets 403/404.
+- [ ] **H0b. Selector in the Share dialog.** In `ShareDialog.tsx`, replace the plain "Can view / Can edit" text next to each person under **People with access** with a small selector (`ToggleGroup` or a native select) wired to a new `changeMemberRole(noteId, userId, role)` in `api.ts`; the Remove button stays. Disabled while a request runs; offline shows the existing "Go online" message. Done when: changing a role updates the list without reopening the dialog.
+- [ ] **H0c. The other person's screen follows.** Add `setNoteRole(doc, id, role)` to `indexDoc.ts` and a `refreshRoles(doc)` helper that reads `GET /api/share/mine` and updates the `role` of any shared entry that differs. Call it when a note's socket closes with 4401 (`useAccessLost` gets an `onRoleChanged` callback) and once at startup when online (H3 uses the same read, so build them together). Done when: lowering a role while the person has the note open turns it read-only, with the "View only" banner, within a few seconds, with no reload; raising it unlocks the editor.
+- [ ] **H0d. Checkpoint: headless test then manual.** Headless (as in step D): lower an editor to viewer while connected: the old socket closes with 4401, the provider reconnects, and the next edit is dropped; raise it again: the next edit lands; a non-owner calling the route gets 403/404; the owner's own row cannot be changed. Manual: two accounts, change the role in the dialog and watch the other window. Done when: both pass.
 
 ### Step H: Delete and leave
 
@@ -169,6 +180,7 @@ All routes: same-origin check (`Origin` must equal the request origin, like the 
 
 - **The role header can be forged by a client.** The guard must overwrite `x-jot-role` on every connection and never copy a client value. Same for `x-jot-user`.
 - **`isReadOnly` only filters sync updates.** Awareness (cursors) from viewers is still accepted, which is fine. If A1 shows viewers can write through some other message type, close the connection instead.
+- **A connection keeps the role it was opened with** (tags are fixed at connect). When a viewer is raised to editor by a second link, `accept` closes their open connections with code 4401 ("role changed") and the provider reconnects as editor; 4403 means removed and shows the no-access screen. Checked headless: viewer edit dropped, then after the edit link the connection closes with 4401, reconnects by itself, and the next edit reaches the owner.
 - **Hibernation drops memory, not connection state.** Keep the role in `connection.setState`, never in a class field.
 - **Do not trust the `shared` / `role` fields in the index doc for permissions.** They are UI hints only; D1 `note_members` is the truth.
 - **Claim-or-member must stay race-safe** (`note_one_owner` index). Accepting an invite never touches the owner row.

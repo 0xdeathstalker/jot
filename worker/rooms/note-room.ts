@@ -27,9 +27,11 @@ export class NoteRoom extends YServer {
   }
 
   // Called by the Worker (via a stub) when someone is removed from the note.
-  kick(userId: string) {
+  // 4403 = removed (the client shows "no access"); 4401 = role changed (the client just reconnects,
+  // because a connection keeps the role it was opened with).
+  kick(userId: string, code = 4403, reason = "removed") {
     for (const connection of this.getConnections(`user:${userId}`)) {
-      connection.close(4403, "removed")
+      connection.close(code, reason)
     }
   }
 

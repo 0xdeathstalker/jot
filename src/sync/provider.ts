@@ -57,6 +57,22 @@ function useRoomSession(options: RoomOptions): RoomSession {
   return session
 }
 
+// Calls `onClosed(code)` each time this room's socket closes: the server closes with 4403 when
+// someone is removed from a note; a refused reconnect shows up as 1006 (browsers hide the HTTP status).
+export function useConnectionClosed(session: RoomSession, onClosed: (code: number) => void) {
+  useEffect(() => {
+    const { provider } = session
+    const handler = (event: CloseEvent) => onClosed(event.code)
+    provider.on("connection-close", handler)
+    return () => provider.off("connection-close", handler)
+  }, [session, onClosed])
+}
+
+// Stops reconnecting (the provider retries forever by default): used once access is gone.
+export function stopSyncing(session: RoomSession) {
+  session.provider.disconnect()
+}
+
 // One Y.Doc per note: /parties/note-room/<noteId>.
 export function useNoteSession(noteId: string): RoomSession {
   return useRoomSession({ party: "note-room", room: noteId, idbName: `jot-note-${noteId}` })

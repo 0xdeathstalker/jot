@@ -25,7 +25,7 @@ import {
   updateMeta,
   useNotes,
 } from "@/sync/indexDoc"
-import { requestDurableStorage } from "@/sync/localData"
+import { deleteLocalNote, requestDurableStorage } from "@/sync/localData"
 import { useIndexSession } from "@/sync/provider"
 
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
@@ -44,7 +44,8 @@ function NotesApp({
   const visibleNotes = useNoteSearch(notes, query)
   const { noteId, openNote } = useNoteId()
   // Only the owner can share (a note with a `role` belongs to someone else).
-  const ownedNote = notes.find((note) => note.id === noteId && !note.role)
+  const currentNote = notes.find((note) => note.id === noteId)
+  const ownedNote = currentNote && !currentNote.role ? currentNote : undefined
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Signed in: ask the browser to keep this device's notes (see localData.ts).
@@ -83,6 +84,13 @@ function NotesApp({
   const handleOpen = (id: string) => {
     openNote(id)
     setSidebarOpen(false)
+  }
+
+  // Access to a shared note was taken away: drop it from the list and from this device.
+  const handleRemoveLost = (id: string) => {
+    softDelete(doc, id)
+    deleteLocalNote(id)
+    openNote(null, { replace: true })
   }
 
   // Soft delete. If it was the open note, clear the URL: the effect above then opens the next one.
@@ -148,7 +156,14 @@ function NotesApp({
           {shareToken ? (
             <ShareLinkPage token={shareToken} doc={doc} onOpen={openSharedNote} />
           ) : noteId ? (
-            <Editor key={noteId} noteId={noteId} onMetaChange={handleMeta} />
+            <Editor
+              key={noteId}
+              noteId={noteId}
+              onMetaChange={handleMeta}
+              role={currentNote?.role}
+              followRemote={!!(currentNote?.role || currentNote?.shared)}
+              onRemoveLost={() => handleRemoveLost(noteId)}
+            />
           ) : (
             <p className="text-muted-foreground">No notes yet. Create one with “New note”.</p>
           )}

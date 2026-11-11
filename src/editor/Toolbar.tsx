@@ -94,7 +94,7 @@ const groups: Item[][] = [
   ],
 ]
 
-export function Toolbar({ editor }: { editor: Editor }) {
+export function Toolbar({ editor, disabled = false }: { editor: Editor; disabled?: boolean }) {
   // Tiptap v3 does not re-render React on every transaction: subscribe to the active flags.
   const active = useEditorState({
     editor,
@@ -118,6 +118,7 @@ export function Toolbar({ editor }: { editor: Editor }) {
               size="sm"
               aria-label={item.label}
               pressed={active[g][i]}
+              disabled={disabled}
               onPressedChange={() => item.run(editor)}
             >
               <HugeiconsIcon icon={item.icon} />

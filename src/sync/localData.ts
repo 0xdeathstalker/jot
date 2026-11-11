@@ -48,6 +48,16 @@ export async function wipeIfPending() {
   }
 }
 
+// Removes this device's copy of one note (after losing access, or leaving it). Safe to call while
+// the note is still open: the delete waits until its connection closes.
+export function deleteLocalNote(noteId: string) {
+  try {
+    indexedDB.deleteDatabase(`${PREFIX}note-${noteId}`)
+  } catch {
+    // Nothing to remove.
+  }
+}
+
 // Asks the browser not to evict our IndexedDB when it is short on space. Only a request: Safari
 // and Chrome decide for themselves (installed apps and frequent use help), and the server copy is
 // the safety net either way.

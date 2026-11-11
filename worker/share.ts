@@ -83,6 +83,8 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
         )
           .bind(invite.note_id, user.id)
           .run()
+        // Their open connections still carry the viewer role: close them, they reconnect as editor.
+        await kickUser(env, invite.note_id, user.id, 4401, "role changed")
       }
       return json({ noteId: invite.note_id, role: invite.role })
     }
