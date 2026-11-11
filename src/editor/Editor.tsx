@@ -1,10 +1,12 @@
 import Collaboration, { isChangeOrigin } from "@tiptap/extension-collaboration"
+import CollaborationCaret from "@tiptap/extension-collaboration-caret"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import { useEffect } from "react"
 
 import { Toolbar } from "@/editor/Toolbar"
 import { getTitleAndPreview } from "@/features/notes/noteMeta"
+import type { CaretUser } from "@/features/sharing/caretUser"
 import { NoAccess } from "@/features/sharing/NoAccess"
 import { useAccessLost } from "@/features/sharing/useAccessLost"
 import type { SharedRole } from "@/sync/indexDoc"
@@ -29,6 +31,8 @@ type Props = {
   onRoleChanged?: () => void
   // The server said we are no longer a member (learned before opening: no socket is kept).
   noAccess?: boolean
+  // Name and colour other people see on our cursor.
+  caret: CaretUser
 }
 
 // Content comes from the Y.Doc, never from Tiptap's `content` option.
@@ -42,6 +46,7 @@ export function Editor({
   onRemoveLost,
   onRoleChanged,
   noAccess,
+  caret,
 }: Props) {
   const session = useNoteSession(noteId)
   const { doc } = session
@@ -56,6 +61,8 @@ export function Editor({
     extensions: [
       StarterKit.configure({ undoRedo: false }),
       Collaboration.configure({ document: doc }),
+      // Cursors live in Yjs awareness (in memory, never saved): they vanish when a socket closes.
+      CollaborationCaret.configure({ provider: session.provider, user: caret }),
     ],
   })
 

@@ -14,6 +14,7 @@ import { NoteList } from "@/features/notes/NoteList"
 import { useNoteId } from "@/features/notes/useNoteId"
 import { useNoteSearch } from "@/features/notes/useNoteSearch"
 import { removeMember, unshareNote } from "@/features/sharing/api"
+import { caretUser } from "@/features/sharing/caretUser"
 import { type InviteLink, readInviteLink } from "@/features/sharing/inviteLink"
 import { JoinPage } from "@/features/sharing/JoinPage"
 import { refreshRoles } from "@/features/sharing/refreshRoles"
@@ -206,6 +207,7 @@ function NotesApp({
               onRemoveLost={() => handleRemoveLost(noteId)}
               onRoleChanged={() => void refreshRoles(doc)}
               noAccess={currentNote?.noAccess}
+              caret={caretUser(user)}
             />
           ) : (
             <p className="text-muted-foreground">No notes yet. Create one with “New note”.</p>
