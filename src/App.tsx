@@ -13,12 +13,15 @@ import { Editor } from "@/editor/Editor"
 import { NoteList } from "@/features/notes/NoteList"
 import { useNoteId } from "@/features/notes/useNoteId"
 import { useNoteSearch } from "@/features/notes/useNoteSearch"
+import { type InviteLink, readInviteLink } from "@/features/sharing/inviteLink"
+import { JoinPage } from "@/features/sharing/JoinPage"
+import { ShareLinkPage } from "@/features/sharing/ShareLinkPage"
 import { createNote, softDelete, togglePin, updateMeta, useNotes } from "@/sync/indexDoc"
 import { requestDurableStorage } from "@/sync/localData"
 import { useIndexSession } from "@/sync/provider"
 
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
-function NotesApp({ user }: { user: AuthUser }) {
+function NotesApp({ user, shareToken }: { user: AuthUser; shareToken: string | null }) {
   const { doc } = useIndexSession(user.id)
   const notes = useNotes(doc)
   const [query, setQuery] = useState("")
@@ -30,10 +33,13 @@ function NotesApp({ user }: { user: AuthUser }) {
   useEffect(requestDurableStorage, [])
 
   // No ?note= in the URL: open the newest note once the list is known.
+  // (Not while a share link is being opened: that page replaces the URL with the shared note.)
   const newestId = notes[0]?.id
   useEffect(() => {
-    if (!noteId && newestId) openNote(newestId, { replace: true })
-  }, [noteId, newestId, openNote])
+    if (!noteId && newestId && !shareToken) openNote(newestId, { replace: true })
+  }, [noteId, newestId, shareToken, openNote])
+
+  const openSharedNote = useCallback((id: string) => openNote(id, { replace: true }), [openNote])
 
   const handleNew = () => {
     openNote(createNote(doc))
@@ -103,7 +109,9 @@ function NotesApp({ user }: { user: AuthUser }) {
             <HugeiconsIcon icon={Menu01Icon} />
           </Button>
 
-          {noteId ? (
+          {shareToken ? (
+            <ShareLinkPage token={shareToken} doc={doc} onOpen={openSharedNote} />
+          ) : noteId ? (
             <Editor key={noteId} noteId={noteId} onMetaChange={handleMeta} />
           ) : (
             <p className="text-muted-foreground">No notes yet. Create one with “New note”.</p>
@@ -118,9 +126,18 @@ function NotesApp({ user }: { user: AuthUser }) {
 
 function App() {
   const auth = useAuthUser()
+  // /join/<token> or /share/<token>, read once: it is the address the page was opened at.
+  const [invite] = useState<InviteLink | null>(readInviteLink)
   if (auth.status === "loading") return null
-  if (auth.status === "signedOut") return <LoginScreen />
-  return <NotesApp key={auth.user.id} user={auth.user} />
+  if (auth.status === "signedOut") return <LoginScreen invite={invite} />
+  if (invite?.kind === "join") return <JoinPage token={invite.token} />
+  return (
+    <NotesApp
+      key={auth.user.id}
+      user={auth.user}
+      shareToken={invite?.kind === "share" ? invite.token : null}
+    />
+  )
 }
 
 export default App

@@ -11,7 +11,11 @@ export type NoteMeta = {
   updatedAt: number
   pinned: boolean
   deleted: boolean
+  // Sharing (Phase 6). UI hints only: the server decides access from D1.
+  role?: SharedRole // set when someone else owns the note; absent means you own it
+  shared?: boolean // you own it and have made a share link
 }
+export type SharedRole = "editor" | "viewer"
 export type Note = NoteMeta & { id: string }
 
 type NotesMap = YMap<YMap<unknown>>
@@ -32,6 +36,36 @@ export function createNote(doc: Doc): string {
   const note = new YMap<unknown>(Object.entries(meta))
   getNotes(doc).set(id, note)
   return id
+}
+
+// A note someone else owns, added after opening their share link. The title is a placeholder until
+// the note is opened and its first line is known. Brings back an entry left or deleted earlier.
+export function addSharedNote(doc: Doc, id: string, role: SharedRole) {
+  const existing = getNotes(doc).get(id)
+  if (existing) {
+    doc.transact(() => {
+      existing.set("deleted", false)
+      existing.set("role", role)
+    })
+    return
+  }
+  const now = Date.now()
+  const meta: NoteMeta = {
+    title: "Shared note",
+    preview: "",
+    createdAt: now,
+    updatedAt: now,
+    pinned: false,
+    deleted: false,
+    role,
+  }
+  getNotes(doc).set(id, new YMap<unknown>(Object.entries(meta)))
+}
+
+// The owner made a share link for this note.
+export function markShared(doc: Doc, id: string) {
+  const note = getNotes(doc).get(id)
+  if (note && !note.get("shared")) note.set("shared", true)
 }
 
 // Ignores ids missing from the index (e.g. a note opened by URL): the list is the source of truth.
@@ -69,6 +103,8 @@ function readNotes(notes: NotesMap): Note[] {
       updatedAt: (note.get("updatedAt") as number) ?? 0,
       pinned: !!note.get("pinned"),
       deleted: false,
+      role: (note.get("role") as SharedRole | undefined) ?? undefined,
+      shared: !!note.get("shared") || undefined,
     })
   })
   return list.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)

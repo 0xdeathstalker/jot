@@ -20,7 +20,8 @@ export function useNoteId() {
 
   // `null` clears the open note (back to the bare `/`).
   const openNote = useCallback((id: string | null, options?: { replace?: boolean }) => {
-    const url = id ? `?note=${encodeURIComponent(id)}` : window.location.pathname
+    // Absolute: from /share/<token> or /join/<token> a bare `?note=` would keep that path.
+    const url = id ? `/?note=${encodeURIComponent(id)}` : "/"
     if (options?.replace) window.history.replaceState(null, "", url)
     else window.history.pushState(null, "", url)
     window.dispatchEvent(new PopStateEvent("popstate"))
