@@ -44,6 +44,10 @@ export default defineConfig({
         // navigation, and rooms/auth must always reach the Worker.
         navigateFallbackDenylist: [/^\/api\//, /^\/parties\//],
         cleanupOutdatedCaches: true,
+        // Default is js, css and html only: add the self-hosted fonts, icons and manifest so the
+        // installed app looks right with no network. Keep every file under 2 MiB (Workbox skips
+        // bigger ones silently, which would break offline start).
+        globPatterns: ["**/*.{js,css,html,woff2,svg,png,ico,webmanifest}"],
       },
     }),
   ],

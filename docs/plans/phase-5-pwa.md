@@ -43,9 +43,9 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step C: Offline app shell and updates
 
-- [ ] **C1. Register.** In `main.tsx`: `import { registerSW } from "virtual:pwa-register"` and `registerSW({ immediate: true })`; add `vite-plugin-pwa/client` to the types. Done when: `pnpm check` passes.
-- [ ] **C2. Keep long-lived apps fresh.** In `onRegisteredSW`, call `registration.update()` every hour and when the page becomes visible. An installed app can stay open for days without a reload. Done when: it type-checks.
-- [ ] **C3. Auto-update behavior and precache list.** Add `globPatterns: ["**/*.{js,css,html,woff2,svg,png,ico}"]` to `workbox` so the fonts and icons are cached too. `registerType: "autoUpdate"` with the new worker skipping the wait and claiming clients, so the page reloads once on the new version. Done when: deploying a visible change shows up after the next reopen with no prompt.
+- [x] **C1. Register.** In `main.tsx`: `import { registerSW } from "virtual:pwa-register"` and `registerSW({ immediate: true })`; add `vite-plugin-pwa/client` to the types. Done when: `pnpm check` passes.
+- [x] **C2. Keep long-lived apps fresh.** In `onRegisteredSW`, call `registration.update()` every hour and when the page becomes visible. An installed app can stay open for days without a reload. Done when: it type-checks.
+- [x] **C3. Auto-update behavior and precache list.** Add `globPatterns: ["**/*.{js,css,html,woff2,svg,png,ico}"]` to `workbox` so the fonts and icons are cached too. `registerType: "autoUpdate"` with the new worker skipping the wait and claiming clients, so the page reloads once on the new version. Done when: deploying a visible change shows up after the next reopen with no prompt.
 - [ ] **C4. Checkpoint: offline start (manual).** `pnpm build && pnpm preview`, open the printed URL once while online and sign in, then DevTools > Network > Offline (and, better, stop the preview server) and hard-reload. Done when: the app opens, shows your cached user and your notes, and typing works. The login screen must **not** appear (see the offline session rule in the Phase 4 plan).
 - [ ] **C5. Checkpoint: login still works with the worker active.** Sign out and sign in with Google on the production preview. Done when: the callback completes (proves the denylist).
 
