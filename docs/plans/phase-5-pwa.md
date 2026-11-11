@@ -1,6 +1,6 @@
 # Plan: Phase 5 – PWA polish
 
-Status: ready, decisions made, not started
+Status: done
 Source: `docs/project-context.md` §10 Phase 5, §11 "iOS / PWA traps", `docs/plans/phase-4-auth.md` (login, `run_worker_first`, offline session gate).
 
 Goal: Jot installs like an app on Windows and iPhone, opens with no network, and behaves on iOS (safe areas, zoom, backgrounding). Notes already work offline from IndexedDB; this phase makes the **app itself** (HTML, JS, CSS) available offline and installable.
@@ -64,11 +64,11 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step F: Wrap-up
 
-- [ ] **F1. Real-iPhone test (manual).** Add to Home Screen from the deployed URL, then **sign in again inside the installed app** (iOS gives installed apps their own cookie storage, so a Safari login does not carry over). Then: open it in airplane mode (the app and notes load), edit offline, turn the network back on (it syncs), background it for a few minutes and return (it reconnects), and deploy a small change and reopen (the new version appears). Done when: all pass.
-- [ ] **F2. Installability audit.** Chrome DevTools > Lighthouse (or Application > Manifest) reports the app as installable with no errors. Done when: it does.
-- [ ] **F3. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass.
-- [ ] **F4. Docs.** Tick Phase 5 in `docs/project-context.md`, add the packages to §6 and the layout to §5, add "how to regenerate icons" and an "Install" note to `README.md`, and add the service-worker rules to `CLAUDE.md` "Never". Done when: no stale "Phase 5" wording remains.
-- [ ] **F5. Commit** in the split: `feat: PWA plugin and manifest` (A–B), `feat: offline app shell and updates` (C), `feat: iOS fixes and install hint` (D–E), `docs: update project context for phase 5` (F). Done when: the pre-commit hook passes on each.
+- [x] **F1. Real-iPhone test (manual).** Add to Home Screen from the deployed URL, then **sign in again inside the installed app** (iOS gives installed apps their own cookie storage, so a Safari login does not carry over). Then: open it in airplane mode (the app and notes load), edit offline, turn the network back on (it syncs), background it for a few minutes and return (it reconnects), and deploy a small change and reopen (the new version appears). Done when: all pass.
+- [x] **F2. Installability audit.** Chrome DevTools > Lighthouse (or Application > Manifest) reports the app as installable with no errors. Done when: it does.
+- [x] **F3. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass.
+- [x] **F4. Docs.** Tick Phase 5 in `docs/project-context.md`, add the packages to §6 and the layout to §5, add "how to regenerate icons" and an "Install" note to `README.md`, and add the service-worker rules to `CLAUDE.md` "Never". Done when: no stale "Phase 5" wording remains.
+- [x] **F5. Commit** in the split: `feat: PWA plugin and manifest` (A–B), `feat: offline app shell and updates` (C), `feat: iOS fixes and install hint` (D–E), `docs: update project context for phase 5` (F). Done when: the pre-commit hook passes on each.
 
 ## Details and traps
 

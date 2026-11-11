@@ -115,9 +115,10 @@ jot/
 ├── components.json           ← shadcn/ui config (aliases use @/*)
 ├── .oxlintrc.json            ← lint rules
 ├── .oxfmtrc.json             ← formatter rules
-├── vite.config.ts
+├── vite.config.ts            ← includes the PWA plugin (manifest, Workbox)
+├── pwa-assets.config.ts      ← icon generation (`pnpm pwa:icons`)
 ├── src/                      ← client (React PWA)
-│   ├── main.tsx
+│   ├── main.tsx              ← registers the service worker (phase 5)
 │   ├── App.tsx
 │   ├── styles/index.css      ← Tailwind + shadcn theme variables
 │   ├── components/ui/        ← shadcn/ui components (generated, add on demand)
@@ -151,6 +152,7 @@ jot/
 | `minisearch`                                                                                           | 3     | Local search                                                                      |
 | `better-auth`                                                                                          | 4     | Google login + sessions, with D1 as its database. Needs the `nodejs_compat` flag. |
 | `vite-plugin-pwa`                                                                                      | 5     | Manifest + service worker. **Not earlier**, since caching confuses dev.           |
+| `@vite-pwa/assets-generator` (dev)                                                                     | 5     | `pnpm pwa:icons`: makes every icon size from `public/icon-source.svg`.            |
 | `@tiptap/extension-collaboration-caret`                                                                | 6     | Other people's cursors                                                            |
 
 Don't add: `nanoid` (use `crypto.randomUUID()`), any `@tiptap-pro/*` package, or Hocuspocus packages.
@@ -249,8 +251,8 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 
 ### Phase 5: PWA polish
 
-- [ ] `vite-plugin-pwa`: manifest (`display: standalone`, icons, `theme-color`), app-shell caching
-- [ ] iOS fixes (see Traps) and a first-visit "Add to Home Screen" hint
+- [x] `vite-plugin-pwa`: manifest (`display: standalone`, icons, `theme-color`), app-shell caching, silent auto-update. Icons from `pnpm pwa:icons`
+- [x] iOS fixes (see Traps) and a first-visit "Add to Home Screen" hint (iPhone Safari only)
 
 ### Phase 6: Sharing
 

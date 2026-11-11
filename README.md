@@ -107,7 +107,11 @@ Later deploys are just `pnpm run deploy`; secrets stay in Cloudflare. If a chang
 ## Install on devices
 
 - **Windows:** open the site in Edge or Chrome → install icon in the address bar (or menu → _Install Jot_).
-- **iPhone:** open the site in Safari → **Share → Add to Home Screen**.
+- **iPhone:** open the site in Safari → **Share → Add to Home Screen** (Jot shows a hint for this). Sign in again inside the installed app: iOS gives it its own cookies.
+
+The app shell is cached, so an installed Jot opens with no network and updates itself silently on the next launch after a deploy. The service worker only exists in production builds: test it with `pnpm build && pnpm preview`, not `pnpm dev`.
+
+**Changing the icon:** replace `public/icon-source.svg` (and the rounded `public/favicon.svg`), run `pnpm pwa:icons`, commit the generated files in `public/`, deploy. On iPhone, delete and re-add the Home Screen icon.
 
 ---
 
@@ -151,6 +155,7 @@ pnpm dlx shadcn@latest add <component>
 | `pnpm typecheck`         | Regenerate Worker types and run `tsc -b`                      |
 | `pnpm check`             | Lint + format check + typecheck. Run before pushing or in CI  |
 | `pnpm cf-typegen`        | Regenerate `worker-configuration.d.ts` after editing wrangler |
+| `pnpm pwa:icons`         | Regenerate PWA icons from `public/icon-source.svg`            |
 | `pnpm db:migrate`        | Apply `migrations/` to the local D1 database                  |
 | `pnpm db:migrate:remote` | Apply `migrations/` to the real D1 database                   |
 
