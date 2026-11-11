@@ -35,20 +35,21 @@ Build a lightweight notes app that:
 
 ## 2. Decisions (settled)
 
-| Decision        | Choice                                                            | Why                                                                                                    |
-| --------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Name            | **Jot**                                                           |                                                                                                        |
-| App type        | PWA (one React codebase for every device)                         | No app stores, instant updates                                                                         |
-| UI              | React + Vite + TypeScript                                         | Owner's strength                                                                                       |
-| Editor          | TipTap, **open-source packages only**                             | Headless: we build our own UI                                                                          |
-| Sync model      | Yjs (CRDT)                                                        | Offline edits merge automatically                                                                      |
-| Sync server     | **Cloudflare Durable Objects + `y-partyserver`**                  | Free, nothing to maintain, nothing sleeps                                                              |
-| Hosting shape   | **One Cloudflare Worker serves both the PWA and the sync server** | One origin, no CORS, one deploy                                                                        |
-| Domain          | `jot.deathstalker.dev`                                            | Subdomain of an existing domain, so no extra cost                                                      |
-| Scaffold        | `pnpm create cloudflare` (React framework)                        | Simplest to learn. Better-T-Stack skipped (see §10).                                                   |
-| Package manager | **pnpm**                                                          | Enforced by a `preinstall` guard. Lockfile is `pnpm-lock.yaml`.                                        |
-| UI kit          | **Tailwind CSS v4 + shadcn/ui**                                   | Components are copied into `src/components/ui/`, so we own them. Add one only when a feature needs it. |
-| Lint / format   | **oxlint + oxfmt**, Husky + lint-staged pre-commit                | Fast, one config each. A lint error blocks the commit.                                                 |
+| Decision        | Choice                                                            | Why                                                                                                                                                                                                   |
+| --------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name            | **Jot**                                                           |                                                                                                                                                                                                       |
+| App type        | PWA (one React codebase for every device)                         | No app stores, instant updates                                                                                                                                                                        |
+| UI              | React + Vite + TypeScript                                         | Owner's strength                                                                                                                                                                                      |
+| Editor          | TipTap, **open-source packages only**                             | Headless: we build our own UI                                                                                                                                                                         |
+| Sync model      | Yjs (CRDT)                                                        | Offline edits merge automatically                                                                                                                                                                     |
+| Sync server     | **Cloudflare Durable Objects + `y-partyserver`**                  | Free, nothing to maintain, nothing sleeps                                                                                                                                                             |
+| Hosting shape   | **One Cloudflare Worker serves both the PWA and the sync server** | One origin, no CORS, one deploy                                                                                                                                                                       |
+| Domain          | `jot.deathstalker.dev`                                            | Subdomain of an existing domain, so no extra cost                                                                                                                                                     |
+| Scaffold        | `pnpm create cloudflare` (React framework)                        | Simplest to learn. Better-T-Stack skipped (see §10).                                                                                                                                                  |
+| Package manager | **pnpm**                                                          | Enforced by a `preinstall` guard. Lockfile is `pnpm-lock.yaml`.                                                                                                                                       |
+| UI kit          | **Tailwind CSS v4 + shadcn/ui**                                   | Components are copied into `src/components/ui/`, so we own them. Add one only when a feature needs it.                                                                                                |
+| Lint / format   | **oxlint + oxfmt**, Husky + lint-staged pre-commit                | Fast, one config each. A lint error blocks the commit.                                                                                                                                                |
+| Auth            | **Google OAuth via Better Auth + D1**, session cookie (no JWT)    | Free, runs in the Worker. Same origin, so the browser sends the cookie on the WebSocket upgrade and the Worker checks it. Access is limited to an `ALLOWED_EMAILS` allowlist plus Google Testing mode |
 
 Rejected alternatives: Hocuspocus (needs a paid always-on Node server or a flaky free VM), Render's free tier (sleeps, wipes files), Tiptap Cloud (paid).
 
@@ -80,9 +81,9 @@ Rejected alternatives: Hocuspocus (needs a paid always-on Node server or a flaky
                                        ▼
           ┌────────── Cloudflare Worker (jot.deathstalker.dev) ──────────┐
           │ Static assets: the React PWA                                  │
-          │ Router: checks auth token → routes /parties/... to a DO room  │
+          │ Router: checks session cookie → routes /parties/... to a DO room  │
           │ NoteRoom DO (one per note): relays updates, stores Yjs state  │
-          │ D1: users, note_members (sharing)                             │
+          │ D1: auth tables, note_members                                 │
           └───────────────────────────────────────────────────────────────┘
 ```
 
@@ -138,19 +139,19 @@ jot/
 
 ## 6. Dependencies (add them only when their phase starts)
 
-| Package                                                                                                | Phase | Purpose                                                                 |
-| ------------------------------------------------------------------------------------------------------ | ----- | ----------------------------------------------------------------------- |
-| `tailwindcss`, `@tailwindcss/vite`, shadcn/ui deps (`class-variance-authority`, `tw-animate-css`, ...) | 0     | Styling + UI kit. Installed by `shadcn init`.                           |
-| `oxlint`, `oxfmt`, `husky`, `lint-staged`                                                              | 0     | Lint, format, pre-commit                                                |
-| `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`                                                   | 1     | Editor                                                                  |
-| `@tiptap/extension-collaboration`                                                                      | 1     | Binds the editor to Yjs. Install any peer dependency pnpm asks for.     |
-| `yjs`                                                                                                  | 1     | CRDT                                                                    |
-| `partyserver`, `y-partyserver`                                                                         | 1     | Durable Object server + client `YProvider`                              |
-| `y-indexeddb`                                                                                          | 2     | Local persistence / offline                                             |
-| `minisearch`                                                                                           | 3     | Local search                                                            |
-| Auth library (TBD)                                                                                     | 4     | Must run inside a Worker                                                |
-| `vite-plugin-pwa`                                                                                      | 5     | Manifest + service worker. **Not earlier**, since caching confuses dev. |
-| `@tiptap/extension-collaboration-caret`                                                                | 6     | Other people's cursors                                                  |
+| Package                                                                                                | Phase | Purpose                                                                           |
+| ------------------------------------------------------------------------------------------------------ | ----- | --------------------------------------------------------------------------------- |
+| `tailwindcss`, `@tailwindcss/vite`, shadcn/ui deps (`class-variance-authority`, `tw-animate-css`, ...) | 0     | Styling + UI kit. Installed by `shadcn init`.                                     |
+| `oxlint`, `oxfmt`, `husky`, `lint-staged`                                                              | 0     | Lint, format, pre-commit                                                          |
+| `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`                                                   | 1     | Editor                                                                            |
+| `@tiptap/extension-collaboration`                                                                      | 1     | Binds the editor to Yjs. Install any peer dependency pnpm asks for.               |
+| `yjs`                                                                                                  | 1     | CRDT                                                                              |
+| `partyserver`, `y-partyserver`                                                                         | 1     | Durable Object server + client `YProvider`                                        |
+| `y-indexeddb`                                                                                          | 2     | Local persistence / offline                                                       |
+| `minisearch`                                                                                           | 3     | Local search                                                                      |
+| `better-auth`                                                                                          | 4     | Google login + sessions, with D1 as its database. Needs the `nodejs_compat` flag. |
+| `vite-plugin-pwa`                                                                                      | 5     | Manifest + service worker. **Not earlier**, since caching confuses dev.           |
+| `@tiptap/extension-collaboration-caret`                                                                | 6     | Other people's cursors                                                            |
 
 Don't add: `nanoid` (use `crypto.randomUUID()`), any `@tiptap-pro/*` package, or Hocuspocus packages.
 
@@ -165,29 +166,32 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 ### Client-side (Yjs)
 
 - **One Y.Doc per note.** Room name: plain `<noteId>` (URL `/parties/note-room/<noteId>`). Holds the rich text (a `Y.XmlFragment` bound to TipTap).
-- **One "index" Y.Doc per user.** Party `index-room` (class `IndexRoom`, migration `v2`), room `index-default` until Phase 4, IndexedDB `jot-index-default`. These names are permanent: Phase 4 copies the doc into `index-<userId>` instead of renaming in place. A `Y.Map` named `notes`, one nested `Y.Map` per note (so concurrent edits to different fields both survive):
+- **One "index" Y.Doc per user.** Party `index-room` (class `IndexRoom`, migration `v2`), room `index-<userId>`, IndexedDB `jot-index-<userId>`. A `Y.Map` named `notes`, one nested `Y.Map` per note (so concurrent edits to different fields both survive):
   ```ts
   { [noteId]: { title: string, preview: string, createdAt: number, updatedAt: number, pinned: boolean, deleted: boolean } }
   ```
-  The title is the first line of the note and the preview its next ~200 characters, both written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview.
+  The title is the first line of the note and the preview its next ~200 characters, both written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`src/sync/legacyIndex.ts`).
 - IDs are generated on the client with `crypto.randomUUID()`, so notes can be created offline.
 
 ### Server-side
 
 - **Note content:** each NoteRoom DO stores the compacted Yjs state (`Y.encodeStateAsUpdate`) in its own SQLite storage.
-- **D1 (phases 4 and 6):**
+- **D1 (`jot-db`, binding `DB`, SQL in `migrations/`, applied with `pnpm db:migrate` / `db:migrate:remote`):**
   ```sql
-  users        (id, email, name, created_at)
+  -- 0001, Phase 4: generated by Better Auth: user, session, account, verification
+  -- 0002, Phase 4:
   note_members (note_id, user_id, role, created_at)   -- role: 'owner' | 'editor' | 'viewer'
+  -- Phase 6:
   invites      (id, note_id, email, role, token, expires_at)
   ```
+  `note_members` has a unique index allowing one owner per note. The first signed-in user to open a note id claims it as owner (ids are random UUIDs, so this works for notes created offline).
 
 ---
 
 ## 8. Sharing and permissions (phase 6)
 
 - The owner shares a note by email, which adds a row to `note_members` or creates an invite.
-- **Every WebSocket connection is checked in the Worker** (JWT + `note_members`) before routing to the room.
+- **Every WebSocket connection is checked in the Worker** (session cookie + `note_members`, in `worker/auth/gate.ts`) before routing to the room.
 - **Viewers are read-only.** The server must ignore updates from viewer connections. Never trust the client for this.
 - Live cursors and names come from Yjs awareness + `CollaborationCaret`.
 - "Shared with me" comes from a REST endpoint reading `note_members`, or a reference written into the recipient's index doc.
@@ -239,9 +243,9 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 
 ### Phase 4: Auth and deploy
 
-- [ ] Login (magic link or OAuth) → JWT; consider generating a throwaway Better-T-Stack project to borrow its Better Auth + D1 + Drizzle setup
-- [ ] The Worker verifies the JWT and note ownership before connecting
-- [ ] Move DNS to Cloudflare, attach `jot.deathstalker.dev`, `pnpm run deploy`
+- [x] Login with Google (Better Auth + D1), session cookie instead of a JWT. Only emails in `ALLOWED_EMAILS` can sign up; sign-out syncs, then clears this device's local data
+- [x] The Worker checks the session and note ownership before connecting (`onBeforeConnect`/`onBeforeRequest`, Origin check, `index-<userId>` only). `run_worker_first` covers `/api/*` and `/parties/*`
+- [x] Deployed on `jot.<account>.workers.dev` and the custom domain `jot.deathstalker.dev` (its DNS was already on Cloudflare), via `pnpm run deploy`
 
 ### Phase 5: PWA polish
 
@@ -299,10 +303,9 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 
 ## 12. Open decisions
 
-| Decision                                  | Status      | Notes                                             |
-| ----------------------------------------- | ----------- | ------------------------------------------------- |
-| Auth method                               | Not decided | Magic link vs Google OAuth; must run in a Worker  |
-| Move `deathstalker.dev` DNS to Cloudflare | Not done    | Required for `jot.deathstalker.dev` on the Worker |
+| Decision                         | Status      | Notes                                                                                                                 |
+| -------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------- |
+| Usage limits before going public | Not decided | Caps on accounts, notes per user and note size, per-user rate limits. Not needed while only listed emails can sign in |
 
 ---
 

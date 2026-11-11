@@ -1,6 +1,6 @@
 # Plan: Phase 4 – Auth and deploy
 
-Status: ready, decisions made, not started
+Status: done
 Source: `docs/project-context.md` §7 (D1 schema), §8, §10 Phase 4, `docs/plans/phase-3-notes-list.md` (index room migration).
 
 Goal: only logged-in people can sync, every note and index room is checked on the server, and the app is live on a real HTTPS URL. After this phase you can open Jot on your phone.
@@ -128,10 +128,10 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 ### Step G: Wrap-up
 
-- [ ] **G1. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass.
-- [ ] **G2. README.** Add the one-time setup (Google client, `.dev.vars`, `db:migrate`, secrets) to `README.md`. Done when: a fresh clone can log in by following it.
-- [ ] **G3. Docs.** Update `docs/project-context.md`: §2 and §10 (cookie sessions instead of JWT), §6 (`better-auth`), §7 (`note_members` now created, claim-on-first-connect, `index-<userId>`), §8, Phase 4 boxes. Done when: no stale "JWT" wording remains.
-- [ ] **G4. Commit** in the split: `feat: D1 and Better Auth on the Worker` (A), `feat: login UI and per-user index` (B–C), `feat: permission checks for rooms` (D), `docs: update project context for phase 4` (G). Done when: the pre-commit hook passes on each.
+- [x] **G1. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass.
+- [x] **G2. README.** Add the one-time setup (Google client, `.dev.vars`, `db:migrate`, secrets) to `README.md`. Done when: a fresh clone can log in by following it.
+- [x] **G3. Docs.** Update `docs/project-context.md`: §2 and §10 (cookie sessions instead of JWT), §6 (`better-auth`), §7 (`note_members` now created, claim-on-first-connect, `index-<userId>`), §8, Phase 4 boxes. Done when: no stale "JWT" wording remains.
+- [x] **G4. Commit** in the split: `feat: D1 and Better Auth on the Worker` (A), `feat: login UI and per-user index` (B–C), `feat: permission checks for rooms` (D), `docs: update project context for phase 4` (G). Done when: the pre-commit hook passes on each.
 
 ## Details and traps
 

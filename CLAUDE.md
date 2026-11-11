@@ -17,6 +17,8 @@ Local-first notes PWA. React + TipTap + Yjs, synced via Cloudflare Durable Objec
 - `pnpm dev`: app + Worker locally
 - `pnpm check`: lint + format check + typecheck. Run before saying work is done.
 - `pnpm lint:fix` / `pnpm format:fix`: apply fixes
+- `pnpm run deploy`: build + deploy (never `pnpm deploy`, a different built-in command)
+- `pnpm db:migrate` / `pnpm db:migrate:remote`: apply `migrations/` to local / real D1
 - `pnpm dlx shadcn@latest add <name>`: add a shadcn component, only when a feature needs it
 
 A pre-commit hook lints and formats staged files. Never bypass it with `--no-verify`.
@@ -36,4 +38,6 @@ A pre-commit hook lints and formats staged files. Never bypass it with `--no-ver
 - Store note content outside Yjs, or put all notes in one Y.Doc.
 - Trust the client for permissions. The Worker checks every connection.
 - Enable TipTap's own undo/redo alongside Collaboration.
-- Edit an existing Durable Object migration. Add a new tag.
+- Edit an existing Durable Object migration or an applied D1 file in `migrations/`. Add a new tag / file.
+- Put secrets in `wrangler.jsonc` or git. Local: `.dev.vars`; production: `wrangler secret put`.
+- Test the permission guard only with `pnpm dev`: also check it against `wrangler dev` (`pnpm build` first), where the Worker-first routing is real.

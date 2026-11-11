@@ -14,6 +14,7 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 - **Real-time sync** across devices over WebSockets
 - **Offline-first**: edits made offline merge automatically on reconnect (Yjs CRDTs)
 - **Installable** on Windows (Edge/Chrome) and iPhone (Safari → Add to Home Screen)
+- **Private**: sign in with Google; the server checks every connection, and only listed emails can sign up
 - **Sharing** _(planned)_: collaborate on a note with a few people, live
 
 ## Tech stack
@@ -43,31 +44,65 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 git clone <repo-url> jot
 cd jot
 pnpm install
+cp .dev.vars.example .dev.vars   # then fill it in, see "One-time setup" below
+pnpm db:migrate                  # creates the local auth tables
 pnpm dev
 ```
 
-`pnpm dev` starts Vite and a local simulation of the Cloudflare Worker and Durable Objects together. Nothing touches your Cloudflare account.
+`pnpm dev` starts Vite and a local simulation of the Cloudflare Worker, Durable Objects and D1 together. Nothing touches your Cloudflare account.
+
+### One-time setup: Google sign-in
+
+Jot logs in with Google, so you need your own OAuth client (free). Any Google account can create it; it does not have to be the account you use in Jot.
+
+1. [Google Cloud Console](https://console.cloud.google.com): create a project, then **Google Auth Platform** (OAuth consent screen): user type **External**, leave it in **Testing**, and add the Google accounts that may use Jot under **Test users**.
+2. **Clients → Create client → Web application**. Add the authorized redirect URI `http://localhost:5173/api/auth/callback/google`.
+3. Fill in `.dev.vars` (gitignored):
+
+   | Key                    | Value                                                                                                   |
+   | ---------------------- | ------------------------------------------------------------------------------------------------------- |
+   | `BETTER_AUTH_SECRET`   | 32+ random characters: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
+   | `GOOGLE_CLIENT_ID`     | from the OAuth client                                                                                   |
+   | `GOOGLE_CLIENT_SECRET` | from the OAuth client                                                                                   |
+   | `ALLOWED_EMAILS`       | comma-separated emails allowed to sign up. **Empty means nobody**                                       |
+
+4. Restart `pnpm dev` after changing `.dev.vars`, then open `http://localhost:5173` (use `localhost`, not `127.0.0.1`) and click **Continue with Google**.
+
+To let another person in, add them under **Test users** in the Console **and** to `ALLOWED_EMAILS`.
 
 ### Check that sync works
 
-_Available from Phase 1 onwards._
-
-1. Open `http://localhost:5173/?note=test` in two browser tabs.
-2. Type in one tab, and it should appear in the other.
-3. Set one tab offline (DevTools → Network → Offline), edit in both, then go back online. Both edits should be kept.
+1. Sign in on `http://localhost:5173` in two different browsers (or a normal and a private window). Two tabs of one browser share storage and prove nothing.
+2. Create a note in one; it should appear in the other, and typing should sync.
+3. Stop `pnpm dev`, edit in both, start it again. Both edits should be kept.
 
 ---
 
 ## Deploy
 
+First time only, with a free [Cloudflare account](https://dash.cloudflare.com/sign-up):
+
 ```bash
-pnpm exec wrangler login     # first time only
+pnpm exec wrangler login
+pnpm exec wrangler d1 create jot-db      # prints a database_id
+```
+
+Put that `database_id` in the `d1_databases` entry of `wrangler.jsonc` (keep the binding name `DB`; if wrangler offers to add its own binding, answer no). Then:
+
+```bash
+pnpm db:migrate:remote                   # creates the tables in the real database
+pnpm exec wrangler secret put BETTER_AUTH_SECRET   # a NEW random value, not your local one
+pnpm exec wrangler secret put GOOGLE_CLIENT_ID
+pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
+pnpm exec wrangler secret put ALLOWED_EMAILS
 pnpm run deploy
 ```
 
-This builds the app and deploys a single Worker that serves both the PWA and the sync server. It's live at `https://jot.<your-account>.workers.dev`.
+`pnpm run deploy` (not `pnpm deploy`, which is a different built-in pnpm command) builds the app and deploys one Worker that serves the PWA, the sync server and the login endpoints. It prints `https://jot.<your-account>.workers.dev`. Add `https://jot.<your-account>.workers.dev/api/auth/callback/google` to the OAuth client's redirect URIs **before** signing in. Open the URL without a `www.`.
 
-To use your own domain, add it in the Cloudflare dashboard under **Workers & Pages → jot → Settings → Domains & Routes → Add custom domain**. The domain's DNS must be on Cloudflare.
+Later deploys are just `pnpm run deploy`; secrets stay in Cloudflare. If a change adds a file to `migrations/`, run `pnpm db:migrate:remote` first.
+
+**Custom domain:** add `"routes": [{ "pattern": "jot.example.com", "custom_domain": true }]` to `wrangler.jsonc`, add the matching `/api/auth/callback/google` redirect URI, and deploy. The domain's DNS must be on Cloudflare, and the hostname must not already have its own DNS record (a wildcard record is fine).
 
 ## Install on devices
 
@@ -82,10 +117,12 @@ To use your own domain, add it in the Cloudflare dashboard under **Workers & Pag
 src/                React PWA
   components/ui/    shadcn/ui components (generated, not formatted)
   editor/           TipTap editor and its UI
-  sync/             Yjs providers and persistence
+  auth/             login screen, session gate, account footer
+  sync/             Yjs providers, note-list store, local-data wipe
   features/         notes, sharing
   lib/              shared helpers
-worker/             Cloudflare Worker + NoteRoom Durable Object
+worker/             Cloudflare Worker, NoteRoom / IndexRoom Durable Objects, auth/ (Better Auth + permission checks)
+migrations/         D1 SQL (auth tables, note_members), append-only
 docs/               Project context and per-task plans
 ```
 
@@ -101,19 +138,21 @@ pnpm dlx shadcn@latest add <component>
 
 ## Scripts
 
-| Command           | What it does                                                  |
-| ----------------- | ------------------------------------------------------------- |
-| `pnpm dev`        | Run the app + Worker locally                                  |
-| `pnpm build`      | Type-check and build for production                           |
-| `pnpm preview`    | Build and preview the production bundle locally               |
-| `pnpm run deploy` | Build and deploy to Cloudflare                                |
-| `pnpm lint`       | Lint with oxlint                                              |
-| `pnpm lint:fix`   | Lint and apply safe fixes                                     |
-| `pnpm format`     | Check formatting (oxfmt), writes nothing                      |
-| `pnpm format:fix` | Format all files                                              |
-| `pnpm typecheck`  | Regenerate Worker types and run `tsc -b`                      |
-| `pnpm check`      | Lint + format check + typecheck. Run before pushing or in CI  |
-| `pnpm cf-typegen` | Regenerate `worker-configuration.d.ts` after editing wrangler |
+| Command                  | What it does                                                  |
+| ------------------------ | ------------------------------------------------------------- |
+| `pnpm dev`               | Run the app + Worker locally                                  |
+| `pnpm build`             | Type-check and build for production                           |
+| `pnpm preview`           | Build and preview the production bundle locally               |
+| `pnpm run deploy`        | Build and deploy to Cloudflare                                |
+| `pnpm lint`              | Lint with oxlint                                              |
+| `pnpm lint:fix`          | Lint and apply safe fixes                                     |
+| `pnpm format`            | Check formatting (oxfmt), writes nothing                      |
+| `pnpm format:fix`        | Format all files                                              |
+| `pnpm typecheck`         | Regenerate Worker types and run `tsc -b`                      |
+| `pnpm check`             | Lint + format check + typecheck. Run before pushing or in CI  |
+| `pnpm cf-typegen`        | Regenerate `worker-configuration.d.ts` after editing wrangler |
+| `pnpm db:migrate`        | Apply `migrations/` to the local D1 database                  |
+| `pnpm db:migrate:remote` | Apply `migrations/` to the real D1 database                   |
 
 A Husky pre-commit hook runs lint-staged: staged files are linted (`oxlint --fix`) and formatted (`oxfmt`). A lint error blocks the commit.
 
