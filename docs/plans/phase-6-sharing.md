@@ -164,8 +164,8 @@ Today the owner can only remove someone and send a new link to lower their role.
 
 ### Step J: Deploy-side setup (manual, yours)
 
-- [ ] **J1. Google consent screen to production.** Google Cloud Console > Google Auth Platform > Audience > **Publish app**. With only the basic scopes (`openid`, `email`, `profile`) no Google review is needed, but check the page for a user cap or a verification notice and tell me what it says. Done when: the status reads **In production** and a non-test account can reach the Jot login.
-- [ ] **J2. Migration and deploy.** `pnpm db:migrate:remote`, then `pnpm check && pnpm run deploy`. Done when: `/api/share/mine` answers 401 without a session on the live URL.
+- [x] **J1. Google consent screen to production.** Google Cloud Console > Google Auth Platform > Audience > **Publish app**. With only the basic scopes (`openid`, `email`, `profile`) no Google review is needed, but check the page for a user cap or a verification notice and tell me what it says. Done when: the status reads **In production** and a non-test account can reach the Jot login.
+- [x] **J2. Migration and deploy.** `pnpm db:migrate:remote`, then `pnpm check && pnpm run deploy`. Done when: `/api/share/mine` answers 401 without a session on the live URL. **Done (2026-11-13):** `0003_sharing.sql` applied to the real `jot-db`; deployed (version 2e6ba738); on `https://jot.deathstalker.dev` without a session `/api/share/mine` and `/api/join` answer 401, a share-link page and `/api/auth/ok` load, a socket to a room answers 401, and a write without `Origin` answers 403. Note: the `workers.dev` address now answers 404 for everything (the deploy lists only the custom domain as a trigger), so use the custom domain.
 
 ### Step K: Two-account test (manual)
 
