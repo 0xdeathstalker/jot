@@ -170,7 +170,7 @@ Today the owner can only remove someone and send a new link to lower their role.
 
 ### Step K: Two-account test (manual)
 
-- [ ] **K1. Real test with two Google accounts**, A on `ALLOWED_EMAILS` and B not, on two browsers or devices. **Join:** A makes a join link; B opens it, signs in, lands in an empty Jot, and can create a note. Three invited accounts fit, a fourth is refused; B cannot make a join link. **Share:** A shares a note as Can view; B opens the share link, sees the note, cannot edit. A makes a Can edit link; B accepts it (upgrades), edits, both see cursors. A shares with two people, a third is refused. A removes B: B sees "no longer has access". A turns off the link: the old link says it is no longer valid. A deletes the shared note: nobody else can open it. Also try both links on an iPhone: they open in Safari (not the installed app), and signing in there works. Done when: all pass.
+- [x] **K1. Real test with two Google accounts**, A on `ALLOWED_EMAILS` and B not, on two browsers or devices. **Join:** A makes a join link; B opens it, signs in, lands in an empty Jot, and can create a note. Three invited accounts fit, a fourth is refused; B cannot make a join link. **Share:** A shares a note as Can view; B opens the share link, sees the note, cannot edit. A makes a Can edit link; B accepts it (upgrades), edits, both see cursors. A shares with two people, a third is refused. A removes B: B sees "no longer has access". A turns off the link: the old link says it is no longer valid. A deletes the shared note: nobody else can open it. Also try both links on an iPhone: they open in Safari (not the installed app), and signing in there works. Done when: all pass.
 
 ### Step L: Wrap-up
 
