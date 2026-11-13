@@ -1,6 +1,6 @@
 # Plan: Phase 6 – Sharing
 
-Status: built and deployed; docs done; K1 (live two-account test) and the L3 commit split are the only open items
+Status: done
 Source: `docs/project-context.md` §7 (data), §8 (sharing and permissions), §10 Phase 6, `docs/plans/phase-4-auth.md` (guard, claim-or-member, allowlist).
 
 Goal: an existing Jot user can (1) invite up to 3 friends to Jot with one join link, and (2) share a note with up to 2 other people with a share link. Both are plain links sent through any chat app, no email. Editors type together live and see each other's cursors. Viewers can read but never change anything, and the **server** enforces that.
@@ -176,7 +176,7 @@ Today the owner can only remove someone and send a new link to lower their role.
 
 - [x] **L1. Full checks.** `pnpm check`, `pnpm build`, `pnpm exec wrangler deploy --dry-run`. Done when: all pass. **Done (2026-11-14):** `pnpm check`, `pnpm build` and `wrangler deploy --dry-run` all pass.
 - [x] **L2. Docs.** `docs/project-context.md`: tick Phase 6, replace the `invites (email ...)` line in §7 with `note_invites`, `user_invites` and `invited_users`, rewrite §8 for link invites, record the decisions in §12. `README.md`: sharing and join-link sections, the "In production" consent step and the new meaning of `ALLOWED_EMAILS` ("the original users, who can invite 3 more each"). `CLAUDE.md`: Never trust the client for roles, and always overwrite `x-jot-role`. Done when: no "invite by email" wording remains. **Done:** `docs/project-context.md` (§5 layout, §6 note on email, §7 data model incl. 0003 and the new index fields, §8 rewritten for join and share links, §10 Phase 6 ticked, §11 new traps, §12 decisions), `README.md` (features, `ALLOWED_EMAILS` meaning, going live / consent screen, a Sharing section), `CLAUDE.md` (never trust a client role; 4401 after role changes).
-- [ ] **L3. Commit** in the split: `feat: invite links and share API` (B–D), `feat: share dialog and invite page` (E–H), `feat: live cursors` (I), `docs: update project context for phase 6` (L). Done when: the pre-commit hook passes on each.
+- [x] **L3. Commit** in the split: `feat: invite links and share API` (B–D), `feat: share dialog and invite page` (E–H), `feat: live cursors` (I), `docs: update project context for phase 6` (L). Done when: the pre-commit hook passes on each. **Done:** the code was committed along the way in smaller commits (one per step); the docs went in as `docs: update project context, README and rules for phase 6 sharing`. The pre-commit hook passed on each.
 
 ## Details and traps
 
