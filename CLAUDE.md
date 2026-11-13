@@ -36,7 +36,7 @@ A pre-commit hook lints and formats staged files. Never bypass it with `--no-ver
 - Install `@tiptap-pro/*`, use Tiptap Cloud, or Hocuspocus.
 - Hard-delete notes (use `deleted: true`).
 - Store note content outside Yjs, or put all notes in one Y.Doc.
-- Trust the client for permissions. The Worker checks every connection.
+- Trust the client for permissions or roles. The Worker checks every connection and overwrites `x-jot-role` / `x-jot-user` itself; after changing someone's role, close their connections (code 4401) so they reconnect with it.
 - Enable TipTap's own undo/redo alongside Collaboration.
 - Edit an existing Durable Object migration or an applied D1 file in `migrations/`. Add a new tag / file.
 - Put secrets in `wrangler.jsonc` or git. Local: `.dev.vars`; production: `wrangler secret put`.

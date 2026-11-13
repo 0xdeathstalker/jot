@@ -14,8 +14,8 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 - **Real-time sync** across devices over WebSockets
 - **Offline-first**: edits made offline merge automatically on reconnect (Yjs CRDTs)
 - **Installable** on Windows (Edge/Chrome) and iPhone (Safari → Add to Home Screen)
-- **Private**: sign in with Google; the server checks every connection, and only listed emails can sign up
-- **Sharing** _(planned)_: collaborate on a note with a few people, live
+- **Private**: sign in with Google; the server checks every connection, and only listed emails, or people holding an invite link, can sign up
+- **Sharing**: send a link to share a note with up to 2 other people, as viewer or editor, with live cursors; send a join link to bring up to 3 friends into Jot (no email service needed)
 
 ## Tech stack
 
@@ -68,7 +68,9 @@ Jot logs in with Google, so you need your own OAuth client (free). Any Google ac
 
 4. Restart `pnpm dev` after changing `.dev.vars`, then open `http://localhost:5173` (use `localhost`, not `127.0.0.1`) and click **Continue with Google**.
 
-To let another person in, add them under **Test users** in the Console **and** to `ALLOWED_EMAILS`.
+`ALLOWED_EMAILS` lists the **original users**: they can sign up and make join links. Anyone else gets in only through a join link made by an original user (see "Sharing" below). To add an original user, add their email to `ALLOWED_EMAILS` (and under **Test users** while the consent screen is still in Testing).
+
+**Going live:** for other people to sign in, move the consent screen to production: Google Auth Platform → Audience → **Publish app**. Basic sign-in (name, email, picture) needs no Google review, but the Branding page asks for a home page, privacy policy and terms link. Jot serves them at `/`, `/privacy` and `/terms` (static pages in `public/`), and `deathstalker.dev` (your own domain) must be listed under Authorized domains.
 
 ### Check that sync works
 
@@ -104,6 +106,15 @@ Later deploys are just `pnpm run deploy`; secrets stay in Cloudflare. If a chang
 
 **Custom domain:** add `"routes": [{ "pattern": "jot.example.com", "custom_domain": true }]` to `wrangler.jsonc`, add the matching `/api/auth/callback/google` redirect URI, and deploy. The domain's DNS must be on Cloudflare, and the hostname must not already have its own DNS record (a wildcard record is fine).
 
+## Sharing
+
+Two kinds of link, sent through any chat app:
+
+- **Invite a friend to Jot** (sidebar footer, original users only): one link, valid 7 days, lets up to 3 people sign up. Invited users are full users but cannot invite more people.
+- **Share** (button above a note you own): choose **Can view** or **Can edit** and copy the link. A note holds you plus at most 2 other people. A share link never creates an account, so a new person needs a join link first. In the dialog you can raise or lower someone's access, remove them, or turn a link off. Anyone can **Leave note**; deleting a note you shared removes everyone's access.
+
+Viewers are read-only on the server, not just in the editor. See [`docs/project-context.md`](docs/project-context.md#8-sharing-and-permissions-phase-6) for the rules.
+
 ## Install on devices
 
 - **Windows:** open the site in Edge or Chrome → install icon in the address bar (or menu → _Install Jot_).
@@ -123,10 +134,10 @@ src/                React PWA
   editor/           TipTap editor and its UI
   auth/             login screen, session gate, account footer
   sync/             Yjs providers, note-list store, local-data wipe
-  features/         notes, sharing
+  features/         notes (list, search), sharing (share dialog, link pages, cursors)
   lib/              shared helpers
-worker/             Cloudflare Worker, NoteRoom / IndexRoom Durable Objects, auth/ (Better Auth + permission checks)
-migrations/         D1 SQL (auth tables, note_members), append-only
+worker/             Cloudflare Worker, NoteRoom / IndexRoom Durable Objects, auth/ (Better Auth + permission checks), share.ts and join.ts (link APIs)
+migrations/         D1 SQL (auth tables, note_members, invite links), append-only
 docs/               Project context and per-task plans
 ```
 
