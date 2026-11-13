@@ -41,8 +41,9 @@ export default defineConfig({
       },
       workbox: {
         // Never answer these from the cached app shell: the Google callback is a browser
-        // navigation, and rooms/auth must always reach the Worker.
-        navigateFallbackDenylist: [/^\/api\//, /^\/parties\//],
+        // navigation, and rooms/auth must always reach the Worker. /privacy and /terms are real
+        // static pages (public/), linked from Google's consent screen.
+        navigateFallbackDenylist: [/^\/api\//, /^\/parties\//, /^\/privacy/, /^\/terms/],
         cleanupOutdatedCaches: true,
         // Default is js, css and html only: add the self-hosted fonts, icons and manifest so the
         // installed app looks right with no network. Keep every file under 2 MiB (Workbox skips
