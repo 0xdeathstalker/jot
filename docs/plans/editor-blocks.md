@@ -1,6 +1,6 @@
 # Plan: Editor blocks (checklists, Markdown, link, image, paragraph)
 
-Status: in progress (A done; B and C in code, manual checks pending)
+Status: in progress (A done; B, C and D in code, manual checks pending)
 Source: GitHub issue [#1](https://github.com/0xdeathstalker/jot/issues/1), `docs/project-context.md` §6 (dependencies), §11 (traps).
 
 Goal: the editor gets checklists, a Raycast Notes style toolbar (dropdowns for headings, text styles and lists; highlighted when the cursor is in that formatting), links, images and Markdown copy/download/paste. Everything still lives in the note's Y.Doc and syncs as today.
@@ -80,14 +80,18 @@ Mitigations, all in this plan:
 
 ### D. Link
 
-- [ ] **D1.** `StarterKit.configure({ link: { openOnClick: false, autolink: true } })`, keep the default URL check (blocks `javascript:`).
+- [ ] **D1.** `StarterKit.configure({ link: { openOnClick: false, autolink: true } })`, keep the default URL check (blocks `javascript:`). **Done in code:** `openOnClick: false`, `autolink`, `defaultProtocol: "https"`. Ctrl/Cmd+click opens a link in a new tab while editing (`editorProps.handleClick`); for viewers the editor is not editable, so a plain click follows the link. Link styles (colour, underline) in `src/styles/index.css`.
 - [ ] **D2. Link box (Raycast Notes style).** `src/editor/link-box.tsx`. The toolbar "Link" button (`Link01Icon`, C2 slot) is enabled when text is selected or the cursor is in a link, and is pressed when the cursor is in a link. Clicking it opens a small box **next to the selected text** (not under the button):
   - One input, placeholder "Enter a link...", prefilled with the current link; a ✓ button (apply) and a 🗑 button (remove, shown only when there is a link). Icons: `Tick02Icon`, `Delete02Icon`.
   - Enter or ✓ applies `extendMarkRange("link").setLink({ href })`; an empty value or 🗑 runs `unsetLink()`; Escape closes without changes. `https://` is added when the user typed no scheme. Link's own URL check still blocks `javascript:` and similar.
   - Position: Base UI `Popover` (already installed) with a virtual anchor built from `editor.view.coordsAtPos(from)` / `(to)`, below the selection, flipping above near the bottom of the screen. No new package (Tiptap's `BubbleMenu` would add `@floating-ui/dom`), no shadcn `popover` needed.
   - Focus: the input takes focus when the box opens; after apply/remove/Escape the cursor returns to the editor with the text still selected.
-  - No keyboard shortcut for now: `⌘K` / `Ctrl+K` is left for a future command palette (Raycast uses it for actions; separate issue).
+  - **Shortcut: `Ctrl+L` / `⌘L`** (Raycast Notes), only while the note has focus (it overrides the browser's address-bar shortcut there). `⌘K` / `Ctrl+K` stays free for a future command palette (separate issue).
+  - **What gets linked:** the selection; else the whole link under the cursor; else the word under the cursor (`src/editor/select-word.ts`, Unicode letters and digits). With none of these (empty line, cursor next to spaces or punctuation only), nothing opens and a short message shows at the bottom: "Select text to add a link" / "Place the cursor inside a word or select text first." (`src/editor/notice.tsx`, closes after 4 s or with ✕). The toolbar button is always enabled for editors, so a click can show that message.
+  - **Pointer cursor** over linked text, also while editing (a click still places the cursor; Ctrl/Cmd+click opens).
+  - Word selection checked headlessly: inside, at the end and at the start of a word, accented letters, both sides of a line break, a word half in bold, a word in brackets, and no word (punctuation only, empty line): all pass.
   - Done when: select text, open the box, type `example.com`, Enter: the text links to `https://example.com`; reopen on the link: the URL is prefilled; 🗑 removes it; works on a phone (box stays on screen above the keyboard) and a second tab sees the link.
+  - **Done in code** (`src/editor/link-box.tsx`, Base UI `Popover` with a virtual anchor at the selection). Checked headlessly with the same commands the box runs: `javascript:` and `data:` refused, `https:` and `mailto:` accepted, applying links the selection, the cursor inside a link selects the whole link, editing replaces the whole link, removing from the cursor removes the whole link. Not yet seen in a browser. Known gap: while the box has focus the editor does not draw the selection highlight (browser behaviour); add a decoration if it confuses.
 
 ### E. Images (stored inside the note)
 
@@ -99,7 +103,7 @@ Mitigations, all in this plan:
   - No files but the parsed `slice` contains image nodes (HTML from a web page or another Jot note): drop any `data:` image over 300 KB, then check the budget for the rest. Remote `https://` images are kept as links (they load from that site, and only while it serves them).
   - Done when: a screenshot paste, a "Copy image" from a website, and a dragged file each insert one shrunk image; pasting a web article keeps its text.
 - [ ] **E5. Toolbar button.** "Image" (`Image01Icon`, C2 slot) clicks a hidden `<input type="file" accept="image/*" multiple>`, then runs the same path as E4. `alt` = file name without extension (screenshots get "Image"). Disabled for viewers like every other button. Done when: picking photos on iOS inserts them.
-- [ ] **E6. Messages.** Errors from E2/E3 show inline above the editor (same style as the "View only" banner) and clear on the next edit. No toast library. Done when: each refusal shows its message.
+- [ ] **E6. Messages.** Errors from E2/E3 use the same bottom message as the link box (`notify` from `src/editor/notice.tsx`). No toast library. Done when: each refusal shows its message.
 - [ ] **E7. Style.** `max-width: 100%`, `height: auto`, rounded, outline when selected. Done when: a wide image fits on a phone and a selected image is visible in light and dark.
 
 ### F. Markdown
@@ -114,7 +118,7 @@ Mitigations, all in this plan:
 - [ ] **G2.** Two tabs, one offline: every block above edits offline and merges on reconnect, including an image pasted while offline.
 - [ ] **G3.** Viewer account: cannot tick, cannot edit links, cannot paste, drop or pick images; Markdown copy/download works.
 - [ ] **G3b. Heavy note.** Fill a note to about 4 MB with images. Check, in `wrangler dev` and on the deployed app: typing still saves (no `onSave` error in the Worker logs, no CPU-limit error), a reload from another device restores every image, and opening the note on a phone is acceptable. Write the result here. If saves fail below 4 MB, lower the note cap (E3) to what works.
-- [ ] **G4.** `pnpm check`; `pnpm build && pnpm preview`: no precached file over 2 MiB (note the main chunk size before and after in this plan). Before this plan: not measured. After step C: main chunk 1,058.68 kB (gzip 341 kB), precache 23 entries, 1,149 KiB.
+- [ ] **G4.** `pnpm check`; `pnpm build && pnpm preview`: no precached file over 2 MiB (note the main chunk size before and after in this plan). Before this plan: not measured. After step C: main chunk 1,058.68 kB (gzip 341 kB), precache 1,149 KiB. After step D: 1,069.74 kB (gzip 344 kB), precache 1,161 KiB.
 - [ ] **G5.** Old-client test: build the current `main`, open a note in it, add a checklist from the new build in another tab; the old tab shows the banner (B1) and the checklist survives.
 - [ ] **G6.** Tick §6 in `docs/project-context.md`, add the image-storage and Markdown decisions to §12, add two traps to §11: "old schema deletes unknown nodes" and "images live inside the note: keep the 4 MB note cap, the DO row limit is 8 MB and a failed save is lost server-side". Close issue #1.
 

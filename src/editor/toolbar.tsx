@@ -29,7 +29,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Toggle, toggleVariants } from "@/components/ui/toggle"
-import { isApple } from "@/lib/platform"
+import { LinkBox } from "@/editor/link-box"
+import type { Notice } from "@/editor/notice"
+import { formatShortcut as shortcut } from "@/lib/platform"
 import { cn } from "@/lib/utils"
 
 type Item = {
@@ -131,18 +133,19 @@ const lists: Item[] = [
   },
 ]
 
-const apple = isApple()
-const symbols: Record<string, string> = { Mod: "⌘", Alt: "⌥", Shift: "⇧" }
-const shortcut = (keys: string[]) =>
-  apple
-    ? keys.map((k) => symbols[k] ?? k).join("")
-    : keys.map((k) => (k === "Mod" ? "Ctrl" : k)).join("+")
-
 const flags = (editor: Editor, items: Item[]) => items.map((item) => item.isActive(editor))
 
-// Raycast Notes layout: H ▾ | I ▾ | <> | quote, code block | lists ▾.
+// Raycast Notes layout: H ▾ | I ▾ | link | <> | quote, code block | lists ▾.
 // No undo/redo buttons: Collaboration owns undo/redo (keyboard shortcuts still work).
-export function Toolbar({ editor, disabled = false }: { editor: Editor; disabled?: boolean }) {
+export function Toolbar({
+  editor,
+  disabled = false,
+  notify,
+}: {
+  editor: Editor
+  disabled?: boolean
+  notify: (notice: Notice) => void
+}) {
   // Tiptap v3 does not re-render React on every transaction: subscribe to the active flags.
   const active = useEditorState({
     editor,
@@ -150,6 +153,7 @@ export function Toolbar({ editor, disabled = false }: { editor: Editor; disabled
       headings: flags(editor, headings),
       textStyles: flags(editor, textStyles),
       inlineCode: inlineCode.isActive(editor),
+      inLink: editor.isActive("link"),
       blocks: flags(editor, blocks),
       lists: flags(editor, lists),
     }),
@@ -180,6 +184,7 @@ export function Toolbar({ editor, disabled = false }: { editor: Editor; disabled
           editor={editor}
           disabled={disabled}
         />
+        <LinkBox editor={editor} inLink={active.inLink} disabled={disabled} notify={notify} />
         <Button item={inlineCode} pressed={active.inlineCode} editor={editor} disabled={disabled} />
       </Group>
       <Group>

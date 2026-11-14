@@ -217,6 +217,16 @@
   pointer-events: none;
 }
 
+/* Links: Tailwind preflight removes colour and underline. Pointer over a link, also while editing
+   (a click there places the cursor; Ctrl/Cmd+click opens it). */
+.ProseMirror a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--muted-foreground);
+  cursor: pointer;
+}
+
 .ProseMirror blockquote {
   border-left: 3px solid var(--border);
   padding-left: 1rem;

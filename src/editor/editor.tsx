@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit"
 import * as React from "react"
 
 import { Button } from "@/components/ui/button"
+import { type Notice, NoticeToast } from "@/editor/notice"
 import { TaskItem } from "@/editor/task-item"
 import { Toolbar } from "@/editor/toolbar"
 import { getTitleAndPreview } from "@/features/notes/note-meta"
@@ -62,10 +63,22 @@ export function Editor({
   // The shared doc holds content this version's schema cannot show (a newer Jot added a block type).
   // Without enableContentCheck, y-tiptap deletes that content from the shared doc for everyone.
   const [outdated, setOutdated] = React.useState(false)
+  const [notice, setNotice] = React.useState<Notice | null>(null)
+  const clearNotice = React.useCallback(() => setNotice(null), [])
 
   const editor = useEditor({
     editable: !readOnly,
     enableContentCheck: true,
+    editorProps: {
+      handleClick: (_view, _pos, event) => {
+        if (!(event.metaKey || event.ctrlKey)) return false
+        const link = (event.target as HTMLElement).closest("a[href]")
+        if (!(link instanceof HTMLAnchorElement)) return false
+        // The Link mark has already dropped unsafe hrefs (javascript: etc.) when rendering.
+        window.open(link.href, "_blank", "noopener,noreferrer")
+        return true
+      },
+    },
     onContentError: ({ disableCollaboration }) => {
       // Stop before anything is written back: no sync, no local edits, until the app is reloaded.
       stopSyncing(session)
@@ -73,7 +86,13 @@ export function Editor({
       setOutdated(true)
     },
     extensions: [
-      StarterKit.configure({ undoRedo: false }),
+      StarterKit.configure({
+        undoRedo: false,
+        // Clicking a link while editing places the cursor; Ctrl/Cmd+click opens it (handleClick
+        // below). Viewers' editor is not editable, so a plain click follows the link natively.
+        // Ctrl/Cmd+L opens the link box (link-box.tsx).
+        link: { openOnClick: false, autolink: true, defaultProtocol: "https" },
+      }),
       TaskList,
       TaskItem.configure({ nested: true }),
       Collaboration.configure({ document: doc }),
@@ -135,8 +154,9 @@ export function Editor({
           </p>
         )
       )}
-      <Toolbar editor={editor} disabled={readOnly || outdated} />
+      <Toolbar editor={editor} disabled={readOnly || outdated} notify={setNotice} />
       <EditorContent editor={editor} />
+      <NoticeToast notice={notice} onClose={clearNotice} />
     </>
   )
 }
