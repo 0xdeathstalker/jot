@@ -176,9 +176,10 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 - **One "index" Y.Doc per user.** Party `index-room` (class `IndexRoom`, migration `v2`), room `index-<userId>`, IndexedDB `jot-index-<userId>`. A `Y.Map` named `notes`, one nested `Y.Map` per note (so concurrent edits to different fields both survive):
   ```ts
   { [noteId]: { title: string, preview: string, createdAt: number, updatedAt: number, pinned: boolean, deleted: boolean,
-                role?: 'editor' | 'viewer', shared?: boolean, noAccess?: boolean } }
+                role?: 'editor' | 'viewer', shared?: boolean, noAccess?: boolean, blank?: boolean, leftBlank?: boolean } }
   ```
-  The last three are Phase 6 UI hints, never permissions: `role` is set when someone else owns the note, `shared` when you own it and made a share link, `noAccess` when its owner removed you (learned from the server). D1 `note_members` is the truth.
+  `blank` is `true` from New note until the note's first real content; a blank note you leave gets `leftBlank: true` and is hidden while it stays blank (a separate key from `deleted`, so a first edit on another device at the same moment, `blank: false`, always wins), and New note reuses a blank one instead of making another (`docs/plans/blank-notes.md`). Notes made before that have no `blank` and are never treated as blank.
+  `role`, `shared` and `noAccess` are Phase 6 UI hints, never permissions: `role` is set when someone else owns the note, `shared` when you own it and made a share link, `noAccess` when its owner removed you (learned from the server). D1 `note_members` is the truth.
   The title is the first line of the note and the preview its next ~200 characters, both written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`src/sync/legacy-index.ts`).
 - IDs are generated on the client with `crypto.randomUUID()`, so notes can be created offline.
 
