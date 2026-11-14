@@ -1,10 +1,12 @@
 import Collaboration, { isChangeOrigin } from "@tiptap/extension-collaboration"
 import CollaborationCaret from "@tiptap/extension-collaboration-caret"
+import { TaskList } from "@tiptap/extension-list"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import * as React from "react"
 
 import { Button } from "@/components/ui/button"
+import { TaskItem } from "@/editor/task-item"
 import { Toolbar } from "@/editor/toolbar"
 import { getTitleAndPreview } from "@/features/notes/note-meta"
 import type { CaretUser } from "@/features/sharing/caret-user"
@@ -72,6 +74,8 @@ export function Editor({
     },
     extensions: [
       StarterKit.configure({ undoRedo: false }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
       Collaboration.configure({ document: doc }),
       // Cursors live in Yjs awareness (in memory, never saved): they vanish when a socket closes.
       CollaborationCaret.configure({ provider: session.provider, user: caret }),

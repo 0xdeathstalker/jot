@@ -1,6 +1,6 @@
 # Plan: Editor blocks (checklists, Markdown, link, image, paragraph)
 
-Status: in progress (A done, B in code; B1 manual check pending)
+Status: in progress (A done; B and C in code, manual checks pending)
 Source: GitHub issue [#1](https://github.com/0xdeathstalker/jot/issues/1), `docs/project-context.md` §6 (dependencies), §11 (traps).
 
 Goal: the editor gets checklists, a Raycast Notes style toolbar (dropdowns for headings, text styles and lists; highlighted when the cursor is in that formatting), links, images and Markdown copy/download/paste. Everything still lives in the note's Y.Doc and syncs as today.
@@ -47,14 +47,14 @@ Mitigations, all in this plan:
 
 ### C. Checklists and toolbar
 
-- [ ] **C1. Checklist node.** `TaskList` + `TaskItem.configure({ nested: true })` in the editor. Done when: a checklist renders with a checkbox per line and ticking one syncs to a second tab.
-- [ ] **C1a. Typing shortcuts (Raycast Notes style).** At the start of a line, these turn the line into a checklist item when the **space** after them is typed:
+- [x] **C1. Checklist node.** `TaskList` + `TaskItem.configure({ nested: true })` in the editor. Done when: a checklist renders with a checkbox per line and ticking one syncs to a second tab. **Done in code** (`src/editor/editor.tsx`).
+- [x] **C1a. Typing shortcuts (Raycast Notes style).** At the start of a line, these turn the line into a checklist item when the **space** after them is typed: **Done in code** (`src/editor/task-item.ts`). The `- [ ] ` rule swaps the bullet item for a checklist item directly (ProseMirror's `liftListItem` refuses a transaction that already holds the deletion of `[ ] `). Checked headlessly (happy-dom, a throwaway script outside the repo): `[] `, `[ ] `, `[x] `, `- [ ] `, `* [x] `, `+ [] `, middle of a bullet list (splits it), nested bullet (checkbox under the parent), text before the brackets (no change): all pass. Enter/Backspace behaviour still to check by hand.
   - `[] `, `[ ] ` (unticked) and `[x] ` (ticked). TaskItem's built-in rule already matches these (`/^\s*(\[([( |x])?\])\s$/` in `@tiptap/extension-list` 3.34.0): note the trigger is the space (owner confirmed: convert after the space, not on `]`), typing `[]` alone does nothing.
   - `- [] `, `- [ ] `, `- [x] ` (also with `*` or `+`). Today `- ` becomes a bullet first, then `[ ] ` inside it would nest a checklist **inside** the bullet (bullet + checkbox). Fix: extend `TaskItem` with one extra input rule that fires when the match is at the start of a `bulletList` item. It deletes the typed `[ ] `, lifts that one item out of the bullet list (`liftListItem("listItem")`) and wraps it in a checklist (`toggleTaskList()`), ticked for `x`. Only that item changes: in a 5-item bullet list, doing it on item 3 splits the list around one checklist item.
   - Backspace right after a shortcut undoes it (Tiptap's `undoInputRule`), so `[ ]` can still be typed literally.
   - Done when: each shortcut above gives one checkbox and **no bullet**; `[x] ` gives a ticked item; Enter on a filled item makes a new unticked item; Enter on an empty item leaves the checklist; Backspace at the start of an empty item turns it into a plain line.
-- [ ] **C1b. Other Markdown typing shortcuts (Raycast Notes style).** Already built into StarterKit 3.34.0 (rules checked in the installed packages), so no code: test each once and fix only what fails. At the start of a line, after the space: `# ` to `###### ` (headings 1–6), `- `, `* `, `+ ` (bullet list), `1. ` (numbered list), `> ` (quote). Three backticks or `~~~` then space or Enter (code block). `---`, `___ `, `*** ` (divider). Inline, when the closing mark is typed: `` `code` ``, `**bold**` / `__bold__`, `*italic*` / `_italic_`, `~~strike~~`. Typing a URL then a space links it (Link `autolink`, D1). Backspace right after any of these undoes it. Done when: each one converts in a note, syncs to a second tab, and survives a reload.
-- [ ] **C2. Toolbar in Raycast Notes layout.** Rebuild `src/editor/toolbar.tsx` as one row, left to right, groups split by a thin divider:
+- [x] **C1b. Other Markdown typing shortcuts (Raycast Notes style).** Already built into StarterKit 3.34.0 (rules checked in the installed packages), so no code: test each once and fix only what fails. At the start of a line, after the space: `# ` to `###### ` (headings 1–6), `- `, `* `, `+ ` (bullet list), `1. ` (numbered list), `> ` (quote). Three backticks or `~~~` then space or Enter (code block). `---`, `___ `, `*** ` (divider). Inline, when the closing mark is typed: `` `code` ``, `**bold**` / `__bold__`, `*italic*` / `_italic_`, `~~strike~~`. Typing a URL then a space links it (Link `autolink`, D1). Backspace right after any of these undoes it. Done when: each one converts in a note, syncs to a second tab, and survives a reload.
+- [x] **C2. Toolbar in Raycast Notes layout.** Rebuild `src/editor/toolbar.tsx` as one row, left to right, groups split by a thin divider: **Done in code** for every slot except Link, Image and `…` (steps D2, E5, F2 add them). Menu items show their keyboard shortcut on the right (⌘⌥⇧ on Apple, Ctrl+Alt+Shift elsewhere, hidden on touch screens; buttons show it in their tooltip), and the active item gets an accent background with medium weight instead of a tick. Not yet seen in a browser: check the focus and iOS points above.
 
   | Slot          | Control                                                                   | Inside                                                                                                                 | Active when                                     |
   | ------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -75,13 +75,19 @@ Mitigations, all in this plan:
   - **Phone width.** The row fits a 360 px screen without wrapping (8 controls); if not, the `…` menu wraps last.
   - Done when: every control works, the highlight follows the cursor through bold text, a heading, a link, inline code, a quote, a code block and each list type, and a second tab sees the same formatting.
 
-- [ ] **C3.** Styles in `src/styles/index.css`: checkbox aligned with the first line, ticked items muted with a strike-through, no bullet. Done when: it looks right in light and dark.
-- [ ] **C4.** Viewer: TaskItem disables its checkbox when the editor is not editable (no `onReadOnlyChecked`). Done when: a viewer cannot tick (and the server already drops viewer edits).
+- [x] **C3.** Styles in `src/styles/index.css`: checkbox aligned with the first line, ticked items muted with a strike-through, no bullet. Done when: it looks right in light and dark. **Done in code.**
+- [x] **C4.** Viewer: TaskItem disables its checkbox when the editor is not editable (no `onReadOnlyChecked`). Done when: a viewer cannot tick (and the server already drops viewer edits). **Done in code:** TaskItem reverts a click when read-only; CSS also turns off pointer events on the checkbox for viewers.
 
 ### D. Link
 
 - [ ] **D1.** `StarterKit.configure({ link: { openOnClick: false, autolink: true } })`, keep the default URL check (blocks `javascript:`).
-- [ ] **D2.** The toolbar "Link" button (`Link01Icon`, C2 slot) is enabled when text is selected or the cursor is in a link, and opens a small popover with the shadcn `Input`: prefilled with the current link, Enter applies `extendMarkRange("link").setLink({ href })`, empty value runs `unsetLink()`. Add `https://` when the user typed no scheme. Reuse an existing shadcn piece (dropdown-menu or dialog) for the popover; add `popover` via `pnpm dlx shadcn@latest add popover` only if neither fits. Done when: add, edit and remove a link work, and pasting a URL over selected text links it.
+- [ ] **D2. Link box (Raycast Notes style).** `src/editor/link-box.tsx`. The toolbar "Link" button (`Link01Icon`, C2 slot) is enabled when text is selected or the cursor is in a link, and is pressed when the cursor is in a link. Clicking it opens a small box **next to the selected text** (not under the button):
+  - One input, placeholder "Enter a link...", prefilled with the current link; a ✓ button (apply) and a 🗑 button (remove, shown only when there is a link). Icons: `Tick02Icon`, `Delete02Icon`.
+  - Enter or ✓ applies `extendMarkRange("link").setLink({ href })`; an empty value or 🗑 runs `unsetLink()`; Escape closes without changes. `https://` is added when the user typed no scheme. Link's own URL check still blocks `javascript:` and similar.
+  - Position: Base UI `Popover` (already installed) with a virtual anchor built from `editor.view.coordsAtPos(from)` / `(to)`, below the selection, flipping above near the bottom of the screen. No new package (Tiptap's `BubbleMenu` would add `@floating-ui/dom`), no shadcn `popover` needed.
+  - Focus: the input takes focus when the box opens; after apply/remove/Escape the cursor returns to the editor with the text still selected.
+  - No keyboard shortcut for now: `⌘K` / `Ctrl+K` is left for a future command palette (Raycast uses it for actions; separate issue).
+  - Done when: select text, open the box, type `example.com`, Enter: the text links to `https://example.com`; reopen on the link: the URL is prefilled; 🗑 removes it; works on a phone (box stays on screen above the keyboard) and a second tab sees the link.
 
 ### E. Images (stored inside the note)
 
@@ -108,7 +114,7 @@ Mitigations, all in this plan:
 - [ ] **G2.** Two tabs, one offline: every block above edits offline and merges on reconnect, including an image pasted while offline.
 - [ ] **G3.** Viewer account: cannot tick, cannot edit links, cannot paste, drop or pick images; Markdown copy/download works.
 - [ ] **G3b. Heavy note.** Fill a note to about 4 MB with images. Check, in `wrangler dev` and on the deployed app: typing still saves (no `onSave` error in the Worker logs, no CPU-limit error), a reload from another device restores every image, and opening the note on a phone is acceptable. Write the result here. If saves fail below 4 MB, lower the note cap (E3) to what works.
-- [ ] **G4.** `pnpm check`; `pnpm build && pnpm preview`: no precached file over 2 MiB (note the main chunk size before and after in this plan).
+- [ ] **G4.** `pnpm check`; `pnpm build && pnpm preview`: no precached file over 2 MiB (note the main chunk size before and after in this plan). Before this plan: not measured. After step C: main chunk 1,058.68 kB (gzip 341 kB), precache 23 entries, 1,149 KiB.
 - [ ] **G5.** Old-client test: build the current `main`, open a note in it, add a checklist from the new build in another tab; the old tab shows the banner (B1) and the checklist survives.
 - [ ] **G6.** Tick §6 in `docs/project-context.md`, add the image-storage and Markdown decisions to §12, add two traps to §11: "old schema deletes unknown nodes" and "images live inside the note: keep the 4 MB note cap, the DO row limit is 8 MB and a failed save is lost server-side". Close issue #1.
 

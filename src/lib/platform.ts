@@ -9,3 +9,8 @@ export function isIosBrowser(): boolean {
     window.matchMedia("(display-mode: standalone)").matches
   return iosDevice && !installed
 }
+
+// Apple keyboards: shortcuts read ⌘ ⌥ ⇧ instead of Ctrl / Alt / Shift.
+export function isApple(): boolean {
+  return /Mac|iPhone|iPad|iPod/.test(navigator.userAgent)
+}
