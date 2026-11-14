@@ -15,14 +15,6 @@ export type NoteMeta = {
   role?: SharedRole // set when someone else owns the note; absent means you own it
   shared?: boolean // you own it and have made a share link
   noAccess?: boolean // someone else owns it and has removed you (learned from the server)
-  // Created by New note and never edited (docs/plans/blank-notes.md). Absent on notes made before
-  // that fix: those are never treated as blank.
-  blank?: boolean
-  // A blank note was left (removed from the list). Kept apart from `deleted` on purpose: if another
-  // device makes the first edit at the same time, it writes `blank: false`, a different key, so
-  // both survive the merge and the note shows again. (Two devices writing `deleted` at once would
-  // be settled by client id, not by what happened.)
-  leftBlank?: boolean
 }
 export type SharedRole = "editor" | "viewer"
 export type Note = NoteMeta & { id: string }
@@ -41,7 +33,6 @@ export function createNote(doc: Doc): string {
     updatedAt: now,
     pinned: false,
     deleted: false,
-    blank: true,
   }
   const note = new YMap<unknown>(Object.entries(meta))
   getNotes(doc).set(id, note)
@@ -116,33 +107,6 @@ export function togglePin(doc: Doc, id: string) {
   if (note) note.set("pinned", !note.get("pinned"))
 }
 
-// The note got its first real content. Writes once (later edits cost nothing). A note another
-// device left as blank meanwhile shows again (see `leftBlank`).
-export function markEdited(doc: Doc, id: string) {
-  const note = getNotes(doc).get(id)
-  if (note?.get("blank") === true) note.set("blank", false)
-}
-
-// Hidden from the list: deleted, or left while still blank.
-const isHidden = (note: YMap<unknown>) =>
-  note.get("deleted") === true || (note.get("leftBlank") === true && note.get("blank") === true)
-
-// Leaving a blank note: hide it (a soft removal, nothing is deleted), but only a never-edited note
-// we own and have not shared (someone else may be about to type into a shared one). Returns whether
-// it was removed.
-export function removeIfBlank(doc: Doc, id: string): boolean {
-  const note = getNotes(doc).get(id)
-  if (!note || note.get("blank") !== true || isHidden(note)) return false
-  if (note.get("role") || note.get("shared")) return false
-  note.set("leftBlank", true)
-  return true
-}
-
-// A blank note to reuse instead of creating another (the list is already newest first).
-export function findBlank(notes: Note[]): Note | undefined {
-  return notes.find((note) => note.blank && !note.role && !note.shared)
-}
-
 export function softDelete(doc: Doc, id: string) {
   getNotes(doc).get(id)?.set("deleted", true)
 }
@@ -151,7 +115,7 @@ export function softDelete(doc: Doc, id: string) {
 function readNotes(notes: NotesMap): Note[] {
   const list: Note[] = []
   notes.forEach((note, id) => {
-    if (isHidden(note)) return
+    if (note.get("deleted")) return
     list.push({
       id,
       title: (note.get("title") as string) ?? "",
@@ -163,7 +127,6 @@ function readNotes(notes: NotesMap): Note[] {
       role: (note.get("role") as SharedRole | undefined) ?? undefined,
       shared: !!note.get("shared") || undefined,
       noAccess: !!note.get("noAccess") || undefined,
-      blank: note.get("blank") === true || undefined,
     })
   })
   return list.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
