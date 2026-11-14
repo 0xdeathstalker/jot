@@ -92,13 +92,15 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
     // New member. The limit check and the insert are one statement: no two people take the last place.
     const added = await env.DB.prepare(
       `INSERT INTO note_members (note_id, user_id, role, created_at)
-       SELECT ?, ?, ?, ? WHERE (SELECT count(*) FROM note_members WHERE note_id = ? AND role != 'owner') < ?`,
+       SELECT ?, ?, ?, ? WHERE (SELECT count(*) FROM note_members WHERE note_id = ? AND role != 'owner') < ?
+       ON CONFLICT (note_id, user_id) DO NOTHING`,
     )
       .bind(invite.note_id, user.id, invite.role, now, invite.note_id, NOTE_LIMIT)
       .run()
-    return added.meta.changes > 0
-      ? json({ noteId: invite.note_id, role: invite.role })
-      : fail(409, "full")
+    if (added.meta.changes > 0) return json({ noteId: invite.note_id, role: invite.role })
+    // A parallel accept for the same person (double request) may have inserted first.
+    const raced = await roleOn(env, invite.note_id, user.id)
+    return raced ? json({ noteId: invite.note_id, role: raced }) : fail(409, "full")
   }
 
   if (!a || !NOTE_ID.test(a) || a === "mine" || a === "accept") return fail(404, "not_found")
