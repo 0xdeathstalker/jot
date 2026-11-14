@@ -4,8 +4,8 @@ import { IndexeddbPersistence } from "y-indexeddb"
 import YProvider from "y-partyserver/provider"
 import { Doc } from "yjs"
 
-import { carryOverLegacyIndex } from "@/sync/legacyIndex"
-import { listLocalDatabases } from "@/sync/localData"
+import { carryOverLegacyIndex } from "@/sync/legacy-index"
+import { listLocalDatabases } from "@/sync/local-data"
 
 export type RoomSession = { doc: Doc; provider: YProvider }
 
@@ -80,7 +80,7 @@ export function useNoteSession(noteId: string): RoomSession {
 
 // One note list per user: /parties/index-room/index-<userId>, IndexedDB jot-index-<userId>.
 // These names are permanent. The Phase 3 placeholder `index-default` is carried over once per
-// device (legacyIndex.ts) and the server no longer allows it (step D).
+// device (legacy-index.ts) and the server no longer allows it (step D).
 export function useIndexSession(userId: string): RoomSession {
   const session = useRoomSession({
     party: "index-room",

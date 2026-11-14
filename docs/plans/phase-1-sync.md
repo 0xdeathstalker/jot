@@ -1,7 +1,7 @@
 # Plan: Phase 1 – Prove sync works
 
 Status: draft, awaiting owner go-ahead
-Source: `docs/project-context.md` §10 Phase 1, `docs/research/phase-1-sync.md` (all facts and links live there).
+Source: `docs/project-context.md` §10 Phase 1.
 
 Goal: two browser tabs on `/?note=test` stay in sync. Nothing else.
 
@@ -14,7 +14,7 @@ Goal: two browser tabs on `/?note=test` stay in sync. Nothing else.
 | Room names        | **Plain IDs**: `/parties/note-room/<id>`, no `note:` prefix. Phase 1 room is `test`               |
 | Hibernation issue | Accept partykit #427 (save timer blocks hibernation only while typing). Revisit if quota matters  |
 
-Why not the Tiptap CLI: SCSS + Radix + Floating UI, React 19 not fully supported, its undo/redo buttons conflict with Collaboration, and the npm CLI package carries Tiptap's Pro license text (research §B3).
+Why not the Tiptap CLI: SCSS + Radix + Floating UI, React 19 not fully supported, its undo/redo buttons conflict with Collaboration, and the npm CLI package carries Tiptap's Pro license text.
 
 ## Out of scope
 
@@ -43,8 +43,8 @@ Small tasks, in order. Each one ends with a "done when" check, and leaves `pnpm 
 
 ### C. Editor and app shell
 
-- [x] **C1. `src/editor/Editor.tsx`, minimal.** `useEditor` with `StarterKit.configure({ undoRedo: false })` and `Collaboration.configure({ document: provider.doc })`, rendered with `EditorContent`. No Tiptap `content` option (step 5). Done when: `pnpm check` passes.
-- [x] **C2. `src/App.tsx`: read `?note=`**, default `test`, render `<Editor key={noteId} noteId={noteId} />` (step 6). Done when: the page loads at `/` and at `/?note=test` with no console errors.
+- [x] **C1. `src/editor/editor.tsx`, minimal.** `useEditor` with `StarterKit.configure({ undoRedo: false })` and `Collaboration.configure({ document: provider.doc })`, rendered with `EditorContent`. No Tiptap `content` option (step 5). Done when: `pnpm check` passes.
+- [x] **C2. `src/app.tsx`: read `?note=`**, default `test`, render `<Editor key={noteId} noteId={noteId} />` (step 6). Done when: the page loads at `/` and at `/?note=test` with no console errors.
 - [x] **C3. Editor styles** on `.ProseMirror` in `src/styles/index.css`: headings, lists, blockquote, code, font size at least 16px (step 5). Done when: typing `# ` or `- ` shows styled heading or list.
 - [x] **C4. Checkpoint: two-tab sync.** Run verify items 1–3 from step 8. Done when: text typed in one tab shows in the other within about a second, a WebSocket to `/parties/note-room/test` is open in both, and `?note=other` stays separate.
   - If the WebSocket gets the SPA page instead of connecting, add `run_worker_first: ["/parties/*"]` to `wrangler.jsonc` and run `pnpm cf-typegen`.
@@ -52,11 +52,11 @@ Small tasks, in order. Each one ends with a "done when" check, and leaves `pnpm 
 ### D. Toolbar
 
 - [x] **D1. Add the shadcn toggle.** `pnpm dlx shadcn@latest add toggle` (step 7). Done when: `src/components/ui/toggle.tsx` exists and is not hand-edited.
-- [x] **D2. `src/editor/Toolbar.tsx` with mark toggles:** bold, italic, strike, inline code. Active state from `editor.isActive`, `aria-label` on each (step 7). Done when: clicking bold in tab 1 formats text and shows it in tab 2.
+- [x] **D2. `src/editor/toolbar.tsx` with mark toggles:** bold, italic, strike, inline code. Active state from `editor.isActive`, `aria-label` on each (step 7). Done when: clicking bold in tab 1 formats text and shows it in tab 2.
 - [x] **D3. Heading toggles** H1 and H2 via `toggleHeading({ level })`. Done when: heading toggles and syncs.
 - [x] **D4. List toggles:** bullet and ordered. Done when: both toggle and sync.
 - [x] **D5. Blockquote and code block toggles.** Done when: both toggle and sync.
-- [x] **D6. Render `<Toolbar editor={editor} />` inside `Editor.tsx`.** Done when: toolbar is visible and no undo/redo buttons exist.
+- [x] **D6. Render `<Toolbar editor={editor} />` inside `editor.tsx`.** Done when: toolbar is visible and no undo/redo buttons exist.
 
 ### E. Wrap-up
 
@@ -122,7 +122,7 @@ new YProvider(window.location.host, noteId, doc, { party: "note-room" })
 - Reconnect on iOS: on `document` `visibilitychange` (visible) and `window` `online`, call `provider.connect()` if `!provider.wsconnected`. Clean up listeners and call `provider.disconnect()` on unmount (not `destroy()`, partykit #402).
 - Create the provider once per note id. Key the editor component by id (the provider does not re-create when `room` changes).
 
-### 5. `src/editor/Editor.tsx`
+### 5. `src/editor/editor.tsx`
 
 ```ts
 useEditor({
@@ -137,11 +137,11 @@ useEditor({
 - Keep the default Collaboration `field`. It must never change once real notes exist.
 - Editor typography on `.ProseMirror` in `src/styles/index.css` (Tailwind preflight strips list and heading styles): headings, lists, blockquote, code. Font size **≥ 16px** (iOS zoom trap, context §11). No new dependency (skip `@tailwindcss/typography`).
 
-### 6. `src/App.tsx`
+### 6. `src/app.tsx`
 
 Read `?note=` from `window.location.search`, default `test`. Render `<Editor key={noteId} noteId={noteId} />`. No router. No spinner: the editor works before the socket connects (local-first).
 
-### 7. `src/editor/Toolbar.tsx`
+### 7. `src/editor/toolbar.tsx`
 
 Add the shadcn components needed (only what the toolbar uses):
 

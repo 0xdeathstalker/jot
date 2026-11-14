@@ -119,13 +119,14 @@ jot/
 ├── pwa-assets.config.ts      ← icon generation (`pnpm pwa:icons`)
 ├── src/                      ← client (React PWA)
 │   ├── main.tsx              ← registers the service worker (phase 5)
-│   ├── App.tsx
+│   ├── app.tsx
 │   ├── styles/index.css      ← Tailwind + shadcn theme variables
 │   ├── components/ui/        ← shadcn/ui components (generated, add on demand)
 │   ├── editor/               ← TipTap editor + our own toolbar/UI
+│   ├── hooks/                ← React hooks, one per file (`use-*.ts`)
 │   ├── sync/
 │   │   ├── provider.ts       ← the ONLY module that imports y-partyserver
-│   │   └── indexDoc.ts       ← per-user note list (phase 3)
+│   │   └── index-doc.ts      ← per-user note list (phase 3)
 │   ├── features/
 │   │   ├── notes/            ← sidebar, list, search
 │   │   └── sharing/          ← share dialog, /share and /join pages, API client, cursors (phase 6)
@@ -177,7 +178,7 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
                 role?: 'editor' | 'viewer', shared?: boolean, noAccess?: boolean } }
   ```
   The last three are Phase 6 UI hints, never permissions: `role` is set when someone else owns the note, `shared` when you own it and made a share link, `noAccess` when its owner removed you (learned from the server). D1 `note_members` is the truth.
-  The title is the first line of the note and the preview its next ~200 characters, both written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`src/sync/legacyIndex.ts`).
+  The title is the first line of the note and the preview its next ~200 characters, both written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`src/sync/legacy-index.ts`).
 - IDs are generated on the client with `crypto.randomUUID()`, so notes can be created offline.
 
 ### Server-side

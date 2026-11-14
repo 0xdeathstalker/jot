@@ -1,8 +1,8 @@
 import { useState } from "react"
 
-import { type AuthUser, signOut } from "@/auth/useAuthUser"
 import { Button } from "@/components/ui/button"
-import { InviteFriend } from "@/features/sharing/InviteFriend"
+import { InviteFriend } from "@/features/sharing/invite-friend"
+import { type AuthUser, signOut } from "@/hooks/use-auth-user"
 import { syncAllLocalData } from "@/sync/provider"
 
 export function AccountFooter({ user }: { user: AuthUser }) {

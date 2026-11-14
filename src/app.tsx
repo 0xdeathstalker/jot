@@ -2,24 +2,24 @@ import { Add01Icon, Menu01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useCallback, useEffect, useState } from "react"
 
-import { AccountFooter } from "@/auth/AccountFooter"
-import { LoginScreen } from "@/auth/LoginScreen"
-import { type AuthUser, useAuthUser } from "@/auth/useAuthUser"
-import { InstallHint } from "@/components/InstallHint"
+import { AccountFooter } from "@/auth/account-footer"
+import { LoginScreen } from "@/auth/login-screen"
+import { InstallHint } from "@/components/install-hint"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Editor } from "@/editor/Editor"
-import { NoteList } from "@/features/notes/NoteList"
-import { useNoteId } from "@/features/notes/useNoteId"
-import { useNoteSearch } from "@/features/notes/useNoteSearch"
+import { Editor } from "@/editor/editor"
+import { NoteList } from "@/features/notes/note-list"
 import { removeMember, unshareNote } from "@/features/sharing/api"
-import { caretUser } from "@/features/sharing/caretUser"
-import { type InviteLink, readInviteLink } from "@/features/sharing/inviteLink"
-import { JoinPage } from "@/features/sharing/JoinPage"
-import { refreshRoles } from "@/features/sharing/refreshRoles"
-import { ShareDialog } from "@/features/sharing/ShareDialog"
-import { ShareLinkPage } from "@/features/sharing/ShareLinkPage"
+import { caretUser } from "@/features/sharing/caret-user"
+import { type InviteLink, readInviteLink } from "@/features/sharing/invite-link"
+import { JoinPage } from "@/features/sharing/join-page"
+import { refreshRoles } from "@/features/sharing/refresh-roles"
+import { ShareDialog } from "@/features/sharing/share-dialog"
+import { ShareLinkPage } from "@/features/sharing/share-link-page"
+import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
+import { useNoteId } from "@/hooks/use-note-id"
+import { useNoteSearch } from "@/hooks/use-note-search"
 import {
   createNote,
   markShared,
@@ -27,8 +27,8 @@ import {
   togglePin,
   updateMeta,
   useNotes,
-} from "@/sync/indexDoc"
-import { deleteLocalNote, requestDurableStorage } from "@/sync/localData"
+} from "@/sync/index-doc"
+import { deleteLocalNote, requestDurableStorage } from "@/sync/local-data"
 import { useIndexSession } from "@/sync/provider"
 
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
@@ -51,7 +51,7 @@ function NotesApp({
   const ownedNote = currentNote && !currentNote.role ? currentNote : undefined
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Signed in: ask the browser to keep this device's notes (see localData.ts).
+  // Signed in: ask the browser to keep this device's notes (see local-data.ts).
   useEffect(requestDurableStorage, [])
 
   // Owners can change our role on shared notes, or remove us, while we are away: read the current

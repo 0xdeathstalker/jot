@@ -3,7 +3,7 @@ import type { Doc } from "yjs"
 
 import { Button } from "@/components/ui/button"
 import { acceptShareLink } from "@/features/sharing/api"
-import { addSharedNote } from "@/sync/indexDoc"
+import { addSharedNote } from "@/sync/index-doc"
 
 const MESSAGES: Record<string, string> = {
   invalid: "This link is not valid.",

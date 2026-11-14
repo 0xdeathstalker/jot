@@ -116,7 +116,7 @@ Smoke test (then delete, so nothing is pre-installed):
 pnpm dlx shadcn@latest add button
 ```
 
-Render `<Button>Test</Button>` in `src/App.tsx`, confirm it is styled, then remove the usage and `src/components/ui/button.tsx`.
+Render `<Button>Test</Button>` in `src/app.tsx`, confirm it is styled, then remove the usage and `src/components/ui/button.tsx`.
 
 From now on, add components only when a feature needs them: `pnpm dlx shadcn@latest add <name>`.
 
@@ -128,7 +128,7 @@ Create:
 - `worker/rooms/note-room.ts` – stub only, see step 8
 
 Skip `src/features/sharing/`, `worker/auth/`, `src/sync/provider.ts` (later phases).
-Strip template demo code: unused assets, template CSS, demo content in `src/App.tsx`. Keep `main.tsx`.
+Strip template demo code: unused assets, template CSS, demo content in `src/app.tsx`. Keep `main.tsx`.
 
 ### 8. `wrangler.jsonc` + NoteRoom stub
 

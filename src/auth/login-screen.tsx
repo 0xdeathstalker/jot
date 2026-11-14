@@ -1,6 +1,6 @@
 import { authClient } from "@/auth/client"
 import { Button } from "@/components/ui/button"
-import { type InviteLink, setJoinCookie } from "@/features/sharing/inviteLink"
+import { type InviteLink, setJoinCookie } from "@/features/sharing/invite-link"
 
 // Better Auth sends the browser back to the app with ?error=<code> when a sign-in is refused,
 // e.g. the Google account is not on ALLOWED_EMAILS and has no valid join link.

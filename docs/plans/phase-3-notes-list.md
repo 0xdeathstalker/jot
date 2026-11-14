@@ -52,13 +52,13 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 
 - [x] **B1. Generalize the session hook.** In `src/sync/provider.ts` turn `createNoteSession`/`useNoteSession` into one internal `useRoomSession({ party, room, idbName })`, and keep `useNoteSession(noteId)` as a thin wrapper (`party: "note-room"`, `idbName: jot-note-${noteId}`). Same cleanup rules as Phase 2 (create IndexedDB persistence in the effect, `disconnect()` not `destroy()` on the provider). Done when: the editor still syncs and `pnpm check` passes.
 - [x] **B2. Index session.** Add `useIndexSession()` in the same file: `party: "index-room"`, `room: "index-default"`, `idbName: "jot-index-default"`. These two names are permanent; renaming orphans data. Done when: `pnpm check` passes.
-- [x] **B3. Index store.** Create `src/sync/indexDoc.ts` with the `NoteMeta` type, helpers `createNote()`, `updateMeta(id, { title, preview })`, `togglePin(id)`, `softDelete(id)`, and a `useNotes()` hook that returns the list as a stable array through `useSyncExternalStore` plus `observeDeep` (cache the snapshot; a new array on every call causes an infinite render loop). Sorting: pinned first, then `updatedAt` descending; `deleted: true` entries are filtered out of the list. No import of `y-partyserver` here. Done when: `pnpm check` passes.
+- [x] **B3. Index store.** Create `src/sync/index-doc.ts` with the `NoteMeta` type, helpers `createNote()`, `updateMeta(id, { title, preview })`, `togglePin(id)`, `softDelete(id)`, and a `useNotes()` hook that returns the list as a stable array through `useSyncExternalStore` plus `observeDeep` (cache the snapshot; a new array on every call causes an infinite render loop). Sorting: pinned first, then `updatedAt` descending; `deleted: true` entries are filtered out of the list. No import of `y-partyserver` here. Done when: `pnpm check` passes.
 - [x] **B4. Checkpoint: index sync (headless).** Node script with two clients on `index-default` (BroadcastChannel off): client A creates a note, client B sees it; both go offline, A pins, B changes the title of the same note, reconnect; both fields survive. Done when: the script prints PASS.
 
 ### Step C: App shell and navigation
 
-- [x] **C1. Current note id.** `useNoteId()` in `src/features/notes/`: reads `?note=` (same `^[\w-]{1,64}$` check as today), exposes `openNote(id)` using `history.pushState`, and listens to `popstate`. Replaces `getNoteId()` in `App.tsx`. Done when: back/forward changes the open note.
-- [x] **C2. Layout.** `App.tsx`: sidebar on the left (`aside`), editor on the right, fixed width on desktop. On narrow screens the sidebar is a toggled panel (a plain button, no sheet component). Keep `<Editor key={noteId} />`. Done when: both render side by side.
+- [x] **C1. Current note id.** `useNoteId()` in `src/features/notes/`: reads `?note=` (same `^[\w-]{1,64}$` check as today), exposes `openNote(id)` using `history.pushState`, and listens to `popstate`. Replaces `getNoteId()` in `app.tsx`. Done when: back/forward changes the open note.
+- [x] **C2. Layout.** `app.tsx`: sidebar on the left (`aside`), editor on the right, fixed width on desktop. On narrow screens the sidebar is a toggled panel (a plain button, no sheet component). Keep `<Editor key={noteId} />`. Done when: both render side by side.
 - [x] **C3. New note.** A "New note" button calls `createNote()` and `openNote(id)`. The id comes from `crypto.randomUUID()`. Done when: the click opens an empty editor and a row appears in the list.
 - [x] **C4. Opening and empty states.** No `?note=`: open the newest note; empty list: show a short empty state with the New note button. A `?note=` id missing from the index (e.g. the old `test` note) still opens. Done when: all three cases behave.
 
@@ -72,7 +72,7 @@ Small tasks, in order. Each ends with a "done when" check, and `pnpm check` must
 ### Step E: Title and preview from the editor
 
 - [x] **E1. Helper.** Pure function `getTitleAndPreview(editor.getText())`: title = first non-empty line, trimmed, max 100 chars; preview = text after the title, whitespace collapsed, first 200 chars. Done when: a tiny self-check script or `demo()` covers an empty doc, a one-line doc and a long doc.
-- [x] **E2. Write on local edits only.** In `Editor.tsx` use `onUpdate`, **debounced ~500 ms**, skip transactions that came from Yjs (`isChangeOrigin` from `@tiptap/y-tiptap`) so remote edits do not echo, and skip the write when title and preview are unchanged. Also bump `updatedAt` when it writes. Done when: typing updates the sidebar row and a remote-only change causes no index write.
+- [x] **E2. Write on local edits only.** In `editor.tsx` use `onUpdate`, **debounced ~500 ms**, skip transactions that came from Yjs (`isChangeOrigin` from `@tiptap/y-tiptap`) so remote edits do not echo, and skip the write when title and preview are unchanged. Also bump `updatedAt` when it writes. Done when: typing updates the sidebar row and a remote-only change causes no index write.
 - [x] **E3. Checkpoint: two tabs.** Tab A types a first line; tab B's sidebar row shows it. Done when: it appears in under ~2 s.
 
 ### Step F: Search

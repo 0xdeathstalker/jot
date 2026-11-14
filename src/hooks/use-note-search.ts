@@ -1,7 +1,7 @@
 import MiniSearch from "minisearch"
 import { useMemo } from "react"
 
-import type { Note } from "@/sync/indexDoc"
+import type { Note } from "@/sync/index-doc"
 
 // Local search over title + preview. The list is small, so the index is rebuilt whenever it
 // changes instead of being updated incrementally.

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { acceptJoinLink } from "@/features/sharing/api"
-import { clearJoinCookie } from "@/features/sharing/inviteLink"
+import { clearJoinCookie } from "@/features/sharing/invite-link"
 
 const MESSAGES: Record<string, string> = {
   invalid: "This invite link is not valid.",

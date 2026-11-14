@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Note } from "@/sync/indexDoc"
+import type { Note } from "@/sync/index-doc"
 
 type Props = {
   notes: Note[]

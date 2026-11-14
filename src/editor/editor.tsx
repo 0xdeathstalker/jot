@@ -4,12 +4,12 @@ import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import { useEffect } from "react"
 
-import { Toolbar } from "@/editor/Toolbar"
-import { getTitleAndPreview } from "@/features/notes/noteMeta"
-import type { CaretUser } from "@/features/sharing/caretUser"
-import { NoAccess } from "@/features/sharing/NoAccess"
-import { useAccessLost } from "@/features/sharing/useAccessLost"
-import type { SharedRole } from "@/sync/indexDoc"
+import { Toolbar } from "@/editor/toolbar"
+import { getTitleAndPreview } from "@/features/notes/note-meta"
+import type { CaretUser } from "@/features/sharing/caret-user"
+import { NoAccess } from "@/features/sharing/no-access"
+import { useAccessLost } from "@/hooks/use-access-lost"
+import type { SharedRole } from "@/sync/index-doc"
 import { stopSyncing, useNoteSession } from "@/sync/provider"
 
 const META_DEBOUNCE_MS = 500

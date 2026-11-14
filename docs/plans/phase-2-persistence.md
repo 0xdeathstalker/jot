@@ -1,7 +1,7 @@
 # Plan: Phase 2 – Offline and persistence
 
 Status: done
-Source: `docs/project-context.md` §10 Phase 2, `docs/research/phase-1-sync.md` (server persistence sketch, limits).
+Source: `docs/project-context.md` §10 Phase 2.
 
 Goal: a note survives a page reload, going offline, and the server restarting. Edits made offline in two tabs merge on reconnect.
 

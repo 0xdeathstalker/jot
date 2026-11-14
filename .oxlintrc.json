@@ -21,7 +21,7 @@
       }
     },
     {
-      "files": ["src/editor/**", "src/features/notes/**"],
+      "files": ["src/editor/**", "src/features/notes/**", "src/hooks/use-note-*.ts"],
       "rules": {
         "no-restricted-globals": [
           "error",
