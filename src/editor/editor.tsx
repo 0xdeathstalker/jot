@@ -4,6 +4,7 @@ import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import * as React from "react"
 
+import { Button } from "@/components/ui/button"
 import { Toolbar } from "@/editor/toolbar"
 import { getTitleAndPreview } from "@/features/notes/note-meta"
 import type { CaretUser } from "@/features/sharing/caret-user"
@@ -56,8 +57,19 @@ export function Editor({
     if (noAccess) stopSyncing(session) // do not keep knocking on a door that is closed
   }, [noAccess, session])
 
+  // The shared doc holds content this version's schema cannot show (a newer Jot added a block type).
+  // Without enableContentCheck, y-tiptap deletes that content from the shared doc for everyone.
+  const [outdated, setOutdated] = React.useState(false)
+
   const editor = useEditor({
     editable: !readOnly,
+    enableContentCheck: true,
+    onContentError: ({ disableCollaboration }) => {
+      // Stop before anything is written back: no sync, no local edits, until the app is reloaded.
+      stopSyncing(session)
+      disableCollaboration()
+      setOutdated(true)
+    },
     extensions: [
       StarterKit.configure({ undoRedo: false }),
       Collaboration.configure({ document: doc }),
@@ -67,8 +79,8 @@ export function Editor({
   })
 
   React.useEffect(() => {
-    editor?.setEditable(!readOnly)
-  }, [editor, readOnly])
+    editor?.setEditable(!readOnly && !outdated)
+  }, [editor, readOnly, outdated])
 
   React.useEffect(() => {
     if (!editor || !onMetaChange) return
@@ -105,12 +117,21 @@ export function Editor({
 
   return (
     <>
-      {readOnly && (
-        <p className="mb-2 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground">
-          View only: you can read this note but not change it.
-        </p>
+      {outdated ? (
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground">
+          <span>This note uses a newer version of Jot. Reload to update.</span>
+          <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
+            Reload
+          </Button>
+        </div>
+      ) : (
+        readOnly && (
+          <p className="mb-2 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground">
+            View only: you can read this note but not change it.
+          </p>
+        )
       )}
-      <Toolbar editor={editor} disabled={readOnly} />
+      <Toolbar editor={editor} disabled={readOnly || outdated} />
       <EditorContent editor={editor} />
     </>
   )
