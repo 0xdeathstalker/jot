@@ -6,6 +6,7 @@ import {
   Heading02Icon,
   Heading03Icon,
   HeadingIcon,
+  Image01Icon,
   LeftToRightListBulletIcon,
   LeftToRightListNumberIcon,
   QuoteDownIcon,
@@ -29,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Toggle, toggleVariants } from "@/components/ui/toggle"
+import { imageFiles } from "@/editor/images"
 import { LinkBox } from "@/editor/link-box"
 import type { Notice } from "@/editor/notice"
 import { formatShortcut as shortcut } from "@/lib/platform"
@@ -135,16 +137,18 @@ const lists: Item[] = [
 
 const flags = (editor: Editor, items: Item[]) => items.map((item) => item.isActive(editor))
 
-// Raycast Notes layout: H ▾ | I ▾ | link | <> | quote, code block | lists ▾.
+// Raycast Notes layout: H ▾ | I ▾ | link | image | <> | quote, code block | lists ▾.
 // No undo/redo buttons: Collaboration owns undo/redo (keyboard shortcuts still work).
 export function Toolbar({
   editor,
   disabled = false,
   notify,
+  onPickImages,
 }: {
   editor: Editor
   disabled?: boolean
   notify: (notice: Notice) => void
+  onPickImages: (files: File[]) => void
 }) {
   // Tiptap v3 does not re-render React on every transaction: subscribe to the active flags.
   const active = useEditorState({
@@ -154,6 +158,7 @@ export function Toolbar({
       textStyles: flags(editor, textStyles),
       inlineCode: inlineCode.isActive(editor),
       inLink: editor.isActive("link"),
+      onImage: editor.isActive("image"),
       blocks: flags(editor, blocks),
       lists: flags(editor, lists),
     }),
@@ -185,6 +190,7 @@ export function Toolbar({
           disabled={disabled}
         />
         <LinkBox editor={editor} inLink={active.inLink} disabled={disabled} notify={notify} />
+        <ImageButton pressed={active.onImage} disabled={disabled} onPick={onPickImages} />
         <Button item={inlineCode} pressed={active.inlineCode} editor={editor} disabled={disabled} />
       </Group>
       <Group>
@@ -210,6 +216,45 @@ export function Toolbar({
         />
       </Group>
     </div>
+  )
+}
+
+// Opens the file picker (photo library / camera on phones). Pressed when an image is selected.
+function ImageButton({
+  pressed,
+  disabled,
+  onPick,
+}: {
+  pressed: boolean
+  disabled: boolean
+  onPick: (files: File[]) => void
+}) {
+  const inputRef = React.useRef<HTMLInputElement>(null)
+  return (
+    <>
+      <Toggle
+        size="sm"
+        aria-label="Image"
+        title="Image"
+        pressed={pressed}
+        disabled={disabled}
+        onPressedChange={() => inputRef.current?.click()}
+      >
+        <HugeiconsIcon icon={Image01Icon} />
+      </Toggle>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(event) => {
+          const files = imageFiles(event.target.files)
+          event.target.value = "" // picking the same file again must fire onChange
+          if (files.length) onPick(files)
+        }}
+      />
+    </>
   )
 }
 

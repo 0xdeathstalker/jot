@@ -6,6 +6,15 @@ import StarterKit from "@tiptap/starter-kit"
 import * as React from "react"
 
 import { Button } from "@/components/ui/button"
+import {
+  NOTE_FULL,
+  NoteImage,
+  dropOversizedImages,
+  fitsInNote,
+  imageFiles,
+  insertImageFiles,
+  sliceImageBytes,
+} from "@/editor/images"
 import { type Notice, NoticeToast } from "@/editor/notice"
 import { TaskItem } from "@/editor/task-item"
 import { Toolbar } from "@/editor/toolbar"
@@ -78,6 +87,35 @@ export function Editor({
         window.open(link.href, "_blank", "noopener,noreferrer")
         return true
       },
+      // Images are stored inside the note (docs/plans/editor-blocks.md, step E). Files are shrunk
+      // first; HTML that already holds images is trimmed to the limits.
+      transformPasted: (slice) => dropOversizedImages(slice, setNotice),
+      handlePaste: (view, event, slice) => {
+        const files = imageFiles(event.clipboardData?.files)
+        if (files.length) {
+          // "Copy image" in a browser also puts an <img> address on the clipboard: the file wins,
+          // so the image never depends on another site.
+          event.preventDefault()
+          void insertImageFiles(view, doc, files, setNotice)
+          return true
+        }
+        if (fitsInNote(doc, sliceImageBytes(slice))) return false
+        setNotice(NOTE_FULL)
+        return true
+      },
+      handleDrop: (view, event, slice, moved) => {
+        if (moved) return false // dragging within the note
+        const files = imageFiles(event.dataTransfer?.files)
+        if (files.length) {
+          event.preventDefault()
+          const at = view.posAtCoords({ left: event.clientX, top: event.clientY })
+          void insertImageFiles(view, doc, files, setNotice, at?.pos)
+          return true
+        }
+        if (fitsInNote(doc, sliceImageBytes(slice))) return false
+        setNotice(NOTE_FULL)
+        return true
+      },
     },
     onContentError: ({ disableCollaboration }) => {
       // Stop before anything is written back: no sync, no local edits, until the app is reloaded.
@@ -95,6 +133,7 @@ export function Editor({
       }),
       TaskList,
       TaskItem.configure({ nested: true }),
+      NoteImage,
       Collaboration.configure({ document: doc }),
       // Cursors live in Yjs awareness (in memory, never saved): they vanish when a socket closes.
       CollaborationCaret.configure({ provider: session.provider, user: caret }),
@@ -154,7 +193,12 @@ export function Editor({
           </p>
         )
       )}
-      <Toolbar editor={editor} disabled={readOnly || outdated} notify={setNotice} />
+      <Toolbar
+        editor={editor}
+        disabled={readOnly || outdated}
+        notify={setNotice}
+        onPickImages={(files) => void insertImageFiles(editor.view, doc, files, setNotice)}
+      />
       <EditorContent editor={editor} />
       <NoticeToast notice={notice} onClose={clearNotice} />
     </>
