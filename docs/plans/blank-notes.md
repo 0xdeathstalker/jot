@@ -1,6 +1,6 @@
 # Plan: No piles of blank "Untitled" notes
 
-Status: approved (drafts approach), not started
+Status: in progress (A2 done; A1 done in the working tree)
 Source: GitHub issue [#2](https://github.com/0xdeathstalker/jot/issues/2), `docs/project-context.md` §7 (index doc), `docs/plans/phase-3-notes-list.md` (index model).
 
 Goal: pressing **New note** never adds an empty note to the list. A new note is a **draft** that joins the list only when it gets its first real content.
@@ -31,8 +31,8 @@ Goal: pressing **New note** never adds an empty note to the list. A new note is 
 
 ### A. Revert the flag approach
 
-- [ ] **A1.** Restore `src/sync/index-doc.ts` and `docs/project-context.md` §7 to before commit `61cae47` (no `blank` / `leftBlank`, no `markEdited` / `removeIfBlank` / `findBlank`). **Done in the working tree** (staged), not yet committed.
-- [ ] **A2.** `createNote(doc, id = crypto.randomUUID())`: accepts the draft's id. Nothing else changes in the index.
+- [x] **A1.** Restore `src/sync/index-doc.ts` and `docs/project-context.md` §7 to before commit `61cae47` (no `blank` / `leftBlank`, no `markEdited` / `removeIfBlank` / `findBlank`). **Done in the working tree** (staged), not yet committed.
+- [x] **A2.** `createNote(doc, id = crypto.randomUUID())`: accepts the draft's id. Nothing else changes in the index. **Done:** also never overwrites an existing entry (returns the id, writes nothing), so a wrong call cannot drop a pin or sharing mark. Checked headlessly: new uuid, given id, existing id untouched.
 
 ### B. Editor
 
