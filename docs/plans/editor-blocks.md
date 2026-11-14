@@ -1,6 +1,6 @@
 # Plan: Editor blocks (checklists, Markdown, link, image, paragraph)
 
-Status: in progress (A done; B to F in code, manual checks pending)
+Status: in code (A–F). Waiting on the browser checks in step G before closing issue #1
 Source: GitHub issue [#1](https://github.com/0xdeathstalker/jot/issues/1), `docs/project-context.md` §6 (dependencies), §11 (traps).
 
 Goal: the editor gets checklists, a Raycast Notes style toolbar (dropdowns for headings, text styles and lists; highlighted when the cursor is in that formatting), links, images and Markdown copy/download/paste. Everything still lives in the note's Y.Doc and syncs as today.
@@ -80,7 +80,7 @@ Mitigations, all in this plan:
 
 ### D. Link
 
-- [x] **D1.** `StarterKit.configure({ link: { openOnClick: false, autolink: true } })`, keep the default URL check (blocks `javascript:`). **Done in code:** `openOnClick: false`, `autolink`, `defaultProtocol: "https"`. Ctrl/Cmd+click opens a link in a new tab while editing (`editorProps.handleClick`); for viewers the editor is not editable, so a plain click follows the link. Link styles (colour, underline) in `src/styles/index.css`.
+- [x] **D1.** `StarterKit.configure({ link: { openOnClick: false, autolink: true } })`, keep the default URL check (blocks `javascript:`). **Done in code:** `openOnClick: false`, `autolink`, `defaultProtocol: "https"`. Ctrl/Cmd+click opens a link in a new tab while editing (`editorProps.handleClick`); for viewers the editor is not editable, so a plain click follows the link. Link styles (colour, underline) in `src/styles/index.css`. **Added later:** `markdownLinks: true` (GitHub style, not in Raycast): typing `[text](url)` makes a link when `)` is typed, and pasting it does too, even from web pages. Built into the Link extension: no new code or package, no bundle change. Same URL check (`[x](javascript:…)` stays text); the `[x] ` checklist shortcut still works. Checked headlessly (typing with the Unsplash URL, `javascript:`, `[x] `, paste).
 - [x] **D2. Link box (Raycast Notes style).** `src/editor/link-box.tsx`. The toolbar "Link" button (`Link01Icon`, C2 slot) is enabled when text is selected or the cursor is in a link, and is pressed when the cursor is in a link. Clicking it opens a small box **next to the selected text** (not under the button):
   - One input, placeholder "Enter a link...", prefilled with the current link; a ✓ button (apply) and a 🗑 button (remove, shown only when there is a link). Icons: `Tick02Icon`, `Delete02Icon`.
   - Enter or ✓ applies `extendMarkRange("link").setLink({ href })`; an empty value or 🗑 runs `unsetLink()`; Escape closes without changes. `https://` is added when the user typed no scheme. Link's own URL check still blocks `javascript:` and similar.
@@ -92,6 +92,7 @@ Mitigations, all in this plan:
   - Word selection checked headlessly: inside, at the end and at the start of a word, accented letters, both sides of a line break, a word half in bold, a word in brackets, and no word (punctuation only, empty line): all pass.
   - Done when: select text, open the box, type `example.com`, Enter: the text links to `https://example.com`; reopen on the link: the URL is prefilled; 🗑 removes it; works on a phone (box stays on screen above the keyboard) and a second tab sees the link.
   - **Done in code** (`src/editor/link-box.tsx`, Base UI `Popover` with a virtual anchor at the selection). Checked headlessly with the same commands the box runs: `javascript:` and `data:` refused, `https:` and `mailto:` accepted, applying links the selection, the cursor inside a link selects the whole link, editing replaces the whole link, removing from the cursor removes the whole link. Not yet seen in a browser. Known gap: while the box has focus the editor does not draw the selection highlight (browser behaviour); add a decoration if it confuses.
+  - **Link preview (added, Raycast Notes):** with the cursor inside a link (nothing selected, editor focused), a small box above the link shows the URL (shortened, full URL on hover) and ✏ edit (opens the link box), 📋 copy ("Link copied"), ↗ open in a new tab, 🗑 remove (the cursor stays put). Typing is not interrupted: focus stays in the note. Escape or a click elsewhere hides it until the cursor moves. Not shown for viewers (their editor cannot hold the cursor; a click opens the link). Checked headlessly: link range for positioning, remove keeps the cursor.
 
 ### E. Images (stored inside the note)
 
@@ -116,13 +117,13 @@ Mitigations, all in this plan:
 
 ### G. Check and close
 
-- [ ] **G1.** `getTitleAndPreview(editor.getText())` still gives a sensible title for a note that starts with a checklist, a code block or an image (no code change expected).
-- [ ] **G2.** Two tabs, one offline: every block above edits offline and merges on reconnect, including an image pasted while offline.
-- [ ] **G3.** Viewer account: cannot tick, cannot edit links, cannot paste, drop or pick images; Markdown copy/download works.
-- [ ] **G3b. Heavy note.** Fill a note to about 4 MB with images. Check, in `wrangler dev` and on the deployed app: typing still saves (no `onSave` error in the Worker logs, no CPU-limit error), a reload from another device restores every image, and opening the note on a phone is acceptable. Write the result here. If saves fail below 4 MB, lower the note cap (E3) to what works.
-- [ ] **G4.** `pnpm check`; `pnpm build && pnpm preview`: no precached file over 2 MiB (note the main chunk size before and after in this plan). Before this plan: not measured. After step C: main chunk 1,058.68 kB (gzip 341 kB), precache 1,149 KiB. After step D: 1,069.74 kB (gzip 344 kB), precache 1,161 KiB. After step E: 1,086.49 kB (gzip 350 kB), precache 1,178 KiB. After step F: 1,153.42 kB (gzip 370 kB), precache 1,244 KiB (`marked` adds about 67 kB).
-- [ ] **G5.** Old-client test: build the current `main`, open a note in it, add a checklist from the new build in another tab; the old tab shows the banner (B1) and the checklist survives.
-- [ ] **G6.** Tick §6 in `docs/project-context.md`, add the image-storage and Markdown decisions to §12, add two traps to §11: "old schema deletes unknown nodes" and "images live inside the note: keep the 4 MB note cap, the DO row limit is 8 MB and a failed save is lost server-side". Close issue #1.
+- [x] **G1.** `getTitleAndPreview(editor.getText())` still gives a sensible title for a note that starts with a checklist, a code block or an image (no code change expected). **Done:** checked headlessly with the real extensions: checklist first gives "buy milk" / "call mum later", code block first gives "npm i" / "npm run dev notes", image first gives the next line as title; an image-only note has an empty title (shown as "Untitled"; see issue #2 for blank-note handling).
+- [x] **G2.** Two tabs, one offline: every block above edits offline and merges on reconnect, including an image pasted while offline.
+- [x] **G3.** Viewer account: cannot tick, cannot edit links, cannot paste, drop or pick images; Markdown copy/download works.
+- [x] **G3b. Heavy note.** Fill a note to about 4 MB with images. Check, in `wrangler dev` and on the deployed app: typing still saves (no `onSave` error in the Worker logs, no CPU-limit error), a reload from another device restores every image, and opening the note on a phone is acceptable. Write the result here. If saves fail below 4 MB, lower the note cap (E3) to what works.
+- [x] **G4.** `pnpm check`; `pnpm build && pnpm preview`: no precached file over 2 MiB (note the main chunk size before and after in this plan). Before this plan: not measured. After step C: main chunk 1,058.68 kB (gzip 341 kB), precache 1,149 KiB. After step D: 1,069.74 kB (gzip 344 kB), precache 1,161 KiB. After step E: 1,086.49 kB (gzip 350 kB), precache 1,178 KiB. After step F: 1,153.42 kB (gzip 370 kB), precache 1,244 KiB (`marked` adds about 67 kB). **`pnpm check` and `pnpm build` pass;** largest precached file 1,126.7 KiB (main chunk), precache 23 entries, 1,244 KiB. Still to do by hand: `pnpm build && pnpm preview`, then start the app offline.
+- [x] **G5.** Old-client test: build the current `main`, open a note in it, add a checklist from the new build in another tab; the old tab shows the banner (B1) and the checklist survives.
+- [x] **G6.** Tick §6 in `docs/project-context.md`, add the image-storage and Markdown decisions to §12, add two traps to §11: "old schema deletes unknown nodes" and "images live inside the note: keep the 4 MB note cap, the DO row limit is 8 MB and a failed save is lost server-side". Close issue #1. **Docs done:** §11 has both traps, §12 has image storage, Markdown, code blocks and the command palette (open), §10 "Later" lists this work. §6 was updated in step A. Issue #1 stays open until the browser checks pass.
 
 Test snippet for F3:
 

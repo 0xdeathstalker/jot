@@ -285,6 +285,7 @@ Rules:
 - [ ] Version history (our own Yjs snapshots)
 - [ ] Comments (a `Y.Map` inside the note doc)
 - [ ] Tauri wrapper for a global hotkey on Windows
+- [ ] Editor blocks ([issue #1](https://github.com/0xdeathstalker/jot/issues/1), `docs/plans/editor-blocks.md`): checklists, Raycast-style toolbar, link box, images inside the note, Markdown copy/download/paste. Built; browser checks pending
 
 ---
 
@@ -307,6 +308,8 @@ Rules:
 - ❌ Don't copy a role or user id from a client header: `guardRoom` always overwrites `x-jot-role` / `x-jot-user`.
 - ⚠️ A WebSocket keeps the role it was opened with: after any role change, close the person's connections (4401), don't just update the row.
 - ⚠️ Link tokens are passwords: never log them, and drop them from the address bar once used.
+- ❌ **An older app version deletes blocks it does not know.** `y-tiptap` removes shared content its schema cannot show, for everyone. Keep `enableContentCheck` on (it stops sync and shows "Reload to update" instead), ship new node types together, and never rename a node type or attribute that notes already use.
+- ⚠️ **Images live inside the note** (base64 in the Y.Doc). Keep the 4 MB note cap (`MAX_NOTE_BYTES`) and 300 KB per image: the server saves a note as one SQLite row (8 MB max), and a save that fails is lost on the server side.
 
 ### iOS / PWA traps
 
@@ -335,6 +338,10 @@ Rules:
 | Sharing by email                 | Decided: no | Link only (a join link, a share link). No email service, so nothing paid. Can be added later without changing the tables                                                                                                             |
 | Who can invite                   | Decided     | Only original users (`ALLOWED_EMAILS`) make join links, 3 people each. Only a note's owner makes share links and manages people                                                                                                      |
 | Share links                      | Decided     | Reusable until turned off, 7 days, one per note and role; they never create accounts. The owner deleting a shared note removes everyone's access                                                                                     |
+| Image storage                    | Decided     | Inside the note: shrunk on the device (1280 px, WebP or JPEG, max 300 KB), max 4 MB per note. Free, offline, no new service. Server uploads (R2) only if notes become image-heavy                                                    |
+| Markdown                         | Decided     | Both directions: copy / download a note as `.md`; paste Markdown (plain text, or a VS Code copy of a Markdown/MDX file) as formatted text. No `.md` file import                                                                      |
+| Code blocks                      | Decided     | Plain code block, no language picker or highlighting                                                                                                                                                                                 |
+| Command palette (⌘K / Ctrl+K)    | Not decided | Raycast-style action list (new note, pin, browse…). Keep ⌘K free for it; the link box uses Ctrl/⌘+L                                                                                                                                  |
 
 ---
 

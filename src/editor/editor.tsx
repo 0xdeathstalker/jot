@@ -130,8 +130,9 @@ export function Editor({
         undoRedo: false,
         // Clicking a link while editing places the cursor; Ctrl/Cmd+click opens it (handleClick
         // below). Viewers' editor is not editable, so a plain click follows the link natively.
-        // Ctrl/Cmd+L opens the link box (link-box.tsx).
-        link: { openOnClick: false, autolink: true, defaultProtocol: "https" },
+        // Ctrl/Cmd+L opens the link box (link-box.tsx). markdownLinks: typing or pasting
+        // `[text](url)` makes a link (GitHub style); unsafe URLs stay plain text.
+        link: { openOnClick: false, autolink: true, defaultProtocol: "https", markdownLinks: true },
       }),
       TaskList,
       TaskItem.configure({ nested: true }),
