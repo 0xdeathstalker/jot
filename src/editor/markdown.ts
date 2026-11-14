@@ -41,11 +41,33 @@ function trimImages(content: JSONContent[]): {
   return { content: walk(content), bytes, dropped }
 }
 
-// Pasting plain text that looks like Markdown inserts it as formatted text (headings, checklists,
-// links, code blocks…). Text with an HTML version (copied from a web page or another app) keeps the
-// normal paste, and so does anything pasted inside a code block.
+// VS Code puts the file's language on the clipboard ("vscode-editor-data": {"mode": "markdown"}).
+function vscodeLanguage(data: DataTransfer): string | undefined {
+  try {
+    const mode: unknown = JSON.parse(data.getData("vscode-editor-data") || "null")?.mode
+    return typeof mode === "string" ? mode : undefined
+  } catch {
+    return undefined
+  }
+}
+
+// YAML front matter (`---` lines around `key: value` at the very top, as in MDX docs) would parse
+// as a divider plus a heading: keep it as a yaml code block instead.
+const FRONT_MATTER = /^---\n([\s\S]*?)\n---[ \t]*(\n|$)/
+
+export const prepareMarkdown = (text: string) =>
+  text.replace(/\r\n?/g, "\n").replace(FRONT_MATTER, "```yaml\n$1\n```\n")
+
+// Pasting Markdown inserts it as formatted text (headings, checklists, links, code blocks…):
+// - plain text that looks like Markdown;
+// - a copy from a Markdown or MDX file in VS Code. VS Code also puts HTML on the clipboard, and
+//   Tiptap's code block turns any VS Code copy into one code block: this runs first (priority) and
+//   leaves copies from other languages to it.
+// Other text with an HTML version (web pages, apps) keeps the normal paste, and so does anything
+// pasted inside a code block.
 export const MarkdownPaste = Extension.create<{ doc: Doc | null; notify: Notify }>({
   name: "markdownPaste",
+  priority: 1000, // before StarterKit's code block paste handler (default priority 100)
 
   addOptions() {
     return { doc: null, notify: () => {} }
@@ -59,12 +81,17 @@ export const MarkdownPaste = Extension.create<{ doc: Doc | null; notify: Notify 
         props: {
           handlePaste: (view, event) => {
             const data = event.clipboardData
-            const text = data?.getData("text/plain") ?? ""
-            if (!text || data?.types.includes("text/html")) return false
-            if (view.state.selection.$from.parent.type.spec.code) return false
-            if (!looksLikeMarkdown(text) || !editor.markdown) return false
+            if (!data || !editor.markdown) return false
+            const text = data.getData("text/plain")
+            if (!text || view.state.selection.$from.parent.type.spec.code) return false
+            const language = vscodeLanguage(data)
+            const fromMarkdownFile = language === "markdown" || language === "mdx"
+            if (!fromMarkdownFile) {
+              if (language || data.types.includes("text/html")) return false
+              if (!looksLikeMarkdown(text)) return false
+            }
 
-            const parsed = editor.markdown.parse(text)
+            const parsed = editor.markdown.parse(prepareMarkdown(text))
             const { content, bytes, dropped } = trimImages(parsed.content ?? [])
             if (doc && !fitsInNote(doc, bytes)) {
               notify(NOTE_FULL)
