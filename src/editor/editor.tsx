@@ -1,6 +1,7 @@
 import Collaboration, { isChangeOrigin } from "@tiptap/extension-collaboration"
 import CollaborationCaret from "@tiptap/extension-collaboration-caret"
 import { TaskList } from "@tiptap/extension-list"
+import { Markdown } from "@tiptap/markdown"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import * as React from "react"
@@ -15,6 +16,7 @@ import {
   insertImageFiles,
   sliceImageBytes,
 } from "@/editor/images"
+import { MarkdownPaste } from "@/editor/markdown"
 import { type Notice, NoticeToast } from "@/editor/notice"
 import { TaskItem } from "@/editor/task-item"
 import { Toolbar } from "@/editor/toolbar"
@@ -134,6 +136,9 @@ export function Editor({
       TaskList,
       TaskItem.configure({ nested: true }),
       NoteImage,
+      // Copy / download as Markdown, and paste plain-text Markdown as formatted text.
+      Markdown,
+      MarkdownPaste.configure({ doc, notify: setNotice }),
       Collaboration.configure({ document: doc }),
       // Cursors live in Yjs awareness (in memory, never saved): they vanish when a socket closes.
       CollaborationCaret.configure({ provider: session.provider, user: caret }),

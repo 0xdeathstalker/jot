@@ -4,14 +4,12 @@ import { TextSelection } from "@tiptap/pm/state"
 import type { EditorView } from "@tiptap/pm/view"
 import { type Doc, encodeStateAsUpdate } from "yjs"
 
-import type { Notice } from "@/editor/notice"
+import type { Notice, Notify } from "@/editor/notice"
 import { ImageError, MAX_IMAGE_BYTES, shrinkImage } from "@/editor/shrink-image"
 
 // The server keeps a note in one SQLite row (max 8 MB, docs/project-context.md §11). Images live
 // inside the note, so stop adding them well before that.
 export const MAX_NOTE_BYTES = 4 * 1024 * 1024
-
-type Notify = (notice: Notice | null) => void
 
 const SAFE_SRC = /^(data:image\/(png|jpeg|webp|gif);base64,|https:\/\/)/i
 
@@ -42,6 +40,16 @@ export const NoteImage = Image.extend({
         getAttrs: (el) => (isSafeImageSrc(el.getAttribute("src")) ? null : false),
       },
     ]
+  },
+  // Pasted Markdown (`![alt](src)`) does not go through parseHTML: same rule here.
+  parseMarkdown: (token, helpers) =>
+    isSafeImageSrc(token.href)
+      ? helpers.createNode("image", { src: token.href, title: token.title, alt: token.text })
+      : [],
+  renderMarkdown: (node) => {
+    const { src, alt, title } = node.attrs ?? {}
+    if (!isSafeImageSrc(src)) return ""
+    return title ? `![${alt ?? ""}](${src} "${title}")` : `![${alt ?? ""}](${src})`
   },
 }).configure({ inline: false, allowBase64: true })
 

@@ -4,6 +4,9 @@ import * as React from "react"
 
 export type Notice = { title: string; description?: string }
 
+// Shows a notice; null clears it.
+export type Notify = (notice: Notice | null) => void
+
 const SHOW_MS = 4000
 
 // A short message at the bottom of the screen (Raycast style): "Select text to add a link", and later

@@ -7,7 +7,7 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Toggle } from "@/components/ui/toggle"
-import type { Notice } from "@/editor/notice"
+import type { Notify } from "@/editor/notice"
 import { selectWordAtCursor } from "@/editor/select-word"
 import { formatShortcut, isApple } from "@/lib/platform"
 
@@ -45,7 +45,7 @@ export function LinkBox({
   editor: Editor
   inLink: boolean
   disabled: boolean
-  notify: (notice: Notice) => void
+  notify: Notify
 }) {
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState("")
