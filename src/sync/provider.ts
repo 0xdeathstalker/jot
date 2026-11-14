@@ -1,5 +1,5 @@
 // The ONLY module that imports y-partyserver (docs/project-context.md §13 rule 5).
-import { useEffect, useState } from "react"
+import * as React from "react"
 import { IndexeddbPersistence } from "y-indexeddb"
 import YProvider from "y-partyserver/provider"
 import { Doc } from "yjs"
@@ -24,10 +24,10 @@ function createSession({ party, room }: RoomOptions): RoomSession {
 // One session per mount: key the calling component by room.
 // Typing never waits on the network.
 function useRoomSession(options: RoomOptions): RoomSession {
-  const [session] = useState(() => createSession(options))
+  const [session] = React.useState(() => createSession(options))
   const { idbName } = options
 
-  useEffect(() => {
+  React.useEffect(() => {
     const { doc, provider } = session
     // Created here (not in createSession) so Strict Mode's cleanup + remount gets a live one.
     const persistence = new IndexeddbPersistence(idbName, doc)
@@ -60,7 +60,7 @@ function useRoomSession(options: RoomOptions): RoomSession {
 // Calls `onClosed(code)` each time this room's socket closes: the server closes with 4403 when
 // someone is removed from a note; a refused reconnect shows up as 1006 (browsers hide the HTTP status).
 export function useConnectionClosed(session: RoomSession, onClosed: (code: number) => void) {
-  useEffect(() => {
+  React.useEffect(() => {
     const { provider } = session
     const handler = (event: CloseEvent) => onClosed(event.code)
     provider.on("connection-close", handler)
@@ -88,7 +88,7 @@ export function useIndexSession(userId: string): RoomSession {
     idbName: `jot-index-${userId}`,
   })
 
-  useEffect(() => {
+  React.useEffect(() => {
     void carryOverLegacyIndex(session.doc)
   }, [session.doc])
 

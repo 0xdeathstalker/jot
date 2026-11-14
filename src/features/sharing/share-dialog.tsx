@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -33,17 +33,17 @@ const daysLeft = (expiresAt: number) =>
 // The owner's Share button and dialog: make or turn off a link for each role, see who has access,
 // remove people. Everything needs the server, so offline it only says so.
 export function ShareDialog({ noteId, onLinkMade }: { noteId: string; onLinkMade: () => void }) {
-  const [open, setOpen] = useState(false)
-  const [info, setInfo] = useState<ShareInfo | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [role, setRole] = useState<LinkRole>("viewer")
-  const [busy, setBusy] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [open, setOpen] = React.useState(false)
+  const [info, setInfo] = React.useState<ShareInfo | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
+  const [role, setRole] = React.useState<LinkRole>("viewer")
+  const [busy, setBusy] = React.useState(false)
+  const [copied, setCopied] = React.useState(false)
 
   // Bumped after every change so the details are read again from the server.
-  const [version, setVersion] = useState(0)
+  const [version, setVersion] = React.useState(0)
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!open) return
     let cancelled = false
     void getShareInfo(noteId).then((result) => {

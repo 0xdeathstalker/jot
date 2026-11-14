@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import { acceptJoinLink } from "@/features/sharing/api"
@@ -14,9 +14,9 @@ const MESSAGES: Record<string, string> = {
 // Signed-in person on /join/<token>. Normally the sign-up already used the link (the Worker's
 // sign-up hook), so this just confirms and goes home.
 export function JoinPage({ token }: { token: string }) {
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
 
-  useEffect(() => {
+  React.useEffect(() => {
     let cancelled = false
     void acceptJoinLink(token).then((result) => {
       if (cancelled) return

@@ -1,6 +1,6 @@
 import { Cancel01Icon, Share01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useState } from "react"
+import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import { isIosBrowser } from "@/lib/platform"
@@ -18,7 +18,7 @@ function shouldShow(): boolean {
 }
 
 export function InstallHint() {
-  const [visible, setVisible] = useState(shouldShow)
+  const [visible, setVisible] = React.useState(shouldShow)
   if (!visible) return null
 
   const dismiss = () => {

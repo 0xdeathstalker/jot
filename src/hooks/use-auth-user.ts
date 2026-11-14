@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import * as React from "react"
 
 import { authClient } from "@/auth/client"
 import { requestWipe } from "@/sync/local-data"
@@ -36,7 +36,7 @@ export function useAuthUser(): AuthState {
   const { data, isPending, error } = authClient.useSession()
   const sessionUser = data?.user
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isPending) return
     if (sessionUser) {
       const { id, name, email, image } = sessionUser

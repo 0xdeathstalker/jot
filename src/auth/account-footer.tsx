@@ -1,4 +1,4 @@
-import { useState } from "react"
+import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import { InviteFriend } from "@/features/sharing/invite-friend"
@@ -6,7 +6,7 @@ import { type AuthUser, signOut } from "@/hooks/use-auth-user"
 import { syncAllLocalData } from "@/sync/provider"
 
 export function AccountFooter({ user }: { user: AuthUser }) {
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = React.useState(false)
 
   // Push everything to the server first. Only if something could not be synced do we ask before
   // throwing it away.

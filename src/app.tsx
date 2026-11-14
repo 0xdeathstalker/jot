@@ -1,6 +1,6 @@
 import { Add01Icon, Menu01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useCallback, useEffect, useState } from "react"
+import * as React from "react"
 
 import { AccountFooter } from "@/auth/account-footer"
 import { LoginScreen } from "@/auth/login-screen"
@@ -43,16 +43,16 @@ function NotesApp({
 }) {
   const { doc } = useIndexSession(user.id)
   const notes = useNotes(doc)
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = React.useState("")
   const visibleNotes = useNoteSearch(notes, query)
   const { noteId, openNote } = useNoteId()
   // Only the owner can share (a note with a `role` belongs to someone else).
   const currentNote = notes.find((note) => note.id === noteId)
   const ownedNote = currentNote && !currentNote.role ? currentNote : undefined
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = React.useState(false)
 
   // Signed in: ask the browser to keep this device's notes (see local-data.ts).
-  useEffect(requestDurableStorage, [])
+  React.useEffect(requestDurableStorage, [])
 
   // Owners can change our role on shared notes, or remove us, while we are away: read the current
   // state from the server. Runs again when the set of notes shared with us changes, which also
@@ -61,20 +61,20 @@ function NotesApp({
     .filter((note) => note.role)
     .map((note) => note.id)
     .join(",")
-  useEffect(() => {
+  React.useEffect(() => {
     void refreshRoles(doc)
   }, [doc, sharedKey])
 
   // No ?note= in the URL: open the newest note once the list is known.
   // (Not while a share link is being opened: that page replaces the URL with the shared note.)
   const newestId = notes[0]?.id
-  useEffect(() => {
+  React.useEffect(() => {
     if (!noteId && newestId && !shareToken) openNote(newestId, { replace: true })
   }, [noteId, newestId, shareToken, openNote])
 
   // The link page is finished: show the note, and stop treating this visit as a link visit (the
   // address bar already changed, but this page was opened with the token, so forget it here too).
-  const openSharedNote = useCallback(
+  const openSharedNote = React.useCallback(
     (id: string) => {
       openNote(id, { replace: true })
       onShareDone()
@@ -88,7 +88,7 @@ function NotesApp({
   }
 
   // Stable per (doc, noteId): the editor re-subscribes when this changes.
-  const handleMeta = useCallback(
+  const handleMeta = React.useCallback(
     (meta: { title: string; preview: string }) => {
       if (noteId) updateMeta(doc, noteId, meta)
     },
@@ -223,8 +223,8 @@ function NotesApp({
 function App() {
   const auth = useAuthUser()
   // /join/<token> or /share/<token>, read once: it is the address the page was opened at.
-  const [invite, setInvite] = useState<InviteLink | null>(readInviteLink)
-  const clearInvite = useCallback(() => setInvite(null), [])
+  const [invite, setInvite] = React.useState<InviteLink | null>(readInviteLink)
+  const clearInvite = React.useCallback(() => setInvite(null), [])
   if (auth.status === "loading") return null
   if (auth.status === "signedOut") return <LoginScreen invite={invite} />
   if (invite?.kind === "join") return <JoinPage token={invite.token} />

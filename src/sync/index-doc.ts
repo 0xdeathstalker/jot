@@ -1,7 +1,7 @@
 // The per-user note list: one Y.Map "notes" in the index Y.Doc, one nested Y.Map per note.
 // Nested maps (not plain objects) so concurrent edits to different fields both survive.
 // Never remove a key: soft delete only, or an offline device resurrects the note.
-import { useMemo, useSyncExternalStore } from "react"
+import * as React from "react"
 import { type Doc, Map as YMap } from "yjs"
 
 export type NoteMeta = {
@@ -132,7 +132,7 @@ function readNotes(notes: NotesMap): Note[] {
   return list.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
 }
 
-// useSyncExternalStore needs a stable snapshot: rebuild the array only when the Y.Map changes,
+// React.useSyncExternalStore needs a stable snapshot: rebuild the array only when the Y.Map changes,
 // never inside getSnapshot (a new array per call re-renders forever).
 function createStore(doc: Doc) {
   const notes = getNotes(doc)
@@ -152,6 +152,6 @@ function createStore(doc: Doc) {
 }
 
 export function useNotes(doc: Doc): Note[] {
-  const store = useMemo(() => createStore(doc), [doc])
-  return useSyncExternalStore(store.subscribe, store.getSnapshot)
+  const store = React.useMemo(() => createStore(doc), [doc])
+  return React.useSyncExternalStore(store.subscribe, store.getSnapshot)
 }

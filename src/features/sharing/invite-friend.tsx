@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,12 +7,12 @@ import { getJoinInfo, type JoinInfo, makeJoinLink, turnOffJoinLink } from "@/fea
 // "Invite a friend to Jot" in the account area. Shown only to original users: invited users get a
 // 403 from the server and see nothing. Also hidden offline, because it needs the server.
 export function InviteFriend() {
-  const [info, setInfo] = useState<JoinInfo | null>(null)
-  const [open, setOpen] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const [info, setInfo] = React.useState<JoinInfo | null>(null)
+  const [open, setOpen] = React.useState(false)
+  const [copied, setCopied] = React.useState(false)
+  const [busy, setBusy] = React.useState(false)
 
-  useEffect(() => {
+  React.useEffect(() => {
     let cancelled = false
     void getJoinInfo().then((result) => {
       if (!cancelled && result.ok) setInfo(result.data)

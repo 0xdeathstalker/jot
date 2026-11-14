@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react"
+import * as React from "react"
 
 import { sharedWithMe } from "@/features/sharing/api"
 import { type RoomSession, stopSyncing, useConnectionClosed } from "@/sync/provider"
@@ -15,15 +15,15 @@ export function useAccessLost(
   shared: boolean,
   onRoleChanged?: () => void,
 ) {
-  const [lost, setLost] = useState(false)
-  const checking = useRef(false)
+  const [lost, setLost] = React.useState(false)
+  const checking = React.useRef(false)
 
-  const markLost = useCallback(() => {
+  const markLost = React.useCallback(() => {
     stopSyncing(session) // otherwise the provider retries (and is refused) forever
     setLost(true)
   }, [session])
 
-  const onClosed = useCallback(
+  const onClosed = React.useCallback(
     (code: number) => {
       if (!shared) return
       if (code === 4403) return markLost()

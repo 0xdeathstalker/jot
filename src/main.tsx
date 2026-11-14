@@ -1,4 +1,4 @@
-import { StrictMode } from "react"
+import * as React from "react"
 import { createRoot } from "react-dom/client"
 import { registerSW } from "virtual:pwa-register"
 
@@ -25,8 +25,8 @@ registerSW({
 // After a sign-out the device's notes are deleted here, before anything opens them.
 void wipeIfPending().then(() => {
   createRoot(document.getElementById("root")!).render(
-    <StrictMode>
+    <React.StrictMode>
       <App />
-    </StrictMode>,
+    </React.StrictMode>,
   )
 })

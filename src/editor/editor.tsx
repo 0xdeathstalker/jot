@@ -2,7 +2,7 @@ import Collaboration, { isChangeOrigin } from "@tiptap/extension-collaboration"
 import CollaborationCaret from "@tiptap/extension-collaboration-caret"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
-import { useEffect } from "react"
+import * as React from "react"
 
 import { Toolbar } from "@/editor/toolbar"
 import { getTitleAndPreview } from "@/features/notes/note-meta"
@@ -52,7 +52,7 @@ export function Editor({
   const { doc } = session
   const readOnly = role === "viewer"
   const lost = useAccessLost(session, noteId, role !== undefined, onRoleChanged) || !!noAccess
-  useEffect(() => {
+  React.useEffect(() => {
     if (noAccess) stopSyncing(session) // do not keep knocking on a door that is closed
   }, [noAccess, session])
 
@@ -66,11 +66,11 @@ export function Editor({
     ],
   })
 
-  useEffect(() => {
+  React.useEffect(() => {
     editor?.setEditable(!readOnly)
   }, [editor, readOnly])
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!editor || !onMetaChange) return
     let timer: ReturnType<typeof setTimeout> | undefined
 

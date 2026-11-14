@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import * as React from "react"
 import type { Doc } from "yjs"
 
 import { Button } from "@/components/ui/button"
@@ -23,9 +23,9 @@ export function ShareLinkPage({
   doc: Doc
   onOpen: (noteId: string) => void
 }) {
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
 
-  useEffect(() => {
+  React.useEffect(() => {
     let cancelled = false
     void acceptShareLink(token).then((result) => {
       if (cancelled) return
