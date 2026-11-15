@@ -144,20 +144,21 @@ jot/
 
 ## 6. Dependencies (add them only when their phase starts)
 
-| Package                                                                                                | Phase | Purpose                                                                           |
-| ------------------------------------------------------------------------------------------------------ | ----- | --------------------------------------------------------------------------------- |
-| `tailwindcss`, `@tailwindcss/vite`, shadcn/ui deps (`class-variance-authority`, `tw-animate-css`, ...) | 0     | Styling + UI kit. Installed by `shadcn init`.                                     |
-| `oxlint`, `oxfmt`, `husky`, `lint-staged`                                                              | 0     | Lint, format, pre-commit                                                          |
-| `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`                                                   | 1     | Editor                                                                            |
-| `@tiptap/extension-collaboration`                                                                      | 1     | Binds the editor to Yjs. Install any peer dependency pnpm asks for.               |
-| `yjs`                                                                                                  | 1     | CRDT                                                                              |
-| `partyserver`, `y-partyserver`                                                                         | 1     | Durable Object server + client `YProvider`                                        |
-| `y-indexeddb`                                                                                          | 2     | Local persistence / offline                                                       |
-| `minisearch`                                                                                           | 3     | Local search                                                                      |
-| `better-auth`                                                                                          | 4     | Google login + sessions, with D1 as its database. Needs the `nodejs_compat` flag. |
-| `vite-plugin-pwa`                                                                                      | 5     | Manifest + service worker. **Not earlier**, since caching confuses dev.           |
-| `@vite-pwa/assets-generator` (dev)                                                                     | 5     | `pnpm pwa:icons`: makes every icon size from `public/icon-source.svg`.            |
-| `@tiptap/extension-collaboration-caret`                                                                | 6     | Other people's cursors                                                            |
+| Package                                                                                                | Phase         | Purpose                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------------ | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tailwindcss`, `@tailwindcss/vite`, shadcn/ui deps (`class-variance-authority`, `tw-animate-css`, ...) | 0             | Styling + UI kit. Installed by `shadcn init`.                                                                                                                                           |
+| `oxlint`, `oxfmt`, `husky`, `lint-staged`                                                              | 0             | Lint, format, pre-commit                                                                                                                                                                |
+| `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`                                                   | 1             | Editor                                                                                                                                                                                  |
+| `@tiptap/extension-collaboration`                                                                      | 1             | Binds the editor to Yjs. Install any peer dependency pnpm asks for.                                                                                                                     |
+| `yjs`                                                                                                  | 1             | CRDT                                                                                                                                                                                    |
+| `partyserver`, `y-partyserver`                                                                         | 1             | Durable Object server + client `YProvider`                                                                                                                                              |
+| `y-indexeddb`                                                                                          | 2             | Local persistence / offline                                                                                                                                                             |
+| `minisearch`                                                                                           | 3             | Local search                                                                                                                                                                            |
+| `better-auth`                                                                                          | 4             | Google login + sessions, with D1 as its database. Needs the `nodejs_compat` flag.                                                                                                       |
+| `vite-plugin-pwa`                                                                                      | 5             | Manifest + service worker. **Not earlier**, since caching confuses dev.                                                                                                                 |
+| `@vite-pwa/assets-generator` (dev)                                                                     | 5             | `pnpm pwa:icons`: makes every icon size from `public/icon-source.svg`.                                                                                                                  |
+| `@tiptap/extension-collaboration-caret`                                                                | 6             | Other people's cursors                                                                                                                                                                  |
+| `@tiptap/extension-list`, `@tiptap/extension-image`, `@tiptap/markdown`                                | editor blocks | Checklists, images inside the note, Markdown copy/download/paste (`docs/plans/editor-blocks.md`). Keep every `@tiptap/*` package on the same version: they peer on exact `@tiptap/core` |
 
 Don't add: `nanoid` (use `crypto.randomUUID()`), any `@tiptap-pro/*` package, or Hocuspocus packages.
 
@@ -180,6 +181,7 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
   The last three are Phase 6 UI hints, never permissions: `role` is set when someone else owns the note, `shared` when you own it and made a share link, `noAccess` when its owner removed you (learned from the server). D1 `note_members` is the truth.
   The title is the first line of the note and the preview its next ~200 characters, both written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`src/sync/legacy-index.ts`).
 - IDs are generated on the client with `crypto.randomUUID()`, so notes can be created offline.
+- **Drafts:** New note writes nothing to the index. The note is a draft (its id in React state and `sessionStorage` `jot-draft`, this tab only) until the first local edit that leaves it non-blank (anything but one empty paragraph); then `createNote(doc, id)` lists it. Leaving an untouched draft deletes its empty IndexedDB copy. Only a note made by New note on this device is ever a draft, so a listed note can never be re-created over its pin or sharing marks (`createNote` also never overwrites an entry). Plan: `docs/plans/blank-notes.md`.
 
 ### Server-side
 
@@ -284,6 +286,7 @@ Rules:
 - [ ] Version history (our own Yjs snapshots)
 - [ ] Comments (a `Y.Map` inside the note doc)
 - [ ] Tauri wrapper for a global hotkey on Windows
+- [ ] Editor blocks ([issue #1](https://github.com/0xdeathstalker/jot/issues/1), `docs/plans/editor-blocks.md`): checklists, Raycast-style toolbar, link box, images inside the note, Markdown copy/download/paste. Built; browser checks pending
 
 ---
 
@@ -306,6 +309,8 @@ Rules:
 - ❌ Don't copy a role or user id from a client header: `guardRoom` always overwrites `x-jot-role` / `x-jot-user`.
 - ⚠️ A WebSocket keeps the role it was opened with: after any role change, close the person's connections (4401), don't just update the row.
 - ⚠️ Link tokens are passwords: never log them, and drop them from the address bar once used.
+- ❌ **An older app version deletes blocks it does not know.** `y-tiptap` removes shared content its schema cannot show, for everyone. Keep `enableContentCheck` on (it stops sync and shows "Reload to update" instead), ship new node types together, and never rename a node type or attribute that notes already use.
+- ⚠️ **Images live inside the note** (base64 in the Y.Doc). Keep the 4 MB note cap (`MAX_NOTE_BYTES`) and 300 KB per image: the server saves a note as one SQLite row (8 MB max), and a save that fails is lost on the server side.
 
 ### iOS / PWA traps
 
@@ -328,12 +333,17 @@ Rules:
 
 ## 12. Open decisions
 
-| Decision                         | Status      | Notes                                                                                                                                                                                                                                |
-| -------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Usage limits before going public | Not decided | Caps on accounts, notes per user and note size, per-user rate limits. Partly covered by Phase 6: 3 invited people per original user, invited users cannot invite, 2 other people per note. No cap yet on notes per user or note size |
-| Sharing by email                 | Decided: no | Link only (a join link, a share link). No email service, so nothing paid. Can be added later without changing the tables                                                                                                             |
-| Who can invite                   | Decided     | Only original users (`ALLOWED_EMAILS`) make join links, 3 people each. Only a note's owner makes share links and manages people                                                                                                      |
-| Share links                      | Decided     | Reusable until turned off, 7 days, one per note and role; they never create accounts. The owner deleting a shared note removes everyone's access                                                                                     |
+| Decision                         | Status      | Notes                                                                                                                                                                                                                                                                     |
+| -------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Usage limits before going public | Not decided | Caps on accounts, notes per user and note size, per-user rate limits. Partly covered by Phase 6: 3 invited people per original user, invited users cannot invite, 2 other people per note. No cap yet on notes per user or note size                                      |
+| Sharing by email                 | Decided: no | Link only (a join link, a share link). No email service, so nothing paid. Can be added later without changing the tables                                                                                                                                                  |
+| Who can invite                   | Decided     | Only original users (`ALLOWED_EMAILS`) make join links, 3 people each. Only a note's owner makes share links and manages people                                                                                                                                           |
+| Share links                      | Decided     | Reusable until turned off, 7 days, one per note and role; they never create accounts. The owner deleting a shared note removes everyone's access                                                                                                                          |
+| Image storage                    | Decided     | Inside the note: shrunk on the device (1280 px, WebP or JPEG, max 300 KB), max 4 MB per note. Free, offline, no new service. Server uploads (R2) only if notes become image-heavy                                                                                         |
+| Markdown                         | Decided     | Both directions: copy / download a note as `.md`; paste Markdown (plain text, or a VS Code copy of a Markdown/MDX file) as formatted text. No `.md` file import                                                                                                           |
+| Code blocks                      | Decided     | Plain code block, no language picker or highlighting                                                                                                                                                                                                                      |
+| Blank notes (issue #2)           | Decided     | New note is a draft until its first real edit, never synced while blank. Not a `blank` flag plus cleanup (reverted). An old draft id reopened by URL after leaving it stays unlisted even if typed into (rare, accepted). Blank notes made before the fix: delete by hand |
+| Command palette (⌘K / Ctrl+K)    | Not decided | Raycast-style action list (new note, pin, browse…). Keep ⌘K free for it; the link box uses Ctrl/⌘+L                                                                                                                                                                       |
 
 ---
 

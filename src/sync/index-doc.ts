@@ -23,8 +23,10 @@ type NotesMap = YMap<YMap<unknown>>
 
 const getNotes = (doc: Doc): NotesMap => doc.getMap("notes") as NotesMap
 
-export function createNote(doc: Doc): string {
-  const id = crypto.randomUUID()
+// `id`: a draft's id, so the note keeps the id it was opened with (docs/plans/blank-notes.md).
+// Never overwrites an entry that already exists: that would drop its pin and sharing marks.
+export function createNote(doc: Doc, id: string = crypto.randomUUID()): string {
+  if (getNotes(doc).has(id)) return id
   const now = Date.now()
   const meta: NoteMeta = {
     title: "",
