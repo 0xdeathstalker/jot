@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Editor } from "@/editor/editor"
 import { NoteList } from "@/features/notes/note-list"
+import type { NoteText } from "@/features/notes/note-meta"
 import { removeMember, unshareNote } from "@/features/sharing/api"
 import { caretUser } from "@/features/sharing/caret-user"
 import { type InviteLink, readInviteLink } from "@/features/sharing/invite-link"
@@ -140,7 +141,7 @@ function NotesApp({
 
   // Stable per (doc, noteId): the editor re-subscribes when this changes.
   const handleMeta = React.useCallback(
-    (meta: { title: string; preview: string }) => {
+    (meta: NoteText) => {
       if (noteId) updateMeta(doc, noteId, meta)
     },
     [doc, noteId],

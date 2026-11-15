@@ -4,9 +4,12 @@
 import * as React from "react"
 import { type Doc, Map as YMap } from "yjs"
 
+import type { NoteText } from "@/features/notes/note-meta"
+
 export type NoteMeta = {
   title: string // first line of the note
-  preview: string // first ~200 chars after the title
+  preview: string // first ~200 chars after the title (search only, not shown)
+  chars?: number // characters in the note, line breaks left out; absent until the note's next edit
   createdAt: number
   updatedAt: number
   pinned: boolean
@@ -93,13 +96,19 @@ export function markShared(doc: Doc, id: string) {
 
 // Ignores ids missing from the index (e.g. a note opened by URL): the list is the source of truth.
 // Writes only what changed, so an unchanged edit costs no sync traffic.
-export function updateMeta(doc: Doc, id: string, next: Pick<NoteMeta, "title" | "preview">) {
+export function updateMeta(doc: Doc, id: string, next: NoteText) {
   const note = getNotes(doc).get(id)
   if (!note) return
-  if (note.get("title") === next.title && note.get("preview") === next.preview) return
+  if (
+    note.get("title") === next.title &&
+    note.get("preview") === next.preview &&
+    note.get("chars") === next.chars
+  )
+    return
   doc.transact(() => {
     note.set("title", next.title)
     note.set("preview", next.preview)
+    note.set("chars", next.chars)
     note.set("updatedAt", Date.now())
   })
 }
@@ -122,6 +131,7 @@ function readNotes(notes: NotesMap): Note[] {
       id,
       title: (note.get("title") as string) ?? "",
       preview: (note.get("preview") as string) ?? "",
+      chars: note.get("chars") as number | undefined,
       createdAt: (note.get("createdAt") as number) ?? 0,
       updatedAt: (note.get("updatedAt") as number) ?? 0,
       pinned: !!note.get("pinned"),

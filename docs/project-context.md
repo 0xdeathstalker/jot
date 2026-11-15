@@ -175,11 +175,11 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 - **One Y.Doc per note.** Room name: plain `<noteId>` (URL `/parties/note-room/<noteId>`). Holds the rich text (a `Y.XmlFragment` bound to TipTap).
 - **One "index" Y.Doc per user.** Party `index-room` (class `IndexRoom`, migration `v2`), room `index-<userId>`, IndexedDB `jot-index-<userId>`. A `Y.Map` named `notes`, one nested `Y.Map` per note (so concurrent edits to different fields both survive):
   ```ts
-  { [noteId]: { title: string, preview: string, createdAt: number, updatedAt: number, pinned: boolean, deleted: boolean,
+  { [noteId]: { title: string, preview: string, chars?: number, createdAt: number, updatedAt: number, pinned: boolean, deleted: boolean,
                 role?: 'editor' | 'viewer', shared?: boolean, noAccess?: boolean } }
   ```
   The last three are Phase 6 UI hints, never permissions: `role` is set when someone else owns the note, `shared` when you own it and made a share link, `noAccess` when its owner removed you (learned from the server). D1 `note_members` is the truth.
-  The title is the first line of the note and the preview its next ~200 characters, both written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`src/sync/legacy-index.ts`).
+  The title is the first line of the note, the preview its next ~200 characters (search only; the list shows the title, then "Edited … / Current • N characters" from `chars`, the note's length without line breaks), all written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`src/sync/legacy-index.ts`).
 - IDs are generated on the client with `crypto.randomUUID()`, so notes can be created offline.
 - **Drafts:** New note writes nothing to the index. The note is a draft (its id in React state and `sessionStorage` `jot-draft`, this tab only) until the first local edit that leaves it non-blank (anything but one empty paragraph); then `createNote(doc, id)` lists it. Leaving an untouched draft deletes its empty IndexedDB copy. Only a note made by New note on this device is ever a draft, so a listed note can never be re-created over its pin or sharing marks (`createNote` also never overwrites an entry). Plan: `docs/plans/blank-notes.md`.
 

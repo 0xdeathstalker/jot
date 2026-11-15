@@ -48,7 +48,13 @@ function timeAgo(time: number) {
   return "just now"
 }
 
-// Every row is two lines (title + preview, or title + details), so rows keep one height.
+// Notes saved before `chars` existed: estimate from title + preview until their next edit.
+function characters(note: Note) {
+  const n = note.chars ?? note.title.length + note.preview.length
+  return `${n} character${n === 1 ? "" : "s"}`
+}
+
+// Every row is two lines (title + details), so rows keep one height.
 // Same paddings and line heights as a real row: nothing jumps when the list arrives.
 function SkeletonRows() {
   return (
@@ -94,33 +100,28 @@ export function NoteList({
             <span
               className={cn(
                 "flex items-center gap-1.5 truncate text-sm font-medium",
-                !note.title && "text-muted-foreground italic",
+                !note.title && "text-muted-foreground",
               )}
             >
               {note.pinned && <HugeiconsIcon icon={PinIcon} className="size-3 shrink-0" />}
               <span className="truncate">{note.title || "Untitled"}</span>
               {(note.shared || note.role || note.noAccess) && (
-                <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] font-normal text-muted-foreground not-italic">
+                <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] font-normal text-muted-foreground">
                   {note.noAccess ? "No access" : note.role === "viewer" ? "View only" : "Shared"}
                 </span>
               )}
             </span>
-            {note.preview ? (
-              <span className="truncate text-xs text-muted-foreground">{note.preview}</span>
-            ) : (
-              // No body: the title is the whole note, so its length is the note's length.
-              <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-                {note.id === activeId ? (
-                  <>
-                    <span className="size-1.5 shrink-0 rounded-full bg-destructive" />
-                    Current
-                  </>
-                ) : (
-                  `Edited ${timeAgo(note.updatedAt)}`
-                )}
-                {` • ${note.title.length} character${note.title.length === 1 ? "" : "s"}`}
-              </span>
-            )}
+            <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+              {note.id === activeId ? (
+                <>
+                  <span className="size-1.5 shrink-0 rounded-full bg-destructive" />
+                  Current
+                </>
+              ) : (
+                `Edited ${timeAgo(note.updatedAt)}`
+              )}
+              {` • ${characters(note)}`}
+            </span>
           </button>
 
           <DropdownMenu>

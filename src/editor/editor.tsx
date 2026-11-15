@@ -21,7 +21,7 @@ import { MarkdownPaste } from "@/editor/markdown"
 import { type Notice, NoticeToast } from "@/editor/notice"
 import { TaskItem } from "@/editor/task-item"
 import { Toolbar } from "@/editor/toolbar"
-import { getTitleAndPreview } from "@/features/notes/note-meta"
+import { getTitleAndPreview, type NoteText } from "@/features/notes/note-meta"
 import type { CaretUser } from "@/features/sharing/caret-user"
 import { NoAccess } from "@/features/sharing/no-access"
 import { useAccessLost } from "@/hooks/use-access-lost"
@@ -32,9 +32,9 @@ const META_DEBOUNCE_MS = 500
 
 type Props = {
   noteId: string
-  // Called (debounced) after the user's own edits with the note's first line and a preview.
-  // Pass a stable function: a new one re-subscribes.
-  onMetaChange?: (meta: { title: string; preview: string }) => void
+  // Called (debounced) after the user's own edits with the note's first line, a preview and its
+  // character count. Pass a stable function: a new one re-subscribes.
+  onMetaChange?: (meta: NoteText) => void
   // Set when someone else owns the note. "viewer" makes the editor read-only (the server also
   // drops a viewer's edits, this is so the screen does not pretend otherwise).
   role?: SharedRole
