@@ -6,8 +6,8 @@ import { clearJoinCookie } from "@/features/sharing/invite-link"
 
 const MESSAGES: Record<string, string> = {
   invalid: "This invite link is not valid.",
-  gone: "This invite link has expired or was turned off. Ask for a new one.",
-  full: "All the places on this invite link are taken. Ask for a new one.",
+  gone: "This invite link no longer works.",
+  full: "This invite link has no places left.",
   offline: "Connect to the internet to join Jot.",
 }
 
