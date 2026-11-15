@@ -1,6 +1,6 @@
 # Plan: No piles of blank "Untitled" notes
 
-Status: in progress (A and B done)
+Status: in progress (A, B and C done; D to check)
 Source: GitHub issue [#2](https://github.com/0xdeathstalker/jot/issues/2), `docs/project-context.md` §7 (index doc), `docs/plans/phase-3-notes-list.md` (index model).
 
 Goal: pressing **New note** never adds an empty note to the list. A new note is a **draft** that joins the list only when it gets its first real content.
@@ -41,11 +41,11 @@ Goal: pressing **New note** never adds an empty note to the list. A new note is 
 
 ### C. App (`src/app.tsx`)
 
-- [ ] **C1. Draft state.** `draftId` in `NotesApp`, mirrored to `sessionStorage` (`jot-draft`, read once on mount, wrapped in try/catch). A note is a draft when `noteId === draftId` and it is not in `notes`.
-- [ ] **C2. New note.** Open note is a draft → bump `focusKey`, close the sidebar on phones. Else make an id, set `draftId`, `openNote(id)`. No `createNote` here.
-- [ ] **C3. First edit.** `onEdited` for the draft → `createNote(doc, draftId)`, clear `draftId`. `handleMeta` then finds the entry (it ignores ids missing from the index, so title writes before this are skipped; the editor's next debounced meta write fills it in).
-- [ ] **C4. Leaving a draft.** When `noteId` moves away from the draft (another note, back button, New note is not a leave) → `deleteLocalNote(draftId)`, clear `draftId`.
-- [ ] **C5.** A draft shows no Share button and no list highlight (it is not in `notes`, as with any id missing from the index); check nothing breaks.
+- [x] **C1. Draft state.** `draftId` in `NotesApp`, mirrored to `sessionStorage` (`jot-draft`, read once on mount, wrapped in try/catch). A note is a draft when `noteId === draftId` and it is not in `notes`. **Done:** a stored draft that is not the open note on load (reloaded at another URL) is dropped and its empty local copy removed.
+- [x] **C2. New note.** Open note is a draft → bump `focusKey`, close the sidebar on phones. Else make an id, set `draftId`, `openNote(id)`. No `createNote` here.
+- [x] **C3. First edit.** `onEdited` for the draft → `createNote(doc, draftId)`, clear `draftId`. `handleMeta` then finds the entry (it ignores ids missing from the index, so title writes before this are skipped; the editor's next debounced meta write fills it in).
+- [x] **C4. Leaving a draft.** When `noteId` moves away from the draft (another note, back button, New note is not a leave) → `deleteLocalNote(draftId)`, clear `draftId`. **Done** by comparing with the previous `noteId` (a ref), not the draft id alone, so a render where `draftId` is set before the URL changes is not taken as leaving.
+- [x] **C5.** A draft shows no Share button and no list highlight (it is not in `notes`, as with any id missing from the index); check nothing breaks. **Done** in code (`ownedNote` is undefined, `activeId` matches no row); seen in the browser in D.
 
 ### D. Check and close
 
