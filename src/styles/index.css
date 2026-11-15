@@ -145,6 +145,13 @@
   outline: none;
 }
 
+/* Phones: the toolbar sits at the bottom of the screen; keep the last lines clear of it. */
+@media (width < 40rem) {
+  .ProseMirror {
+    padding-bottom: 5rem;
+  }
+}
+
 .ProseMirror > * + * {
   margin-top: 0.75em;
 }

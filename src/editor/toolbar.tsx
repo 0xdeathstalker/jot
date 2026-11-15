@@ -169,8 +169,11 @@ export function Toolbar({
     <div
       role="toolbar"
       aria-label="Formatting"
-      // As wide as its buttons, centred; wraps (still centred) only when the screen is narrower.
-      className="sticky top-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-xl border bg-background p-1"
+      // As wide as its buttons, centred, sticky at the top. Phones (below sm): pinned to the bottom of
+      // the screen (inset-x + mx-auto centres it; left-1/2 would halve the width it may use), with
+      // smaller buttons, icons and gaps so it stays on one line down to ~320px; it
+      // still wraps (centred) if even that does not fit.
+      className="sticky top-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-xl border bg-background p-1 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:gap-0.5 max-sm:p-0.5 max-sm:[&_button]:h-7 max-sm:[&_button]:min-w-7 max-sm:[&_button]:px-1.5 max-sm:[&_svg:not([class*='size-'])]:size-3.5"
     >
       <Group>
         <Menu
@@ -260,7 +263,11 @@ function ImageButton({
 }
 
 function Group({ children }: { children: React.ReactNode }) {
-  return <div className="flex items-center gap-1 not-first:border-l not-first:pl-1">{children}</div>
+  return (
+    <div className="flex items-center gap-1 not-first:border-l not-first:pl-1 max-sm:gap-0 max-sm:not-first:pl-0.5">
+      {children}
+    </div>
+  )
 }
 
 type Common = { editor: Editor; disabled: boolean }
