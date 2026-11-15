@@ -5,13 +5,10 @@ import {
   Heading01Icon,
   Heading02Icon,
   Heading03Icon,
-  Copy01Icon,
-  Download01Icon,
   HeadingIcon,
   Image01Icon,
   LeftToRightListBulletIcon,
   LeftToRightListNumberIcon,
-  MoreHorizontalIcon,
   QuoteDownIcon,
   SourceCodeIcon,
   TextBoldIcon,
@@ -27,7 +24,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuShortcut,
@@ -36,7 +32,6 @@ import {
 import { Toggle, toggleVariants } from "@/components/ui/toggle"
 import { imageFiles } from "@/editor/images"
 import { LinkBox } from "@/editor/link-box"
-import { copyMarkdown, downloadMarkdown } from "@/editor/markdown"
 import type { Notify } from "@/editor/notice"
 import { formatShortcut as shortcut } from "@/lib/platform"
 import { cn } from "@/lib/utils"
@@ -142,7 +137,7 @@ const lists: Item[] = [
 
 const flags = (editor: Editor, items: Item[]) => items.map((item) => item.isActive(editor))
 
-// Raycast Notes layout: H ▾ | I ▾ | link | image | <> | quote, code block | lists ▾ … Markdown ▸
+// Raycast Notes layout: H ▾ | I ▾ | link | image | <> | quote, code block | lists ▾
 // No undo/redo buttons: Collaboration owns undo/redo (keyboard shortcuts still work).
 export function Toolbar({
   editor,
@@ -174,7 +169,8 @@ export function Toolbar({
     <div
       role="toolbar"
       aria-label="Formatting"
-      className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b bg-background py-2"
+      // As wide as its buttons, centred; wraps (still centred) only when the screen is narrower.
+      className="sticky top-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-xl border bg-background p-1"
     >
       <Group>
         <Menu
@@ -220,32 +216,7 @@ export function Toolbar({
           disabled={disabled}
         />
       </Group>
-      <MarkdownMenu editor={editor} notify={notify} />
     </div>
-  )
-}
-
-// Copy / download the note as Markdown. Enabled for viewers too: reading is allowed.
-function MarkdownMenu({ editor, notify }: { editor: Editor; notify: Notify }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="More"
-        className={cn(toggleVariants({ size: "sm" }), "ml-auto px-2")}
-      >
-        <HugeiconsIcon icon={MoreHorizontalIcon} />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" finalFocus={false} className="w-auto">
-        <DropdownMenuItem onClick={() => void copyMarkdown(editor, notify)}>
-          <HugeiconsIcon icon={Copy01Icon} />
-          Copy as Markdown
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => downloadMarkdown(editor)}>
-          <HugeiconsIcon icon={Download01Icon} />
-          Download .md
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }
 

@@ -7,7 +7,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -30,10 +29,20 @@ const MESSAGES: Record<string, string> = {
 const daysLeft = (expiresAt: number) =>
   Math.max(1, Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000)))
 
-// The owner's Share button and dialog: make or turn off a link for each role, see who has access,
-// remove people. Everything needs the server, so offline it only says so.
-export function ShareDialog({ noteId, onLinkMade }: { noteId: string; onLinkMade: () => void }) {
-  const [open, setOpen] = React.useState(false)
+// The owner's Share dialog, opened from the note list: make or turn off a link for each role, see
+// who has access, remove people. Everything needs the server, so offline it only says so.
+// The caller remounts it (new `key`) on each open, so stale details never flash.
+export function ShareDialog({
+  noteId,
+  open,
+  onOpenChange,
+  onLinkMade,
+}: {
+  noteId: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onLinkMade: () => void
+}) {
   const [info, setInfo] = React.useState<ShareInfo | null>(null)
   const [error, setError] = React.useState<string | null>(null)
   const [role, setRole] = React.useState<LinkRole>("viewer")
@@ -55,15 +64,6 @@ export function ShareDialog({ noteId, onLinkMade }: { noteId: string; onLinkMade
       cancelled = true
     }
   }, [open, noteId, version])
-
-  // Start from a clean slate each time it opens, so stale details never flash.
-  const handleOpenChange = (next: boolean) => {
-    if (next) {
-      setInfo(null)
-      setError(null)
-    }
-    setOpen(next)
-  }
 
   const act = async (action: () => Promise<ApiResult<unknown>>) => {
     setBusy(true)
@@ -89,8 +89,7 @@ export function ShareDialog({ noteId, onLinkMade }: { noteId: string; onLinkMade
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger render={<Button variant="outline" size="sm" />}>Share</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Share this note</DialogTitle>

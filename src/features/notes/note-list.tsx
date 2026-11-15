@@ -1,4 +1,10 @@
-import { Delete02Icon, MoreVerticalIcon, PinIcon, PinOffIcon } from "@hugeicons/core-free-icons"
+import {
+  Delete02Icon,
+  MoreVerticalIcon,
+  PinIcon,
+  PinOffIcon,
+  Share08Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { cn } from "cn"
 
@@ -18,6 +24,7 @@ type Props = {
   activeId: string | null
   onOpen: (id: string) => void
   onTogglePin: (id: string) => void
+  onShare: (id: string) => void
   onDelete: (id: string) => void
 }
 
@@ -61,7 +68,15 @@ function SkeletonRows() {
 }
 
 // Presentational only: the caller owns the Y.Doc and passes plain callbacks.
-export function NoteList({ notes, loading, activeId, onOpen, onTogglePin, onDelete }: Props) {
+export function NoteList({
+  notes,
+  loading,
+  activeId,
+  onOpen,
+  onTogglePin,
+  onShare,
+  onDelete,
+}: Props) {
   if (loading) return <SkeletonRows />
   return (
     <ul className="flex flex-col gap-0.5">
@@ -126,6 +141,13 @@ export function NoteList({ notes, loading, activeId, onOpen, onTogglePin, onDele
                 <HugeiconsIcon icon={note.pinned ? PinOffIcon : PinIcon} />
                 {note.pinned ? "Unpin" : "Pin"}
               </DropdownMenuItem>
+              {/* Only the owner shares (a note with a `role` belongs to someone else). */}
+              {!note.role && (
+                <DropdownMenuItem onClick={() => onShare(note.id)}>
+                  <HugeiconsIcon icon={Share08Icon} />
+                  Share
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem variant="destructive" onClick={() => onDelete(note.id)}>
                 <HugeiconsIcon icon={Delete02Icon} />
                 {note.role ? "Leave note" : "Delete"}

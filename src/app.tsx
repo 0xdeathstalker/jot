@@ -60,9 +60,9 @@ function NotesApp({
   const [query, setQuery] = React.useState("")
   const visibleNotes = useNoteSearch(notes, query)
   const { noteId, openNote } = useNoteId()
-  // Only the owner can share (a note with a `role` belongs to someone else).
   const currentNote = notes.find((note) => note.id === noteId)
-  const ownedNote = currentNote && !currentNote.role ? currentNote : undefined
+  // Share dialog opened from the note list. `n` changes on each open: a fresh dialog, no stale details.
+  const [share, setShare] = React.useState<{ id: string; n: number; open: boolean } | null>(null)
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
   const [draftId, setDraftId] = React.useState(() => readDraft(noteId))
   const isDraft = !!noteId && noteId === draftId && !currentNote
@@ -219,6 +219,7 @@ function NotesApp({
             activeId={noteId}
             onOpen={handleOpen}
             onTogglePin={(id) => togglePin(doc, id)}
+            onShare={(id) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true }))}
             onDelete={(id) => void handleDelete(id)}
           />
         </ScrollArea>
@@ -227,25 +228,25 @@ function NotesApp({
 
       <main className="flex-1 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-3xl p-4">
-          <div className="mb-2 flex items-center">
+          <div className="mb-2 flex items-center md:hidden">
             <Button
               variant="ghost"
               size="icon-sm"
-              className="md:hidden"
               aria-label="Show notes"
               onClick={() => setSidebarOpen((open) => !open)}
             >
               <HugeiconsIcon icon={Menu01Icon} />
             </Button>
-            {ownedNote && !shareToken && (
-              <div className="ml-auto">
-                <ShareDialog
-                  noteId={ownedNote.id}
-                  onLinkMade={() => markShared(doc, ownedNote.id)}
-                />
-              </div>
-            )}
           </div>
+          {share && (
+            <ShareDialog
+              key={share.n}
+              noteId={share.id}
+              open={share.open}
+              onOpenChange={(open) => setShare({ ...share, open })}
+              onLinkMade={() => markShared(doc, share.id)}
+            />
+          )}
 
           {shareToken ? (
             <ShareLinkPage token={shareToken} doc={doc} onOpen={openSharedNote} />

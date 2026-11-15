@@ -150,7 +150,7 @@ export function Editor({
       TaskList,
       TaskItem.configure({ nested: true }),
       NoteImage,
-      // Copy / download as Markdown, and paste plain-text Markdown as formatted text.
+      // Paste plain-text Markdown as formatted text.
       Markdown,
       MarkdownPaste.configure({ doc, notify: setNotice }),
       Collaboration.configure({ document: doc }),
