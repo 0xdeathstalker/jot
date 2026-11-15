@@ -1,9 +1,24 @@
 import Collaboration, { isChangeOrigin } from "@tiptap/extension-collaboration"
 import CollaborationCaret from "@tiptap/extension-collaboration-caret"
+import { TaskList } from "@tiptap/extension-list"
+import { Markdown } from "@tiptap/markdown"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import * as React from "react"
 
+import { Button } from "@/components/ui/button"
+import {
+  NOTE_FULL,
+  NoteImage,
+  dropOversizedImages,
+  fitsInNote,
+  imageFiles,
+  insertImageFiles,
+  sliceImageBytes,
+} from "@/editor/images"
+import { MarkdownPaste } from "@/editor/markdown"
+import { type Notice, NoticeToast } from "@/editor/notice"
+import { TaskItem } from "@/editor/task-item"
 import { Toolbar } from "@/editor/toolbar"
 import { getTitleAndPreview } from "@/features/notes/note-meta"
 import type { CaretUser } from "@/features/sharing/caret-user"
@@ -56,10 +71,75 @@ export function Editor({
     if (noAccess) stopSyncing(session) // do not keep knocking on a door that is closed
   }, [noAccess, session])
 
+  // The shared doc holds content this version's schema cannot show (a newer Jot added a block type).
+  // Without enableContentCheck, y-tiptap deletes that content from the shared doc for everyone.
+  const [outdated, setOutdated] = React.useState(false)
+  const [notice, setNotice] = React.useState<Notice | null>(null)
+  const clearNotice = React.useCallback(() => setNotice(null), [])
+
   const editor = useEditor({
     editable: !readOnly,
+    enableContentCheck: true,
+    editorProps: {
+      handleClick: (_view, _pos, event) => {
+        if (!(event.metaKey || event.ctrlKey)) return false
+        const link = (event.target as HTMLElement).closest("a[href]")
+        if (!(link instanceof HTMLAnchorElement)) return false
+        // The Link mark has already dropped unsafe hrefs (javascript: etc.) when rendering.
+        window.open(link.href, "_blank", "noopener,noreferrer")
+        return true
+      },
+      // Images are stored inside the note (docs/plans/editor-blocks.md, step E). Files are shrunk
+      // first; HTML that already holds images is trimmed to the limits.
+      transformPasted: (slice) => dropOversizedImages(slice, setNotice),
+      handlePaste: (view, event, slice) => {
+        const files = imageFiles(event.clipboardData?.files)
+        if (files.length) {
+          // "Copy image" in a browser also puts an <img> address on the clipboard: the file wins,
+          // so the image never depends on another site.
+          event.preventDefault()
+          void insertImageFiles(view, doc, files, setNotice)
+          return true
+        }
+        if (fitsInNote(doc, sliceImageBytes(slice))) return false
+        setNotice(NOTE_FULL)
+        return true
+      },
+      handleDrop: (view, event, slice, moved) => {
+        if (moved) return false // dragging within the note
+        const files = imageFiles(event.dataTransfer?.files)
+        if (files.length) {
+          event.preventDefault()
+          const at = view.posAtCoords({ left: event.clientX, top: event.clientY })
+          void insertImageFiles(view, doc, files, setNotice, at?.pos)
+          return true
+        }
+        if (fitsInNote(doc, sliceImageBytes(slice))) return false
+        setNotice(NOTE_FULL)
+        return true
+      },
+    },
+    onContentError: ({ disableCollaboration }) => {
+      // Stop before anything is written back: no sync, no local edits, until the app is reloaded.
+      stopSyncing(session)
+      disableCollaboration()
+      setOutdated(true)
+    },
     extensions: [
-      StarterKit.configure({ undoRedo: false }),
+      StarterKit.configure({
+        undoRedo: false,
+        // Clicking a link while editing places the cursor; Ctrl/Cmd+click opens it (handleClick
+        // below). Viewers' editor is not editable, so a plain click follows the link natively.
+        // Ctrl/Cmd+L opens the link box (link-box.tsx). markdownLinks: typing or pasting
+        // `[text](url)` makes a link (GitHub style); unsafe URLs stay plain text.
+        link: { openOnClick: false, autolink: true, defaultProtocol: "https", markdownLinks: true },
+      }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      NoteImage,
+      // Copy / download as Markdown, and paste plain-text Markdown as formatted text.
+      Markdown,
+      MarkdownPaste.configure({ doc, notify: setNotice }),
       Collaboration.configure({ document: doc }),
       // Cursors live in Yjs awareness (in memory, never saved): they vanish when a socket closes.
       CollaborationCaret.configure({ provider: session.provider, user: caret }),
@@ -67,8 +147,8 @@ export function Editor({
   })
 
   React.useEffect(() => {
-    editor?.setEditable(!readOnly)
-  }, [editor, readOnly])
+    editor?.setEditable(!readOnly && !outdated)
+  }, [editor, readOnly, outdated])
 
   React.useEffect(() => {
     if (!editor || !onMetaChange) return
@@ -105,13 +185,28 @@ export function Editor({
 
   return (
     <>
-      {readOnly && (
-        <p className="mb-2 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground">
-          View only: you can read this note but not change it.
-        </p>
+      {outdated ? (
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground">
+          <span>This note uses a newer version of Jot. Reload to update.</span>
+          <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
+            Reload
+          </Button>
+        </div>
+      ) : (
+        readOnly && (
+          <p className="mb-2 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground">
+            View only: you can read this note but not change it.
+          </p>
+        )
       )}
-      <Toolbar editor={editor} disabled={readOnly} />
+      <Toolbar
+        editor={editor}
+        disabled={readOnly || outdated}
+        notify={setNotice}
+        onPickImages={(files) => void insertImageFiles(editor.view, doc, files, setNotice)}
+      />
       <EditorContent editor={editor} />
+      <NoticeToast notice={notice} onClose={clearNotice} />
     </>
   )
 }

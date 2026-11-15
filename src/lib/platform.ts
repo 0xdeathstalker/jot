@@ -9,3 +9,17 @@ export function isIosBrowser(): boolean {
     window.matchMedia("(display-mode: standalone)").matches
   return iosDevice && !installed
 }
+
+// Apple keyboards: shortcuts read ⌘ ⌥ ⇧ instead of Ctrl / Alt / Shift.
+export function isApple(): boolean {
+  return /Mac|iPhone|iPad|iPod/.test(navigator.userAgent)
+}
+
+const appleKeys: Record<string, string> = { Mod: "⌘", Alt: "⌥", Shift: "⇧" }
+
+// ["Mod", "Shift", "S"] -> "⌘⇧S" on Apple, "Ctrl+Shift+S" elsewhere ("Mod" is Tiptap's name for it).
+export function formatShortcut(keys: string[]): string {
+  return isApple()
+    ? keys.map((k) => appleKeys[k] ?? k).join("")
+    : keys.map((k) => (k === "Mod" ? "Ctrl" : k)).join("+")
+}
