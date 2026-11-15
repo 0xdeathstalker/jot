@@ -131,9 +131,16 @@ export function LinkBox({
   const [dismissedAt, setDismissedAt] = React.useState<number | null>(null)
   const showPreview = !!preview?.href && !open && !disabled && preview.at !== dismissedAt
 
+  // Copied: the copy button shows a tick for 2 s instead of a toast. A refusal still gets a toast.
+  const [copied, setCopied] = React.useState(false)
+  React.useEffect(() => {
+    if (!copied) return
+    const timer = setTimeout(() => setCopied(false), 2000)
+    return () => clearTimeout(timer)
+  }, [copied])
   const copyLink = (href: string) => {
     navigator.clipboard.writeText(href).then(
-      () => notify({ title: "Link copied" }),
+      () => setCopied(true),
       () => notify({ title: "Could not copy", description: "The browser did not allow it." }),
     )
   }
@@ -193,8 +200,8 @@ export function LinkBox({
               </span>
               <PreviewButton label="Edit link" icon={PencilEdit02Icon} onClick={show} />
               <PreviewButton
-                label="Copy link"
-                icon={Copy01Icon}
+                label={copied ? "Copied" : "Copy link"}
+                icon={copied ? Tick02Icon : Copy01Icon}
                 onClick={() => preview && copyLink(preview.href)}
               />
               <PreviewButton
