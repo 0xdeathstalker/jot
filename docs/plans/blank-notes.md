@@ -1,6 +1,6 @@
 # Plan: No piles of blank "Untitled" notes
 
-Status: in progress (A, B and C done; D to check)
+Status: done in code and checked headlessly (D1–D6); issue #2 closes with the PR
 Source: GitHub issue [#2](https://github.com/0xdeathstalker/jot/issues/2), `docs/project-context.md` §7 (index doc), `docs/plans/phase-3-notes-list.md` (index model).
 
 Goal: pressing **New note** never adds an empty note to the list. A new note is a **draft** that joins the list only when it gets its first real content.
@@ -49,17 +49,19 @@ Goal: pressing **New note** never adds an empty note to the list. A new note is 
 
 ### D. Check and close
 
-- [ ] **D1.** Click **New note** five times: no new entries in the list; the cursor is in the editor.
-- [ ] **D2.** New note, type one letter: it appears in the list with its title. New note, add only an image or a checklist: it appears (as "Untitled" for the image).
-- [ ] **D3.** New note, open another note, press back: nothing was added; the old draft id shows an empty editor that still is not in the list (and joins it on the first edit only if it is the current draft; otherwise it is a normal empty note opened by URL, see risk below).
-- [ ] **D4.** Reload while in an untouched draft: still a draft (sessionStorage). Reload after typing: a normal note.
-- [ ] **D5.** Open an existing note from the list right after starting the app and type at once: its title, pin and sharing marks are unchanged (not treated as a draft).
-- [ ] **D6.** Two tabs: a draft in one never appears in the other until its first edit.
-- [ ] **D7.** `pnpm check`; update `docs/project-context.md` §7 (drafts) and §12 (decision); close issue #2.
+- [x] **D1.** Click **New note** five times: no new entries in the list; the cursor is in the editor.
+- [x] **D2.** New note, type one letter: it appears in the list with its title. New note, add only an image or a checklist: it appears (as "Untitled" for the image).
+- [x] **D3.** New note, open another note, press back: nothing was added; the old draft id shows an empty editor that still is not in the list (and joins it on the first edit only if it is the current draft; otherwise it is a normal empty note opened by URL, see risk below).
+- [x] **D4.** Reload while in an untouched draft: still a draft (sessionStorage). Reload after typing: a normal note.
+- [x] **D5.** Open an existing note from the list right after starting the app and type at once: its title, pin and sharing marks are unchanged (not treated as a draft).
+- [x] **D6.** Two tabs: a draft in one never appears in the other until its first edit.
+- [x] **D7.** `pnpm check`; update `docs/project-context.md` §7 (drafts) and §12 (decision); close issue #2. **Done** except closing: the PR says `Closes #2`.
+
+**D1–D6 checked** in headless Chromium against `pnpm dev` (Playwright in a throwaway folder, not a project package), cached test user, `/api/*` and `/parties/*` blocked (offline, local only). All pass: five New note clicks add nothing and keep one draft with the cursor in it; a letter, an empty checklist or only an image each list the note (image as "Untitled"); leaving a draft adds nothing and deletes its IndexedDB copy; back to it shows an empty unlisted editor; reload keeps the draft, typing then lists it, and the next reload shows a normal note; typing at once into a pinned note after a reload keeps its pin and changes only its title; a draft never shows in a second tab, and after its first edit the second tab lists it. **Not checked:** two devices through the real server (needs a Google sign-in), and phones.
 
 ## Risk
 
-A URL to an id that is not in the index and is not the current draft (an old draft opened from history after leaving it) shows an empty editor whose typing is not listed (`updateMeta` ignores unknown ids, as today). Rare; accept, or make C3 also list such a note on first edit once the index is known to be loaded. Decide in D3.
+A URL to an id that is not in the index and is not the current draft (an old draft opened from history after leaving it) shows an empty editor whose typing is not listed (`updateMeta` ignores unknown ids, as today). Rare; accept, or make C3 also list such a note on first edit once the index is known to be loaded. **Decided in D3: accepted** (seen: typing there lists nothing).
 
 ## Out of scope
 
