@@ -1,0 +1,36 @@
+# Deploys to Cloudflare when something lands on main (a merged PR or a direct push).
+# Secrets (repo Settings > Secrets and variables > Actions): CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
+# The Worker's own secrets (BETTER_AUTH_SECRET etc.) already live in Cloudflare and are kept.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # "Run workflow" button, for a redeploy without a commit
+
+# One deploy at a time; a newer push waits instead of racing the older one.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      # New D1 files in migrations/ before the code that needs them. Already-applied files are skipped.
+      - run: pnpm db:migrate:remote
+      - run: pnpm run deploy
