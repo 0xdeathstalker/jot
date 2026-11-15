@@ -1,6 +1,6 @@
 # Plan: No piles of blank "Untitled" notes
 
-Status: in progress (A2 done; A1 done in the working tree)
+Status: in progress (A and B done)
 Source: GitHub issue [#2](https://github.com/0xdeathstalker/jot/issues/2), `docs/project-context.md` §7 (index doc), `docs/plans/phase-3-notes-list.md` (index model).
 
 Goal: pressing **New note** never adds an empty note to the list. A new note is a **draft** that joins the list only when it gets its first real content.
@@ -31,13 +31,13 @@ Goal: pressing **New note** never adds an empty note to the list. A new note is 
 
 ### A. Revert the flag approach
 
-- [x] **A1.** Restore `src/sync/index-doc.ts` and `docs/project-context.md` §7 to before commit `61cae47` (no `blank` / `leftBlank`, no `markEdited` / `removeIfBlank` / `findBlank`). **Done in the working tree** (staged), not yet committed.
+- [x] **A1.** Restore `src/sync/index-doc.ts` and `docs/project-context.md` §7 to before commit `61cae47` (no `blank` / `leftBlank`, no `markEdited` / `removeIfBlank` / `findBlank`). **Done** (commit `141df5f`).
 - [x] **A2.** `createNote(doc, id = crypto.randomUUID())`: accepts the draft's id. Nothing else changes in the index. **Done:** also never overwrites an existing entry (returns the id, writes nothing), so a wrong call cannot drop a pin or sharing mark. Checked headlessly: new uuid, given id, existing id untouched.
 
 ### B. Editor
 
-- [ ] **B1.** `onEdited?: () => void` prop on `Editor` (`src/editor/editor.tsx`): in the existing `update` handler, for local changes only (`!isChangeOrigin`), call it once per mounted note when the document stops being blank (`isBlankDoc`: one child, an empty paragraph).
-- [ ] **B2.** `autofocus` for a draft (the cursor is in the editor right after New note), and a `focusKey` prop: when it changes, focus the editor (New note pressed again while in the draft).
+- [x] **B1.** `onEdited?: () => void` prop on `Editor` (`src/editor/editor.tsx`): in the existing `update` handler, for local changes only (`!isChangeOrigin`), call it once per mounted note when the document stops being blank (`isBlankDoc`: one child, an empty paragraph). **Done** with its own `update` listener (the meta one exists only with `onMetaChange` and also follows remote edits). `onEdited` is read through a ref, so callers need not memoize it.
+- [x] **B2.** `autofocus` for a draft (the cursor is in the editor right after New note), and a `focusKey` prop: when it changes, focus the editor (New note pressed again while in the draft). **Done** as one prop: `focusKey` focuses when the editor is ready and again on each change, so C passes it only for a draft (no separate `autofocus`).
 
 ### C. App (`src/app.tsx`)
 
