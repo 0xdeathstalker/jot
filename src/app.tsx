@@ -55,7 +55,7 @@ function NotesApp({
   shareToken: string | null
   onShareDone: () => void
 }) {
-  const { doc } = useIndexSession(user.id)
+  const { doc, loaded } = useIndexSession(user.id)
   const notes = useNotes(doc)
   const [query, setQuery] = React.useState("")
   const visibleNotes = useNoteSearch(notes, query)
@@ -215,6 +215,7 @@ function NotesApp({
           )}
           <NoteList
             notes={visibleNotes}
+            loading={!loaded}
             activeId={noteId}
             onOpen={handleOpen}
             onTogglePin={(id) => togglePin(doc, id)}
