@@ -1,6 +1,7 @@
 // Small helpers for the JSON API routes (worker/share.ts, worker/join.ts).
 
-export const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+// Latest time a JS Date can hold: join and share links never expire.
+export const NEVER = 8.64e15
 
 export const json = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "Cache-Control": "no-store" } })

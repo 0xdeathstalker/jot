@@ -23,18 +23,14 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<Ap
 export type Role = "owner" | "editor" | "viewer"
 export type LinkRole = "editor" | "viewer"
 export type Member = { userId: string; role: Role; name: string; email: string }
-export type ShareLink = { role: LinkRole; url: string; expiresAt: number }
+export type ShareLink = { role: LinkRole; url: string }
 export type ShareInfo = { members: Member[]; links: ShareLink[]; limit: number }
 export type JoinInfo = { url: string; used: number; limit: number }
 
 const note = (noteId: string) => `/api/share/${encodeURIComponent(noteId)}`
 
-// Share a note (owner only).
+// Share a note (owner only). Also makes the note's permanent view and edit links on first call.
 export const getShareInfo = (noteId: string) => call<ShareInfo>("GET", note(noteId))
-export const makeShareLink = (noteId: string, role: LinkRole) =>
-  call<ShareLink>("POST", `${note(noteId)}/invite`, { role })
-export const turnOffShareLink = (noteId: string, role: LinkRole) =>
-  call<{ ok: true }>("DELETE", `${note(noteId)}/invite/${role}`)
 export const unshareNote = (noteId: string) => call<{ ok: true }>("DELETE", note(noteId))
 // The owner raises or lowers someone's role.
 export const changeMemberRole = (noteId: string, userId: string, role: LinkRole) =>

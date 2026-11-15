@@ -1,10 +1,7 @@
 import { isEmailAllowed } from "./auth/allowlist.ts"
 import { getSignedInUser } from "./auth/gate.ts"
 import { isActiveUser, JOIN_LIMIT, joinStatus, recordJoin } from "./auth/invites.ts"
-import { fail, json, newToken, readJson, writeAllowed } from "./http.ts"
-
-// Latest time a JS Date can hold: join links never expire.
-const NEVER = 8.64e15
+import { fail, json, NEVER, newToken, readJson, writeAllowed } from "./http.ts"
 
 // /api/join: "Join Jot" links. Original users (ALLOWED_EMAILS) get one permanent link; anyone
 // signed in can accept one. See docs/plans/phase-6-sharing.md, C8.

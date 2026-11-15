@@ -245,7 +245,7 @@ function NotesApp({
               noteId={share.id}
               open={share.open}
               onOpenChange={(open) => setShare({ ...share, open })}
-              onLinkMade={() => markShared(doc, share.id)}
+              onShared={() => markShared(doc, share.id)}
             />
           )}
 

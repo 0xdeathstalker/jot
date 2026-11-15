@@ -30,6 +30,13 @@ export function InviteFriend() {
     }
   }, [open])
 
+  // "Copied" shows for 2 s, then the button reads "Copy link" again.
+  React.useEffect(() => {
+    if (!copied) return
+    const timer = setTimeout(() => setCopied(false), 2000)
+    return () => clearTimeout(timer)
+  }, [copied])
+
   if (!info) return null
 
   const left = Math.max(0, info.limit - info.used)
@@ -54,7 +61,7 @@ export function InviteFriend() {
         <DialogTrigger
           render={<Button variant="ghost" size="sm" className="w-full justify-start" />}
         >
-          Invites ({left})
+          Invites (1)
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
@@ -73,6 +80,11 @@ export function InviteFriend() {
                 aria-label="Invite link"
                 value={info.url}
                 onFocus={(event) => event.target.select()}
+                // Ctrl/Cmd+C (or the context menu) on the whole link counts as copied too.
+                onCopy={(event) => {
+                  const { selectionStart, selectionEnd, value } = event.currentTarget
+                  if (selectionStart === 0 && selectionEnd === value.length) setCopied(true)
+                }}
               />
               <Button size="sm" onClick={() => void copy()}>
                 {copied ? "Copied" : "Copy link"}
