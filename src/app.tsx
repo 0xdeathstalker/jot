@@ -31,6 +31,20 @@ import {
 import { deleteLocalNote, requestDurableStorage } from "@/sync/local-data"
 import { useIndexSession } from "@/sync/provider"
 
+// A new note is a draft until its first edit: not in the list yet (docs/plans/blank-notes.md).
+// Its id survives a reload in sessionStorage (per tab). A stored draft that is not the open note
+// was left some other way: drop its empty local copy.
+const DRAFT_KEY = "jot-draft"
+function readDraft(noteId: string | null): string | null {
+  try {
+    const id = sessionStorage.getItem(DRAFT_KEY)
+    if (id && id !== noteId) deleteLocalNote(id)
+    return id === noteId ? id : null
+  } catch {
+    return null
+  }
+}
+
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
 function NotesApp({
   user,
@@ -50,6 +64,30 @@ function NotesApp({
   const currentNote = notes.find((note) => note.id === noteId)
   const ownedNote = currentNote && !currentNote.role ? currentNote : undefined
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
+  const [draftId, setDraftId] = React.useState(() => readDraft(noteId))
+  const isDraft = !!noteId && noteId === draftId && !currentNote
+  const [focusKey, setFocusKey] = React.useState(0)
+
+  React.useEffect(() => {
+    try {
+      if (draftId) sessionStorage.setItem(DRAFT_KEY, draftId)
+      else sessionStorage.removeItem(DRAFT_KEY)
+    } catch {
+      // Storage blocked: a reload forgets the draft (it then opens as an empty, unlisted note).
+    }
+  }, [draftId])
+
+  // Leaving the draft unedited leaves nothing behind. Compares with the previous note, not the
+  // draft id alone, so the render where the draft id is set before the URL changes does not count.
+  const prevNoteId = React.useRef(noteId)
+  React.useEffect(() => {
+    const left = prevNoteId.current
+    prevNoteId.current = noteId
+    if (left && left !== noteId && left === draftId) {
+      deleteLocalNote(left)
+      setDraftId(null)
+    }
+  }, [noteId, draftId])
 
   // Signed in: ask the browser to keep this device's notes (see local-data.ts).
   React.useEffect(requestDurableStorage, [])
@@ -82,9 +120,22 @@ function NotesApp({
     [openNote, onShareDone],
   )
 
+  // Already in an untouched draft: go back into it instead of making another.
   const handleNew = () => {
-    openNote(createNote(doc))
+    if (isDraft) setFocusKey((key) => key + 1)
+    else {
+      const id = crypto.randomUUID()
+      setDraftId(id)
+      openNote(id)
+    }
     setSidebarOpen(false)
+  }
+
+  // First real edit: the draft joins the list. The editor's debounced meta write then fills the title.
+  const handleDraftEdited = () => {
+    if (!draftId) return
+    createNote(doc, draftId)
+    setDraftId(null)
   }
 
   // Stable per (doc, noteId): the editor re-subscribes when this changes.
@@ -208,6 +259,8 @@ function NotesApp({
               onRoleChanged={() => void refreshRoles(doc)}
               noAccess={currentNote?.noAccess}
               caret={caretUser(user)}
+              onEdited={isDraft ? handleDraftEdited : undefined}
+              focusKey={isDraft ? focusKey : undefined}
             />
           ) : (
             <p className="text-muted-foreground">No notes yet. Create one with “New note”.</p>

@@ -2,6 +2,7 @@ import Collaboration, { isChangeOrigin } from "@tiptap/extension-collaboration"
 import CollaborationCaret from "@tiptap/extension-collaboration-caret"
 import { TaskList } from "@tiptap/extension-list"
 import { Markdown } from "@tiptap/markdown"
+import type { Node as PMNode } from "@tiptap/pm/model"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import * as React from "react"
@@ -48,6 +49,16 @@ type Props = {
   noAccess?: boolean
   // Name and colour other people see on our cursor.
   caret: CaretUser
+  // Called once, on the first local edit that leaves the note no longer blank (a draft joins the list).
+  onEdited?: () => void
+  // Focus the editor when set, and again each time it changes (New note pressed while in the draft).
+  focusKey?: number
+}
+
+// The default content: one empty paragraph. An empty checklist or heading is not blank.
+function isBlankDoc(node: PMNode) {
+  const first = node.firstChild
+  return node.childCount === 1 && first?.type.name === "paragraph" && first.content.size === 0
 }
 
 // Content comes from the Y.Doc, never from Tiptap's `content` option.
@@ -62,6 +73,8 @@ export function Editor({
   onRoleChanged,
   noAccess,
   caret,
+  onEdited,
+  focusKey,
 }: Props) {
   const session = useNoteSession(noteId)
   const { doc } = session
@@ -180,6 +193,35 @@ export function Editor({
       }
     }
   }, [editor, onMetaChange, followRemote])
+
+  // The Editor is keyed by note, so "once" means once per opened note. Ref: callers need not memoize.
+  const onEditedRef = React.useRef(onEdited)
+  React.useLayoutEffect(() => {
+    onEditedRef.current = onEdited
+  })
+  React.useEffect(() => {
+    if (!editor) return
+    let fired = false
+    const handleUpdate = ({
+      editor: e,
+      transaction,
+    }: {
+      editor: typeof editor
+      transaction: Parameters<typeof isChangeOrigin>[0]
+    }) => {
+      if (fired || isChangeOrigin(transaction) || isBlankDoc(e.state.doc)) return
+      fired = true
+      onEditedRef.current?.()
+    }
+    editor.on("update", handleUpdate)
+    return () => {
+      editor.off("update", handleUpdate)
+    }
+  }, [editor])
+
+  React.useEffect(() => {
+    if (editor && focusKey !== undefined) editor.commands.focus()
+  }, [editor, focusKey])
 
   if (lost) return <NoAccess onRemove={() => onRemoveLost?.()} />
 
