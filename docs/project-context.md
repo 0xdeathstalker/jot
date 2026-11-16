@@ -328,6 +328,7 @@ Rules:
 - DOs have per-request CPU limits, so don't run heavy work on the server.
 - y-partyserver is young: when stuck, read its source and examples in GitHub `cloudflare/partykit`.
 - A Windows PWA can't register a global hotkey. That needs Tauri later.
+- Plain `wrangler dev` makes the Worker see the custom-domain route (`http://jot.deathstalker.dev`) as its origin, so Better Auth sends Google that redirect URI and Google login fails ("Access blocked: this app's request is invalid"). Use `pnpm preview:worker` (passes `--local-upstream localhost:8787`), open `http://localhost:8787` (not `127.0.0.1`), and keep `http://localhost:8787/api/auth/callback/google` in the Google client's redirect URIs.
 
 ---
 
