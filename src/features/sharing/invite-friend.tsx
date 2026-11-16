@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { getJoinInfo, type JoinInfo } from "@/features/sharing/api"
 
-// "Invites (n)" in the account area, n = invites left. Shown only to original users: invited users
+// "Invites ... n left" in the account area, n = invites left. Shown only to original users: invited users
 // get a 403 from the server and see nothing. Also hidden offline, because it needs the server.
 export function InviteFriend() {
   const [info, setInfo] = React.useState<JoinInfo | null>(null)
@@ -59,9 +59,10 @@ export function InviteFriend() {
     <div className="border-t pt-2">
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger
-          render={<Button variant="ghost" size="sm" className="w-full justify-start" />}
+          render={<Button variant="ghost" size="sm" className="w-full justify-between" />}
         >
-          Invites (1)
+          <span>Invites</span>
+          <span className="text-muted-foreground">{left} left</span>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>

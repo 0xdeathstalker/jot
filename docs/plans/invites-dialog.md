@@ -3,7 +3,7 @@
 Status: done in code
 Source: owner request, 2026-11-15 (branch `feat/ui-improvements`).
 
-Goal: the sidebar's inline "Invite a friend to Jot…" panel becomes one button, `Invites (<n>)`, that opens a dialog. Each original user has one permanent invite link to copy and share.
+Goal: the sidebar's inline "Invite a friend to Jot…" panel becomes one button, `Invites` with `<n> left` on the right, that opens a dialog. Each original user has one permanent invite link to copy and share.
 
 ## How it works
 
