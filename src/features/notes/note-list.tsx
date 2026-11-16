@@ -8,13 +8,19 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import { cn } from "cn"
 
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
+import { Skeleton } from "@/components/ui/skeleton"
 import type { Note } from "@/sync/index-doc"
 
 type Props = {
@@ -58,18 +64,18 @@ function characters(note: Note) {
 // Same paddings and line heights as a real row: nothing jumps when the list arrives.
 function SkeletonRows() {
   return (
-    <ul className="flex flex-col gap-0.5" aria-busy="true" aria-label="Loading notes">
+    <SidebarMenu className="gap-0.5" aria-busy="true" aria-label="Loading notes">
       {Array.from({ length: SKELETON_ROWS }, (_, i) => (
-        <li key={i} className="flex flex-col gap-0.5 px-3 py-2">
+        <SidebarMenuItem key={i} className="flex flex-col gap-0.5 px-3 py-2">
           <span className="flex h-5 items-center">
-            <span className="h-3.5 w-2/3 animate-pulse rounded-full bg-muted" />
+            <Skeleton className="h-3.5 w-2/3 rounded-full" />
           </span>
           <span className="flex h-4 items-center">
-            <span className="h-3 w-full animate-pulse rounded-full bg-muted" />
+            <Skeleton className="h-3 w-full rounded-full" />
           </span>
-        </li>
+        </SidebarMenuItem>
       ))}
-    </ul>
+    </SidebarMenu>
   )
 }
 
@@ -85,17 +91,15 @@ export function NoteList({
 }: Props) {
   if (loading) return <SkeletonRows />
   return (
-    <ul className="flex flex-col gap-0.5">
+    <SidebarMenu className="gap-0.5">
       {notes.map((note) => (
-        <li key={note.id} className="group/row relative">
-          <button
-            type="button"
+        <SidebarMenuItem key={note.id}>
+          {/* Two lines per row: undo the primitive's fixed height and single-line layout. */}
+          <SidebarMenuButton
+            isActive={note.id === activeId}
             aria-current={note.id === activeId ? "page" : undefined}
             onClick={() => onOpen(note.id)}
-            className={cn(
-              "flex w-full flex-col gap-0.5 rounded-xl px-3 py-2 pr-9 text-left outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50",
-              note.id === activeId && "bg-accent",
-            )}
+            className="h-auto flex-col items-stretch gap-0.5 rounded-xl py-2 font-normal data-active:font-normal"
           >
             <span
               className={cn(
@@ -103,7 +107,7 @@ export function NoteList({
                 !note.title && "text-muted-foreground",
               )}
             >
-              {note.pinned && <HugeiconsIcon icon={PinIcon} className="size-3 shrink-0" />}
+              {note.pinned && <HugeiconsIcon icon={PinIcon} className="size-3! shrink-0" />}
               <span className="truncate">{note.title || "Untitled"}</span>
               {(note.shared || note.role || note.noAccess) && (
                 <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] font-normal text-muted-foreground">
@@ -122,16 +126,14 @@ export function NoteList({
               )}
               {` • ${characters(note)}`}
             </span>
-          </button>
+          </SidebarMenuButton>
 
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
+                <SidebarMenuAction
                   aria-label={`Actions for ${note.title || "Untitled"}`}
-                  className="absolute top-2 right-1.5"
+                  className="top-2.5! right-1.5"
                 />
               }
             >
@@ -155,8 +157,8 @@ export function NoteList({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </li>
+        </SidebarMenuItem>
       ))}
-    </ul>
+    </SidebarMenu>
   )
 }

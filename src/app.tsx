@@ -1,8 +1,5 @@
-import { Add01Icon, Menu01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
 import * as React from "react"
 
-import { AccountFooter } from "@/auth/account-footer"
 import { LoginScreen } from "@/auth/login-screen"
 import { InstallHint } from "@/components/install-hint"
 import {
@@ -15,13 +12,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Editor } from "@/editor/editor"
 import { type Notice, NoticeToast } from "@/editor/notice"
-import { NoteList } from "@/features/notes/note-list"
 import type { NoteText } from "@/features/notes/note-meta"
+import { NotesSidebar } from "@/features/notes/notes-sidebar"
 import { removeMember, unshareNote } from "@/features/sharing/api"
 import { caretUser } from "@/features/sharing/caret-user"
 import { type InviteLink, readInviteLink } from "@/features/sharing/invite-link"
@@ -31,7 +26,6 @@ import { ShareDialog } from "@/features/sharing/share-dialog"
 import { ShareLinkPage } from "@/features/sharing/share-link-page"
 import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
 import { useNoteId } from "@/hooks/use-note-id"
-import { useNoteSearch } from "@/hooks/use-note-search"
 import {
   createNote,
   markShared,
@@ -69,8 +63,6 @@ function NotesApp({
 }) {
   const { doc, loaded } = useIndexSession(user.id)
   const notes = useNotes(doc)
-  const [query, setQuery] = React.useState("")
-  const visibleNotes = useNoteSearch(notes, query)
   const { noteId, openNote } = useNoteId()
   const currentNote = notes.find((note) => note.id === noteId)
   // Share dialog opened from the note list. `n` changes on each open: a fresh dialog, no stale details.
@@ -85,7 +77,6 @@ function NotesApp({
     kind: "leave" | "shared"
     open: boolean
   } | null>(null)
-  const [sidebarOpen, setSidebarOpen] = React.useState(false)
   const [draftId, setDraftId] = React.useState(() => readDraft(noteId))
   const isDraft = !!noteId && noteId === draftId && !currentNote
   const [focusKey, setFocusKey] = React.useState(0)
@@ -150,7 +141,6 @@ function NotesApp({
       setDraftId(id)
       openNote(id)
     }
-    setSidebarOpen(false)
   }
 
   // First real edit: the draft joins the list. The editor's debounced meta write then fills the title.
@@ -167,11 +157,6 @@ function NotesApp({
     },
     [doc, noteId],
   )
-
-  const handleOpen = (id: string) => {
-    openNote(id)
-    setSidebarOpen(false)
-  }
 
   // Access to a shared note was taken away: drop it from the list and from this device.
   const handleRemoveLost = (id: string) => {
@@ -220,50 +205,28 @@ function NotesApp({
   }
 
   return (
-    <div className="flex h-dvh pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
-      {/* Phone: slides over the editor. Desktop: fixed column. */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-20 w-64 shrink-0 flex-col gap-2 border-r bg-background p-2 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))] md:static md:flex ${sidebarOpen ? "flex" : "hidden"}`}
-      >
-        <Button onClick={handleNew}>
-          <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
-          New note
-        </Button>
-        <Input
-          type="search"
-          placeholder="Search notes"
-          aria-label="Search notes"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <ScrollArea className="min-h-0 flex-1">
-          {query.trim() && visibleNotes.length === 0 && (
-            <p className="px-3 py-2 text-sm text-muted-foreground">No matching notes</p>
-          )}
-          <NoteList
-            notes={visibleNotes}
-            loading={!loaded}
-            activeId={noteId}
-            onOpen={handleOpen}
-            onTogglePin={(id) => togglePin(doc, id)}
-            onShare={(id) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true }))}
-            onDelete={handleDelete}
-          />
-        </ScrollArea>
-        <AccountFooter user={user} />
-      </aside>
+    // Phone (< 768 px): the sidebar is a sheet over the editor. Desktop: a column that hides fully
+    // (trigger or Ctrl/⌘+B outside the editor); the provider remembers it in a cookie.
+    <SidebarProvider
+      defaultOpen={!document.cookie.includes("sidebar_state=false")}
+      className="h-dvh min-h-0 pr-[env(safe-area-inset-right)]"
+    >
+      <NotesSidebar
+        user={user}
+        notes={notes}
+        loading={!loaded}
+        activeId={noteId}
+        onNew={handleNew}
+        onOpen={openNote}
+        onTogglePin={(id) => togglePin(doc, id)}
+        onShare={(id) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true }))}
+        onDelete={handleDelete}
+      />
 
-      <main className="flex-1 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto max-w-3xl p-4">
-          <div className="mb-2 flex items-center md:hidden">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Show notes"
-              onClick={() => setSidebarOpen((open) => !open)}
-            >
-              <HugeiconsIcon icon={Menu01Icon} />
-            </Button>
+      <SidebarInset className="min-w-0 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto w-full max-w-3xl p-4">
+          <div className="mb-2 flex items-center md:absolute md:top-2 md:left-2 md:mb-0">
+            <SidebarTrigger aria-label="Toggle notes" />
           </div>
           {share && (
             <ShareDialog
@@ -295,7 +258,7 @@ function NotesApp({
             <p className="text-muted-foreground">No notes yet. Create one with “New note”.</p>
           )}
         </div>
-      </main>
+      </SidebarInset>
 
       <AlertDialog
         open={!!confirmDelete?.open}
@@ -330,7 +293,7 @@ function NotesApp({
 
       <NoticeToast notice={notice} onClose={clearNotice} />
       <InstallHint />
-    </div>
+    </SidebarProvider>
   )
 }
 

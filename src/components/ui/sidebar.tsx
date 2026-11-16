@@ -97,6 +97,8 @@ function SidebarProvider({
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Jot: the editor already handled it (Ctrl/⌘+B = Bold), so do not also toggle.
+      if (event.defaultPrevented) return
       if (
         event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
         (event.metaKey || event.ctrlKey)
@@ -188,7 +190,9 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          // Jot: slide the full width with no fade, like the desktop sidebar (Sheet default: fade + 2.5rem nudge).
+          // 150 ms, quicker than desktop's 200 ms: the panel covers less distance on a phone.
+          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground duration-150 ease-linear data-starting-style:opacity-100 data-ending-style:opacity-100 data-[side=left]:data-starting-style:-translate-x-full data-[side=left]:data-ending-style:-translate-x-full data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
