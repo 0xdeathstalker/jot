@@ -99,7 +99,7 @@ export function NoteList({
             isActive={note.id === activeId}
             aria-current={note.id === activeId ? "page" : undefined}
             onClick={() => onOpen(note.id)}
-            className="h-auto flex-col items-stretch gap-0.5 rounded-xl py-2 font-normal data-active:font-normal"
+            className="h-auto flex-col items-stretch gap-0.5 rounded-3xl py-2 font-normal data-active:font-normal"
           >
             <span
               className={cn(

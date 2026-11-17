@@ -29,11 +29,12 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Kbd } from "@/components/ui/kbd"
 import { Toggle, toggleVariants } from "@/components/ui/toggle"
 import { imageFiles } from "@/editor/images"
 import { LinkBox } from "@/editor/link-box"
 import type { Notify } from "@/editor/notice"
-import { formatShortcut as shortcut } from "@/lib/platform"
+import { formatShortcut as shortcut, shortcutKeys } from "@/lib/platform"
 import { cn } from "@/lib/utils"
 
 type Item = {
@@ -173,7 +174,7 @@ export function Toolbar({
       // the screen (inset-x + mx-auto centres it; left-1/2 would halve the width it may use), with
       // smaller buttons, icons and gaps so it stays on one line down to ~320px; it
       // still wraps (centred) if even that does not fit.
-      className="sticky top-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-xl border bg-background p-1 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:gap-0.5 max-sm:p-0.5 max-sm:[&_button]:h-7 max-sm:[&_button]:min-w-7 max-sm:[&_button]:px-1.5 max-sm:[&_svg:not([class*='size-'])]:size-3.5"
+      className="sticky top-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-[12px] border bg-background p-1 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:gap-0.5 max-sm:p-0.5 max-sm:[&_button]:h-7 max-sm:[&_button]:min-w-7 max-sm:[&_button]:px-1.5 max-sm:[&_svg:not([class*='size-'])]:size-3.5"
     >
       <Group>
         <Menu
@@ -315,8 +316,12 @@ function Menu({
         <HugeiconsIcon icon={item.icon} />
         {item.label}
         {/* Hidden on touch screens: no keyboard to press them on. */}
-        <DropdownMenuShortcut className="pl-4 pointer-coarse:hidden">
-          {shortcut(item.keys)}
+        <DropdownMenuShortcut className="flex gap-0.5 pl-4 tracking-normal pointer-coarse:hidden">
+          {shortcutKeys(item.keys).map((key) => (
+            <Kbd key={key} size="sm">
+              {key}
+            </Kbd>
+          ))}
         </DropdownMenuShortcut>
       </>
     )

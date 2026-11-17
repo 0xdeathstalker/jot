@@ -17,9 +17,15 @@ export function isApple(): boolean {
 
 const appleKeys: Record<string, string> = { Mod: "⌘", Alt: "⌥", Shift: "⇧" }
 
-// ["Mod", "Shift", "S"] -> "⌘⇧S" on Apple, "Ctrl+Shift+S" elsewhere ("Mod" is Tiptap's name for it).
-export function formatShortcut(keys: string[]): string {
+// ["Mod", "Shift", "S"] -> ["⌘", "⇧", "S"] on Apple, ["Ctrl", "Shift", "S"] elsewhere ("Mod" is
+// Tiptap's name for it). One entry per keycap.
+export function shortcutKeys(keys: string[]): string[] {
   return isApple()
-    ? keys.map((k) => appleKeys[k] ?? k).join("")
-    : keys.map((k) => (k === "Mod" ? "Ctrl" : k)).join("+")
+    ? keys.map((k) => appleKeys[k] ?? k)
+    : keys.map((k) => (k === "Mod" ? "Ctrl" : k))
+}
+
+// The same as one string: "⌘⇧S" on Apple, "Ctrl+Shift+S" elsewhere (for title attributes).
+export function formatShortcut(keys: string[]): string {
+  return shortcutKeys(keys).join(isApple() ? "" : "+")
 }
