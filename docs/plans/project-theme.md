@@ -67,99 +67,143 @@ orange and passes 4.5:1 in both modes.
 - Not destructive yet: footer **Sign out**, the link box's two **Remove link** buttons
   (`src/editor/link-box.tsx`), and **Remove from my list** (`src/features/sharing/no-access.tsx`).
 
-## Changes
+## Phases
 
-### 1. Theme tokens: `src/styles/index.css`
+Each phase ends in a working app and is its own commit. Do them in order: later phases rely on
+earlier ones (the toggle needs the dark tokens, the destructive sweep needs the crimson). Tick a
+task when it is done.
 
-- Keep `@custom-variant dark (&:is(.dark *));` (class-based, needed for a manual choice).
-- `:root`: the light values above, plus `color-scheme: light;`.
-- `.dark`: the dark values above, plus `color-scheme: dark;` (scrollbars, native checkbox, form
-  controls).
-- `.ProseMirror`: add `caret-color: var(--primary);` (orange text cursor).
-- Nothing else in the editor CSS changes: links, checkboxes, code, blockquote, hr and the image
-  outline already use tokens.
+### Phase 1: New palette (light mode only)
 
-### 2. No flash on start: inline script in `index.html`
+The app looks warm in light mode. Dark mode exists in CSS, but nothing turns it on yet (the same
+as today).
 
-The class must be on `<html>` before first paint, or a dark-mode user sees a cream flash on every
-launch. React runs too late for this. Add a small inline `<script>` in `<head>` that:
+- [ ] **1.1 Light tokens.** `src/styles/index.css` `:root`: replace the `oklch` values with the
+      light column of the palette, including the crimson `--destructive`. Add
+      `color-scheme: light;`.
+- [ ] **1.2 Dark tokens.** Same file, `.dark` block: the dark column. Add `color-scheme: dark;`.
+      Keep `@custom-variant dark (&:is(.dark *));` (class-based, needed for the toggle).
+- [ ] **1.3 Text cursor.** `.ProseMirror`: add `caret-color: var(--primary);`.
+- [ ] **1.4 "Current" dot.** `src/features/notes/note-list.tsx` (~121): `bg-destructive` →
+      `bg-primary`, so red only ever means "removes something".
+- [ ] **1.5 Manifest.** `vite.config.ts`: `theme_color` and `background_color` → `#F3EEE3`.
+      Update the comment ("white because the app has no dark mode yet").
+- [ ] **1.6 Static pages.** `public/privacy.html`, `public/terms.html`:
+      `background: #F3EEE3; color: #111111;`.
 
-- reads `localStorage["jot-theme"]` (`"light"` or `"dark"`; missing means the user never
-  toggled, so follow the system), inside `try`, because storage can be blocked;
-- uses `matchMedia("(prefers-color-scheme: dark)")` when it is missing;
-- sets `document.documentElement.classList.toggle("dark", isDark)`;
-- sets the `theme-color` meta to `#F3EEE3` or `#1E1E1C`.
+Check: `pnpm dev`. The page, sidebar, selected row, popovers (link box, note menu), dialogs,
+toolbar, checklist, link, code block and blockquote all look right, and the focus ring is orange.
+`/privacy` and `/terms` are cream. Add `class="dark"` to `<html>` in devtools: the dark palette
+looks right too. `pnpm check`.
 
-Replace `<meta name="theme-color" content="#ffffff" />` with one tag, `content="#F3EEE3"`, that the
-script and the hook update. Media-query meta pairs cannot follow a manual choice. The installed
-Windows app (Edge/Chrome) colours its title bar from this tag and updates it live.
+### Phase 2: Dark mode switching (no UI yet)
 
-There is no CSP in the Worker or `public/`, so an inline script needs no header change.
+The app follows the system theme or a saved choice, with no flash on start. It can be tested
+from devtools before the menu exists.
 
-### 3. Theme state: `src/hooks/use-theme.ts` (new)
+- [ ] **2.1 Meta tag.** `index.html`: replace `<meta name="theme-color" content="#ffffff" />` with
+      one tag, `content="#F3EEE3"`. Media-query meta pairs cannot follow a manual choice, so the
+      script and the hook update this one tag.
+- [ ] **2.2 Startup script.** An inline `<script>` in the `<head>` of `index.html`, so it runs
+      before anything paints (React runs too late). It:
+  - reads `localStorage["jot-theme"]` (`"light"` or `"dark"`; missing means the user never
+    toggled, so follow the system), inside `try`, because storage can be blocked;
+  - uses `matchMedia("(prefers-color-scheme: dark)")` when the key is missing;
+  - sets `document.documentElement.classList.toggle("dark", isDark)`, and the meta to `#F3EEE3`
+    or `#1E1E1C`.
 
-- `useTheme(): [isDark, setDark]`.
-- `isDark` starts from the class the inline script already set, so the first render is correct.
-- `setDark(on)` writes `localStorage["jot-theme"]` (`"dark"` or `"light"`), toggles `.dark`, and
-  updates the meta tag. It uses the same rules as the inline script; keep both short so they are
-  easy to compare.
-- While no choice is saved, it listens to the `prefers-color-scheme` change event, so switching
-  Windows to dark updates an open app live. After the first toggle the saved choice wins and the
-  listener does nothing.
-- There is no way back to "follow the system" from the UI (the owner's call: fewer options).
-  Clearing site data resets it.
-- The setting is per device and not synced. Sign-out's local wipe (`src/sync/local-data.ts`) only
-  clears its own keys, so the theme survives a sign-out.
+  There is no CSP in the Worker or `public/`, so an inline script needs no header change.
 
-### 4. Account footer: `src/auth/account-footer.tsx`
+- [ ] **2.3 Hook.** New `src/hooks/use-theme.ts`: `useTheme(): [isDark, setDark]`.
+  - `isDark` starts from the class the script already set, so the first render is correct.
+  - `setDark(on)` writes `localStorage["jot-theme"]`, toggles `.dark` and updates the meta. It
+    uses the same rule as the script; keep both short so they are easy to compare.
+  - While no choice is saved, it listens to the `prefers-color-scheme` change event, so the open
+    app follows Windows live. Once a choice is saved, the listener does nothing.
+  - There is no way back to "follow the system" from the UI (the owner's call: fewer options).
+    Clearing site data resets it. The setting is per device. Sign-out's wipe
+    (`src/sync/local-data.ts`) clears only its own keys, so the theme survives a sign-out.
 
-New layout: the avatar on the left, a gear button on the right (`variant="ghost"`,
-`size="icon-sm"`, hugeicons `Settings02Icon`), and no visible name.
+Check:
 
-- The name and email stay in the avatar's `title` and as the gear's
-  `aria-label="Settings for <name>"`, so they are still reachable by hover and by screen readers.
-- The gear is a `DropdownMenuTrigger` (`src/components/ui/dropdown-menu.tsx` is already
-  installed). The menu contains:
-  - `DropdownMenuCheckboxItem` **Dark mode** (`Moon02Icon`), `checked={isDark}`,
-    `onCheckedChange={setDark}`, from `useTheme`;
-  - `DropdownMenuSeparator`;
-  - `DropdownMenuItem variant="destructive"`: **Sign out** with `Logout03Icon`, calling the
-    existing `handleSignOut`.
-- While it syncs before signing out (`busy`), disable the gear and show a muted "Syncing…" next to
-  the avatar, since the menu has already closed.
-- The "notes not synced" `AlertDialog` stays as it is (its button is already destructive).
-- `InviteFriend` stays above the row, unchanged.
+1. With no `jot-theme` key, switch Windows between light and dark (Settings → Personalization →
+   Colors): the app follows without a reload.
+2. In devtools run `localStorage.setItem("jot-theme", "dark")` and reload: dark, with **no cream
+   flash**. Switch Windows to light: it stays dark.
+3. `pnpm check`.
 
-### 5. Destructive actions across the UI
+### Phase 3: Account footer and gear menu
 
-| Where                                                             | Today                   | Change                                                                    |
-| ----------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------- |
-| Account menu **Sign out**                                         | ghost button            | destructive menu item (step 4)                                            |
-| `src/editor/link-box.tsx` edit box **Remove link** (~271)         | `variant="ghost"`       | `variant="destructive"`                                                   |
-| `src/editor/link-box.tsx` preview **Remove link** (~214)          | `PreviewButton` (ghost) | let `PreviewButton` take a `variant` prop; pass `"destructive"` here only |
-| `src/features/sharing/no-access.tsx` **Remove from my list**      | default (orange) button | `variant="destructive"`                                                   |
-| Note list **Delete / Leave**, share dialog remove, alert confirms | already destructive     | none: they pick up the new crimson                                        |
+The footer shows only the avatar and a gear. The gear menu holds the Dark mode toggle and
+Sign out.
 
-One more place uses the destructive colour by mistake: the **"Current" dot** in
-`src/features/notes/note-list.tsx` (~121) is `bg-destructive`, a red dot next to the open note.
-Change it to `bg-primary` (orange), so red only ever means "removes something".
+- [ ] **3.1 Layout.** `src/auth/account-footer.tsx`: remove the visible name. The row is the
+      avatar (left) and a gear button (right: `variant="ghost"`, `size="icon-sm"`,
+      `Settings02Icon`). Put the name and email in the avatar's `title`, and give the gear
+      `aria-label="Settings for <name>"`.
+- [ ] **3.2 Menu.** The gear is a `DropdownMenuTrigger` (`dropdown-menu.tsx` is already
+      installed). The menu has a `DropdownMenuCheckboxItem` **Dark mode** (`Moon02Icon`,
+      `checked={isDark}`, `onCheckedChange={setDark}`), a `DropdownMenuSeparator`, then the
+      Sign out item from 3.3.
+- [ ] **3.3 Sign out.** `DropdownMenuItem variant="destructive"` **Sign out** (`Logout03Icon`),
+      calling the existing `handleSignOut`. Remove the old ghost button.
+- [ ] **3.4 Busy state.** While it syncs before signing out (`busy`), disable the gear and show a
+      muted "Syncing…" next to the avatar (the menu has already closed).
+- [ ] **3.5 Leave alone.** The "notes not synced" `AlertDialog` (already destructive) and
+      `InviteFriend` above the row stay as they are.
 
-### 6. Manifest: `vite.config.ts`
+Check:
 
-`theme_color: "#F3EEE3"`, `background_color: "#F3EEE3"` (the manifest takes one value; it is the
-splash colour, and the meta tag takes over after launch). Update the comment ("white because the
-app has no dark mode yet").
+1. The footer shows the avatar and gear only. Hovering the avatar shows the name.
+2. Tab to the gear and open it with Enter. Toggle Dark mode on and off: it survives a reload, and
+   the check mark matches the current mode.
+3. Sign out while online: you are signed out. Sign out offline with an unsynced note: the
+   "not synced" dialog still appears.
+4. Phone width: the footer still fits inside the sidebar sheet.
+5. `pnpm check`.
 
-### 7. Static pages: `public/privacy.html`, `public/terms.html`
+### Phase 4: Destructive actions everywhere
 
-`background: #F3EEE3; color: #111111;`. No toggle and no dark mode: people see these pages once.
+Every action that removes something is crimson, and nothing else is.
 
-### 8. Docs
+- [ ] **4.1 Link box, edit field.** `src/editor/link-box.tsx` (~271) **Remove link**:
+      `variant="ghost"` → `variant="destructive"`.
+- [ ] **4.2 Link box, preview.** Same file (~214): give `PreviewButton` an optional `variant`
+      prop (default `"ghost"`), and pass `"destructive"` only for **Remove link**.
+- [ ] **4.3 No-access screen.** `src/features/sharing/no-access.tsx` **Remove from my list**:
+      `variant="destructive"`.
+- [ ] **4.4 Confirm the rest.** Note list **Delete / Leave note**, the share dialog's remove
+      button, and the leave/delete and sign-out alert buttons are already destructive. They only
+      need a look.
 
-- `docs/project-context.md` §12: add a "Colour theme" row (warm palette; a Dark mode toggle in the
-  gear menu, per device; follows the system until first toggled).
-- §5 layout: add `src/hooks/use-theme.ts`.
-- This plan: set Status when done.
+Check: in both modes, these are all crimson and clearly different from the orange accent:
+Sign out, **Delete / Leave note**, the share-dialog remove button, both **Remove link** buttons,
+**Remove from my list**, and the alert buttons. `pnpm check`.
+
+### Phase 5: Orange button review
+
+Every default `<Button>` (no `variant`) is now **filled orange**. Keep orange for each screen's
+main action only.
+
+- [ ] **5.1 Screens with a main action** (keep orange; check how it looks): `login-screen`
+      (Continue with Google), `join-page` (Join), `share-link-page`, and `share-dialog` /
+      `invite-friend` (Copy link).
+- [ ] **5.2 Everyday actions** (likely `ghost` / `outline`): `notes-sidebar` (New note),
+      `toolbar`, `editor`, `link-box`, `install-hint`. Decide each one on screen with the owner.
+
+Check: click through every screen in both modes. Each screen has at most one orange button.
+`pnpm check`.
+
+### Phase 6: Installed app, phone and docs
+
+- [ ] **6.1 Windows PWA.** `pnpm build && pnpm preview`, then install in Edge: the title bar
+      follows the toggle and the system setting.
+- [ ] **6.2 iPhone** (after deploy), installed app: the status bar area matches in both modes. If
+      dark shows a white strip, try `apple-mobile-web-app-status-bar-style` = `black-translucent`
+      (it needs `env(safe-area-inset-top)` padding at the top).
+- [ ] **6.3 Docs.** `docs/project-context.md` §12: add a "Colour theme" row (warm palette; Dark
+      mode toggle in the gear menu, per device, follows the system until first toggled). §5: add
+      `src/hooks/use-theme.ts`. Set this plan's Status to done.
 
 ## Left as is (checked)
 
@@ -174,33 +218,7 @@ app has no dark mode yet").
 
 ## Watch out
 
-- Every default `<Button>` (no `variant`) becomes **filled orange**: in `login-screen`,
-  `install-hint`, `editor`, `link-box`, `toolbar`, `notes-sidebar`, `invite-friend`, `join-page`,
-  `share-dialog`, `share-link-page`. Look at each screen. Keep orange for the main action only
-  (Continue with Google, Join, Copy link); use `ghost` / `outline` for everyday actions.
-- The inline script and `use-theme.ts` repeat the same small rule. If one changes, change the other.
+- The inline script (2.2) and `use-theme.ts` (2.3) repeat the same small rule. If one changes,
+  change the other.
 - The installed app picks up the new CSS on the next launch after deploy (service worker
   auto-update).
-
-## Check
-
-1. Fresh profile (or clear `jot-theme`), then switch Windows between light and dark (Settings →
-   Personalization → Colors): the open app follows without a reload, and the toggle's check
-   matches.
-2. `pnpm dev`, in light mode: page, sidebar, selected row, popovers, dialogs, toolbar, checklist,
-   link, code and blockquote all look right. The focus ring is orange.
-3. Gear → **Dark mode** on: everything switches at once. Reload: still dark, with **no cream
-   flash**. Now switch Windows to light: the app stays dark (the saved choice wins). Toggle off:
-   light, and it stays light after a reload.
-4. Destructive check: Sign out, note **Delete / Leave**, share dialog remove, both **Remove link**
-   buttons and **Remove from my list** are crimson, and clearly not the orange accent, in both
-   modes. The "Current" dot is orange.
-5. Footer shows the avatar and gear only. Hovering the avatar shows the name. Tab to the gear and
-   open it with Enter (keyboard access).
-6. Sign out with an unsynced note (offline): the "not synced" dialog still appears.
-7. `pnpm build && pnpm preview`, install in Edge: the title bar follows each choice.
-8. iPhone (after deploy), installed app: the status bar area matches in both modes. If dark shows a
-   white strip, try `apple-mobile-web-app-status-bar-style` = `black-translucent`, which needs
-   `env(safe-area-inset-top)` padding at the top.
-9. `/privacy` and `/terms` show cream.
-10. `pnpm check`.
