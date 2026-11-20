@@ -9,6 +9,7 @@
 > - `CLAUDE.md`: short working rules for AI agents (auto-loaded)
 > - `README.md`: setup, run and deploy, for humans
 > - `docs/project-context.md`: this file (architecture, decisions, traps)
+> - `docs/design.md`: design brief (aim, feel, colour rules, palettes tried)
 > - `docs/plans/`: one plan per task (setup, features, critical fixes)
 
 ---

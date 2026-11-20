@@ -174,7 +174,7 @@ export function Toolbar({
       // the screen (inset-x + mx-auto centres it; left-1/2 would halve the width it may use), with
       // smaller buttons, icons and gaps so it stays on one line down to ~320px; it
       // still wraps (centred) if even that does not fit.
-      className="sticky top-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-[12px] border bg-background p-1 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:gap-0.5 max-sm:p-0.5 max-sm:[&_button]:h-7 max-sm:[&_button]:min-w-7 max-sm:[&_button]:px-1.5 max-sm:[&_svg:not([class*='size-'])]:size-3.5"
+      className="sticky top-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-[12px] border bg-popover p-1 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:gap-0.5 max-sm:p-0.5 max-sm:[&_button]:h-7 max-sm:[&_button]:min-w-7 max-sm:[&_button]:px-1.5 max-sm:[&_svg:not([class*='size-'])]:size-3.5"
     >
       <Group>
         <Menu
@@ -365,7 +365,7 @@ function Menu({
       </DropdownMenuTrigger>
       {/* finalFocus false: the command already put the cursor back in the editor; returning focus
           to the trigger would take it away again. */}
-      <DropdownMenuContent finalFocus={false} className="w-auto">
+      <DropdownMenuContent finalFocus={false} className="w-auto rounded-[12px]">
         {single ? (
           <DropdownMenuRadioGroup value={items[checked.indexOf(true)]?.label ?? ""}>
             {entries}

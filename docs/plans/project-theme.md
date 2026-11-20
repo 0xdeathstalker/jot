@@ -16,41 +16,36 @@ Goals:
 
 ## Palette
 
-Both modes use a burnt orange accent. Light mode uses a darker orange and dark mode a brighter one,
-so it stays readable as text in both (WCAG AA 4.5:1). Contrast ratios are against `--background`.
+Both modes use a muted ink-blue accent, like fountain-pen ink on paper (owner, 2026-11-21: replaces
+burnt orange, deep teal and acid moss; see `docs/design.md` §6). Light mode uses a deep ink and
+dark mode a soft blue-grey, so it stays readable as text in both (WCAG AA 4.5:1). Contrast ratios are against `--background`.
 
-| Token                                | Light                           | Dark      | Notes                                                 |
-| ------------------------------------ | ------------------------------- | --------- | ----------------------------------------------------- |
-| `--background`                       | `#F3EEE3`                       | `#1E1E1C` | cream / charcoal                                      |
-| `--foreground`                       | `#111111`                       | `#D8CBB3` | ink 16:1 / sand 10:1                                  |
-| `--card`, `--popover`                | `#FAF7F0`                       | `#262624` | slightly lifted from the page                         |
-| `--primary`                          | `#B8441A`                       | `#E8693A` | 4.7:1 / 5.2:1; also the link colour and checkbox      |
-| `--primary-foreground`               | `#F3EEE3`                       | `#1E1E1C` | text on orange buttons (4.7:1 / 5.2:1)                |
-| `--secondary`, `--muted`, `--accent` | `#E9E2D3`                       | `#2A2926` | hover and selected backgrounds, code blocks           |
-| `--muted-foreground`                 | `#6B6355`                       | `#A39A8A` | 5.1:1 / 6.0:1                                         |
-| `--border`, `--input`                | `#DDD4C2`                       | `#33322F` |                                                       |
-| `--ring`                             | `#D9541E`                       | `#E8693A` | the original burnt orange (focus rings need only 3:1) |
-| `--destructive`                      | `#C8102E`                       | `#F0566A` | crimson, see "Destructive colour" (5.1:1 / 5.0:1)     |
-| `--sidebar`                          | `#EBE4D6`                       | `#191918` | a shade off the page, like Raycast                    |
-| `--sidebar-accent`                   | `#DFD6C4`                       | `#2A2926` | selected / hovered note row                           |
-| other `--sidebar-*`                  | same as the matching main token |           |                                                       |
-| `--chart-*`                          | unchanged                       | unchanged | not used anywhere                                     |
+| Token                                | Light                           | Dark      | Notes                                             |
+| ------------------------------------ | ------------------------------- | --------- | ------------------------------------------------- |
+| `--background`                       | `#F3EEE3`                       | `#1E1E1C` | cream / charcoal                                  |
+| `--foreground`                       | `#111111`                       | `#D8CBB3` | ink 16:1 / sand 10:1                              |
+| `--card`, `--popover`                | `#FAF7F0`                       | `#262624` | slightly lifted from the page                     |
+| `--primary`                          | `#2F4A7A`                       | `#9DB2D9` | 7.6:1 / 7.8:1; also the link colour and checkbox  |
+| `--primary-foreground`               | `#F3EEE3`                       | `#1E1E1C` | text on ink buttons (7.6:1 / 7.8:1)               |
+| `--secondary`, `--muted`, `--accent` | `#E9E2D3`                       | `#2A2926` | hover and selected backgrounds, code blocks       |
+| `--muted-foreground`                 | `#6B6355`                       | `#A39A8A` | 5.1:1 / 6.0:1                                     |
+| `--border`, `--input`                | `#DDD4C2`                       | `#33322F` |                                                   |
+| `--ring`                             | `#2F4A7A`                       | `#9DB2D9` | same as `--primary`                               |
+| `--destructive`                      | `#C8102E`                       | `#F0566A` | crimson, see "Destructive colour" (5.1:1 / 5.0:1) |
+| `--sidebar`                          | `#EBE4D6`                       | `#191918` | a shade off the page, like Raycast                |
+| `--sidebar-accent`                   | `#DFD6C4`                       | `#2A2926` | selected / hovered note row                       |
+| other `--sidebar-*`                  | same as the matching main token |           |                                                   |
+| `--chart-*`                          | unchanged                       | unchanged | not used anywhere                                 |
 
 Use hex values directly. Tailwind v4's `/opacity` modifiers (`bg-destructive/10`,
 `ring-foreground/5`) use `color-mix`, which accepts hex.
 
 ### Destructive colour
 
-The theme change does **not** alter it today: `--destructive` keeps shadcn's red
-(`oklch(0.577 0.245 27)` ≈ `#E7000B` light, `oklch(0.704 0.191 22)` ≈ `#FF6467` dark). But
-with the new palette it causes two problems, so this plan changes it:
-
-- It is the same hue family as the burnt orange accent (red-orange), so "Delete" and an ordinary
-  orange action look alike.
-- Shadcn's red on cream is about 4.1:1, below the 4.5:1 that small text such as "Delete" needs.
-
-Crimson (`#C8102E` / `#F0566A`) moves it toward pink-red, so it reads as clearly different from
-orange and passes 4.5:1 in both modes.
+shadcn's default red (`oklch(0.577 0.245 27)` ≈ `#E7000B`) is about 4.1:1 on cream, below
+the 4.5:1 that small text such as "Delete" needs. Crimson (`#C8102E` / `#F0566A`) passes 4.5:1 in
+both modes. (It was first chosen to stay apart from the burnt orange accent; against blue, red is
+the opposite colour, so delete actions stand out even more.)
 
 ## Today
 
@@ -78,21 +73,21 @@ task when it is done.
 The app looks warm in light mode. Dark mode exists in CSS, but nothing turns it on yet (the same
 as today).
 
-- [ ] **1.1 Light tokens.** `src/styles/index.css` `:root`: replace the `oklch` values with the
+- [x] **1.1 Light tokens.** `src/styles/index.css` `:root`: replace the `oklch` values with the
       light column of the palette, including the crimson `--destructive`. Add
       `color-scheme: light;`.
-- [ ] **1.2 Dark tokens.** Same file, `.dark` block: the dark column. Add `color-scheme: dark;`.
+- [x] **1.2 Dark tokens.** Same file, `.dark` block: the dark column. Add `color-scheme: dark;`.
       Keep `@custom-variant dark (&:is(.dark *));` (class-based, needed for the toggle).
-- [ ] **1.3 Text cursor.** `.ProseMirror`: add `caret-color: var(--primary);`.
-- [ ] **1.4 "Current" dot.** `src/features/notes/note-list.tsx` (~121): `bg-destructive` →
+- [x] **1.3 Text cursor.** `.ProseMirror`: add `caret-color: var(--primary);`.
+- [x] **1.4 "Current" dot.** `src/features/notes/note-list.tsx` (~121): `bg-destructive` →
       `bg-primary`, so red only ever means "removes something".
-- [ ] **1.5 Manifest.** `vite.config.ts`: `theme_color` and `background_color` → `#F3EEE3`.
+- [x] **1.5 Manifest.** `vite.config.ts`: `theme_color` and `background_color` → `#F3EEE3`.
       Update the comment ("white because the app has no dark mode yet").
-- [ ] **1.6 Static pages.** `public/privacy.html`, `public/terms.html`:
+- [x] **1.6 Static pages.** `public/privacy.html`, `public/terms.html`:
       `background: #F3EEE3; color: #111111;`.
 
 Check: `pnpm dev`. The page, sidebar, selected row, popovers (link box, note menu), dialogs,
-toolbar, checklist, link, code block and blockquote all look right, and the focus ring is orange.
+toolbar, checklist, link, code block and blockquote all look right, and the focus ring is ink blue.
 `/privacy` and `/terms` are cream. Add `class="dark"` to `<html>` in devtools: the dark palette
 looks right too. `pnpm check`.
 
@@ -176,22 +171,22 @@ Every action that removes something is crimson, and nothing else is.
       button, and the leave/delete and sign-out alert buttons are already destructive. They only
       need a look.
 
-Check: in both modes, these are all crimson and clearly different from the orange accent:
+Check: in both modes, these are all crimson and clearly different from the ink-blue accent:
 Sign out, **Delete / Leave note**, the share-dialog remove button, both **Remove link** buttons,
 **Remove from my list**, and the alert buttons. `pnpm check`.
 
-### Phase 5: Orange button review
+### Phase 5: Ink button review
 
-Every default `<Button>` (no `variant`) is now **filled orange**. Keep orange for each screen's
+Every default `<Button>` (no `variant`) is now **filled ink blue**. Keep ink blue for each screen's
 main action only.
 
-- [ ] **5.1 Screens with a main action** (keep orange; check how it looks): `login-screen`
+- [ ] **5.1 Screens with a main action** (keep ink blue; check how it looks): `login-screen`
       (Continue with Google), `join-page` (Join), `share-link-page`, and `share-dialog` /
       `invite-friend` (Copy link).
 - [ ] **5.2 Everyday actions** (likely `ghost` / `outline`): `notes-sidebar` (New note),
       `toolbar`, `editor`, `link-box`, `install-hint`. Decide each one on screen with the owner.
 
-Check: click through every screen in both modes. Each screen has at most one orange button.
+Check: click through every screen in both modes. Each screen has at most one ink-blue button.
 `pnpm check`.
 
 ### Phase 6: Installed app, phone and docs
@@ -210,7 +205,7 @@ Check: click through every screen in both modes. Each screen has at most one ora
 - `src/components/ui/*`: they use tokens and `dark:` classes, so they follow the theme without edits.
   The `bg-black/80` overlays are fine in both modes.
 - `src/features/sharing/caret-user.ts`: cursor colours are readable on both backgrounds.
-  `#ea580c` is close to the accent; swap it only if it causes confusion.
+  The blue `#2563eb` was swapped for cyan `#0891b2` to stay apart from the ink-blue accent.
 - `src/editor/shrink-image.ts` `#fff`: flattening an image for JPEG is not a theme colour.
 - App icons (`public/*.svg`, `pwa-assets.config.ts`): ink + white works on any background. A
   matching variant is a separate decision (edit both SVGs and `resizeOptions.background`, run

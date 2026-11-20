@@ -48,25 +48,28 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Warm "paper and ink" theme: cream / charcoal, one ink-blue accent, crimson for destructive
+   actions. Values and contrast ratios: docs/plans/project-theme.md. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  color-scheme: light;
+  --background: #f3eee3;
+  --foreground: #111111;
+  --card: #faf7f0;
+  --card-foreground: #111111;
+  --popover: #faf7f0;
+  --popover-foreground: #111111;
+  --primary: #2f4a7a;
+  --primary-foreground: #f3eee3;
+  --secondary: #e9e2d3;
+  --secondary-foreground: #111111;
+  --muted: #e9e2d3;
+  --muted-foreground: #6b6355;
+  --accent: #e9e2d3;
+  --accent-foreground: #111111;
+  --destructive: #c8102e;
+  --border: #ddd4c2;
+  --input: #ddd4c2;
+  --ring: #2f4a7a;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -75,48 +78,49 @@
   /* Mild: shadcn's components use rounded-xl..4xl (1.4–2.6x this), which at 0.625rem made
      toolbar toggles and buttons pills. 0.2rem keeps them rectangles (4xl ≈ 8px). */
   --radius: 0.2rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #ebe4d6;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #2f4a7a;
+  --sidebar-primary-foreground: #f3eee3;
+  --sidebar-accent: #dfd6c4;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: #ddd4c2;
+  --sidebar-ring: #2f4a7a;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  color-scheme: dark;
+  --background: #1e1e1c;
+  --foreground: #d8cbb3;
+  --card: #262624;
+  --card-foreground: #d8cbb3;
+  --popover: #262624;
+  --popover-foreground: #d8cbb3;
+  --primary: #9db2d9;
+  --primary-foreground: #1e1e1c;
+  --secondary: #2a2926;
+  --secondary-foreground: #d8cbb3;
+  --muted: #2a2926;
+  --muted-foreground: #a39a8a;
+  --accent: #2a2926;
+  --accent-foreground: #d8cbb3;
+  --destructive: #f0566a;
+  --border: #33322f;
+  --input: #33322f;
+  --ring: #9db2d9;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: #191918;
+  --sidebar-foreground: #d8cbb3;
+  --sidebar-primary: #9db2d9;
+  --sidebar-primary-foreground: #1e1e1c;
+  --sidebar-accent: #2a2926;
+  --sidebar-accent-foreground: #d8cbb3;
+  --sidebar-border: #33322f;
+  --sidebar-ring: #9db2d9;
 }
 
 @layer base {
@@ -143,8 +147,9 @@
   /* Room between the content and the floating toolbar above, and the bottom of the page. */
   padding-block: 1.5rem 3rem;
   font-size: 1rem;
-  line-height: 1.7;
+  line-height: 1.5;
   outline: none;
+  caret-color: var(--primary);
 }
 
 /* Phones: the toolbar sits at the bottom of the screen; keep the last lines clear of it. */
@@ -155,7 +160,7 @@
 }
 
 .ProseMirror > * + * {
-  margin-top: 0.75em;
+  margin-top: 0.4em;
 }
 
 .ProseMirror h1 {
@@ -201,7 +206,7 @@
   flex: none;
   display: flex;
   align-items: center;
-  height: 1.7em; /* one line of text: keeps the box beside the first line */
+  height: 1.5em; /* one line of text: keeps the box beside the first line */
   user-select: none;
 }
 

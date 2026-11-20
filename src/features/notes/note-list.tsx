@@ -118,7 +118,7 @@ export function NoteList({
             <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
               {note.id === activeId ? (
                 <>
-                  <span className="size-1.5 shrink-0 rounded-full bg-destructive" />
+                  <span className="size-1.5 shrink-0 rounded-full bg-primary" />
                   Current
                 </>
               ) : (
