@@ -87,7 +87,7 @@ export function InviteFriend() {
                   if (selectionStart === 0 && selectionEnd === value.length) setCopied(true)
                 }}
               />
-              <Button size="sm" onClick={() => void copy()}>
+              <Button onClick={() => void copy()} className="h-9">
                 {copied ? "Copied" : "Copy link"}
               </Button>
             </div>

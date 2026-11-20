@@ -255,7 +255,10 @@ function NotesApp({
               focusKey={isDraft ? focusKey : undefined}
             />
           ) : (
-            <p className="text-muted-foreground">No notes yet. Create one with “New note”.</p>
+            // Centred on the screen; pointer-events-none so it never blocks the sidebar under it.
+            <p className="pointer-events-none fixed inset-0 flex items-center justify-center p-4 text-center text-muted-foreground">
+              No notes yet. Create one with “New note”.
+            </p>
           )}
         </div>
       </SidebarInset>

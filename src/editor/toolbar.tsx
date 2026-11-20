@@ -293,7 +293,7 @@ function Button({ item, pressed, editor, disabled }: Common & { item: Item; pres
 // checked state for screen readers but show it as an accent background, not a tick. Font weight tells
 // it apart from the hover highlight, which uses the same accent colour in this theme.
 const itemClass =
-  "pr-3 data-checked:bg-accent data-checked:font-medium data-checked:text-accent-foreground *:data-[slot$=indicator]:hidden"
+  "pr-3 data-checked:bg-accent data-checked:font-medium data-checked:text-accent-foreground *:data-[slot$=indicator]:hidden rounded-4xl"
 function Menu({
   label,
   icon,
@@ -318,7 +318,7 @@ function Menu({
         {/* Hidden on touch screens: no keyboard to press them on. */}
         <DropdownMenuShortcut className="flex gap-0.5 pl-4 tracking-normal pointer-coarse:hidden">
           {shortcutKeys(item.keys).map((key) => (
-            <Kbd key={key} size="sm">
+            <Kbd key={key} size="sm" className="border border-muted-foreground/60">
               {key}
             </Kbd>
           ))}

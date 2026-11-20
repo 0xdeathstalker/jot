@@ -139,19 +139,23 @@ export function NoteList({
             >
               <HugeiconsIcon icon={MoreVerticalIcon} />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onTogglePin(note.id)}>
+            <DropdownMenuContent align="end" className="rounded-[12px]">
+              <DropdownMenuItem onClick={() => onTogglePin(note.id)} className="rounded-4xl">
                 <HugeiconsIcon icon={note.pinned ? PinOffIcon : PinIcon} />
                 {note.pinned ? "Unpin" : "Pin"}
               </DropdownMenuItem>
               {/* Only the owner shares (a note with a `role` belongs to someone else). */}
               {!note.role && (
-                <DropdownMenuItem onClick={() => onShare(note.id)}>
+                <DropdownMenuItem onClick={() => onShare(note.id)} className="rounded-4xl">
                   <HugeiconsIcon icon={Share08Icon} />
                   Share
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem variant="destructive" onClick={() => onDelete(note.id)}>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => onDelete(note.id)}
+                className="rounded-4xl"
+              >
                 <HugeiconsIcon icon={Delete02Icon} />
                 {note.role ? "Leave note" : "Delete"}
               </DropdownMenuItem>

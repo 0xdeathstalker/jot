@@ -22,6 +22,10 @@ import {
   type ShareInfo,
 } from "@/features/sharing/api"
 
+// The chosen role in each toggle group shows in the accent colour.
+const SELECTED =
+  "aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/90"
+
 const MESSAGES: Record<string, string> = {
   offline: "Go online to share this note.",
   full: "This note already has the maximum number of other people. Remove someone first.",
@@ -146,8 +150,12 @@ export function ShareDialog({
                   disabled={full}
                   aria-label="What people with the link can do"
                 >
-                  <ToggleGroupItem value="viewer">Can view</ToggleGroupItem>
-                  <ToggleGroupItem value="editor">Can edit</ToggleGroupItem>
+                  <ToggleGroupItem value="viewer" className={SELECTED}>
+                    Can view
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="editor" className={SELECTED}>
+                    Can edit
+                  </ToggleGroupItem>
                 </ToggleGroup>
 
                 {/* Same link for everyone with this role; it admits nobody once the note is full. */}
@@ -167,7 +175,7 @@ export function ShareDialog({
                           if (selectionStart === 0 && selectionEnd === value.length) setCopied(true)
                         }}
                       />
-                      <Button size="sm" onClick={() => void copy()}>
+                      <Button onClick={() => void copy()} className="h-9">
                         {copied ? "Copied" : "Copy link"}
                       </Button>
                     </div>
@@ -215,7 +223,7 @@ export function ShareDialog({
                         value="viewer"
                         aria-label="Can view"
                         title="Can view"
-                        className="px-2"
+                        className={`px-2 ${SELECTED}`}
                       >
                         <HugeiconsIcon icon={ViewIcon} />
                       </ToggleGroupItem>
@@ -223,7 +231,7 @@ export function ShareDialog({
                         value="editor"
                         aria-label="Can edit"
                         title="Can edit"
-                        className="px-2"
+                        className={`px-2 ${SELECTED}`}
                       >
                         <HugeiconsIcon icon={PencilEdit01Icon} />
                       </ToggleGroupItem>
