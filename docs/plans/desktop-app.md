@@ -1,6 +1,6 @@
 # Plan: Windows desktop app (Raycast Notes style)
 
-Status: planned (2026-11-21). Phase 1 (spike) decides whether the rest goes ahead.
+Status: phase 1 (spike) done, go (2026-11-22). Next: phase 2.
 
 Goal: a Windows app that a global hotkey brings up, like Raycast Notes, with everything the web app
 already does (editor, offline, sync, sharing, theme, Google login). The web app and the iPhone PWA
@@ -33,8 +33,9 @@ access: anything an XSS on the site could reach, it would reach.
 
 ## Open risk: Google sign-in inside the app
 
-Google blocks OAuth in embedded webviews (`disallowed_useragent`). Whether it catches WebView2 is
-unknown; phase 1 finds out. If it is blocked:
+**Closed (2026-11-22): login works in WebView2.** Kept as the fallback if Google starts blocking
+it. Google blocks OAuth in some embedded webviews (`disallowed_useragent`). If it ever blocks
+WebView2:
 
 1. The app opens Google login in the system browser.
 2. After login the Worker redirects to `jot://auth?code=…` (Tauri `deep-link` plugin).
@@ -51,17 +52,28 @@ Each phase ends in something that works and is its own commit. Tick a task when 
 
 Answer the unknowns before building anything for real.
 
-- [ ] **1.1** Install Rust (`rustup`) and the MSVC build tools. `src-tauri/` with a window that
+- [x] **1.1** Install Rust (`rustup`) and the MSVC build tools. `src-tauri/` with a window that
       loads the live site.
-- [ ] **1.2** Google login inside the window: works, or `disallowed_useragent`?
-- [ ] **1.3** Offline start: load once, go offline, restart the app. The notes open.
-- [ ] **1.4** Sync: edit in the app and in a browser tab at the same time. Both update within a
+- [x] **1.2** Google login inside the window: works, or `disallowed_useragent`?
+- [x] **1.3** Offline start: load once, go offline, restart the app. The notes open.
+- [x] **1.4** Sync: edit in the app and in a browser tab at the same time. Both update within a
       second.
-- [ ] **1.5** Numbers: installer size, memory with the window shown and hidden, time from hotkey to
+- [x] **1.5** Numbers: installer size, memory with the window shown and hidden, time from hotkey to
       a visible window (target under 100 ms when hidden, not closed).
 
-Outcome: write the results here, then go on or stop. If login is blocked, add the deep-link flow as
-phase 2b.
+Outcome (2026-11-22, branch `spike/desktop-app`): **go.**
+
+| Check          | Result                                                                                                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Google login   | Works inside WebView2. No deep-link flow needed; the "Open risk" section above is closed                                                                                               |
+| Offline start  | Restarted offline: the notes that were open come back                                                                                                                                  |
+| Sync           | App and a browser tab stay in step                                                                                                                                                     |
+| Hotkey         | Show + focus 5–42 ms, hide 6–30 ms (debug build, window calls only)                                                                                                                    |
+| Size           | Release `jot.exe` 9.5 MB. The NSIS installer was not built: the tool download (2.3 MB from GitHub) timed out on a slow link. Build it on CI (phase 4)                                  |
+| Memory (shown) | About 185 MB private across 8 processes (`jot` 4 MB, the rest WebView2). Debug shell, one note open. Hidden-window memory not measured yet; check it in phase 2 with the release build |
+
+The app keeps its own WebView2 profile (`dev.deathstalker.jot`), separate from Edge, so it needs
+its own sign-in once.
 
 ### Phase 2: Shell
 

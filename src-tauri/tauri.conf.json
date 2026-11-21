@@ -1,0 +1,37 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Jot",
+  "version": "0.1.0",
+  "identifier": "dev.deathstalker.jot",
+  "build": {
+    "frontendDist": "../dist/client",
+    "devUrl": "http://localhost:5173"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Jot",
+        "url": "https://jot.deathstalker.dev",
+        "width": 480,
+        "height": 600,
+        "alwaysOnTop": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
