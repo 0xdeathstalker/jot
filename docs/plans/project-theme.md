@@ -132,26 +132,28 @@ Check:
 The footer shows only the avatar and a gear. The gear menu holds the Dark mode toggle and
 Sign out.
 
-- [ ] **3.1 Layout.** `src/auth/account-footer.tsx`: remove the visible name. The row is the
+- [x] **3.1 Layout.** `src/auth/account-footer.tsx`: remove the visible name. The row is the
       avatar (left) and a gear button (right: `variant="ghost"`, `size="icon-sm"`,
       `Settings02Icon`). Put the name and email in the avatar's `title`, and give the gear
       `aria-label="Settings for <name>"`.
-- [ ] **3.2 Menu.** The gear is a `DropdownMenuTrigger` (`dropdown-menu.tsx` is already
-      installed). The menu has a `DropdownMenuCheckboxItem` **Dark mode** (`Moon02Icon`,
-      `checked={isDark}`, `onCheckedChange={setDark}`), a `DropdownMenuSeparator`, then the
-      Sign out item from 3.3.
-- [ ] **3.3 Sign out.** `DropdownMenuItem variant="destructive"` **Sign out** (`Logout03Icon`),
+- [x] **3.2 Menu.** The gear is a `DropdownMenuTrigger` (`dropdown-menu.tsx` is already
+      installed). The menu has a **Mode** row: the label on the left and, on the right, a
+      pill-shaped pair of round icon buttons, moon (`Moon02Icon`) then sun (`Sun03Icon`), with the
+      current mode filled. No check mark (owner, 2026-11-21). It is a Base UI menu `RadioGroup`, so
+      arrow keys reach it and picking a mode keeps the menu open. Then a `DropdownMenuSeparator`
+      and the Sign out item from 3.3.
+- [x] **3.3 Sign out.** `DropdownMenuItem variant="destructive"` **Sign out** (`Logout03Icon`),
       calling the existing `handleSignOut`. Remove the old ghost button.
-- [ ] **3.4 Busy state.** While it syncs before signing out (`busy`), disable the gear and show a
+- [x] **3.4 Busy state.** While it syncs before signing out (`busy`), disable the gear and show a
       muted "Syncing…" next to the avatar (the menu has already closed).
-- [ ] **3.5 Leave alone.** The "notes not synced" `AlertDialog` (already destructive) and
+- [x] **3.5 Leave alone.** The "notes not synced" `AlertDialog` (already destructive) and
       `InviteFriend` above the row stay as they are.
 
 Check:
 
 1. The footer shows the avatar and gear only. Hovering the avatar shows the name.
-2. Tab to the gear and open it with Enter. Toggle Dark mode on and off: it survives a reload, and
-   the check mark matches the current mode.
+2. Tab to the gear and open it with Enter. Pick moon, then sun: it survives a reload, and the
+   filled icon matches the current mode.
 3. Sign out while online: you are signed out. Sign out offline with an unsynced note: the
    "not synced" dialog still appears.
 4. Phone width: the footer still fits inside the sidebar sheet.
