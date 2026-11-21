@@ -66,7 +66,7 @@ export function AccountFooter({ user }: { user: AuthUser }) {
             alt=""
             title={label}
             referrerPolicy="no-referrer"
-            className="size-7 rounded-full"
+            className="size-6 rounded-full"
           />
         ) : (
           <span
