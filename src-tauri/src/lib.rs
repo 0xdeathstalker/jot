@@ -1,6 +1,8 @@
 // Desktop shell (docs/plans/desktop-app.md): the live site in one always-on-top window, a global
 // hotkey to toggle it, and a tray icon instead of a taskbar button. Close and minimize hide to the
 // tray; only the tray's Quit exits, so the hotkey keeps working.
+use std::path::PathBuf;
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use tauri::{
@@ -10,12 +12,50 @@ use tauri::{
     webview::PageLoadEvent,
 };
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 // Passed by the launch-at-login entry: start in the tray, window hidden.
 const HIDDEN_ARG: &str = "--hidden";
 static FIRST_LOAD_DONE: AtomicBool = AtomicBool::new(false);
+
+// The global hotkey: user-set from the gear menu (src/desktop/hotkey-dialog.tsx), kept in a file
+// here, not in the page, so it works even when the page cannot load.
+const DEFAULT_HOTKEY: &str = "control+alt+KeyJ";
+struct Hotkey(Mutex<Shortcut>);
+
+fn hotkey_file(app: &AppHandle) -> tauri::Result<PathBuf> {
+    Ok(app.path().app_config_dir()?.join("hotkey.txt"))
+}
+
+#[tauri::command]
+fn get_hotkey(state: tauri::State<Hotkey>) -> String {
+    state.0.lock().unwrap().into_string()
+}
+
+// Registers the new one before dropping the old, so a combo another app owns ("taken") leaves the
+// current hotkey working.
+#[tauri::command]
+fn set_hotkey(
+    app: AppHandle,
+    state: tauri::State<Hotkey>,
+    hotkey: String,
+) -> Result<String, String> {
+    let new: Shortcut = hotkey.parse().map_err(|_| "invalid".to_string())?;
+    let mut current = state.0.lock().unwrap();
+    if new != *current {
+        let shortcuts = app.global_shortcut();
+        shortcuts.register(new).map_err(|_| "taken".to_string())?;
+        let _ = shortcuts.unregister(*current);
+        *current = new;
+        let path = hotkey_file(&app).map_err(|e| e.to_string())?;
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+        }
+        std::fs::write(path, new.into_string()).map_err(|e| e.to_string())?;
+    }
+    Ok(current.into_string())
+}
 
 fn window_state_flags() -> StateFlags {
     StateFlags::SIZE | StateFlags::POSITION
@@ -56,10 +96,8 @@ fn toggle(app: &AppHandle, needs_focus: bool) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // ponytail: fixed hotkey for now; phase 3.6 makes it user-set.
-    let hotkey = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyJ);
-
     tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![get_hotkey, set_hotkey])
         // First, so a second launch only brings up the running app.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             show(app)
@@ -75,8 +113,9 @@ pub fn run() {
         )
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(move |app, shortcut, event| {
-                    if shortcut == &hotkey && event.state() == ShortcutState::Pressed {
+                // Only one shortcut is ever registered: the hotkey.
+                .with_handler(|app, _shortcut, event| {
+                    if event.state() == ShortcutState::Pressed {
                         toggle(app, true);
                     }
                 })
@@ -101,7 +140,15 @@ pub fn run() {
                 .visible(false)
                 .build()?;
 
-            app.global_shortcut().register(hotkey)?;
+            // The saved hotkey, else the default. If another app holds it, start anyway (the tray
+            // still works) and let the user pick another.
+            let saved = hotkey_file(app.handle())
+                .ok()
+                .and_then(|path| std::fs::read_to_string(path).ok())
+                .and_then(|text| text.trim().parse::<Shortcut>().ok());
+            let hotkey = saved.unwrap_or_else(|| DEFAULT_HOTKEY.parse().expect("valid default"));
+            let _ = app.global_shortcut().register(hotkey);
+            app.manage(Hotkey(Mutex::new(hotkey)));
 
             // Launch at login is on by default: enable it once, on the first run of an installed
             // build. After that the tray checkbox owns it. Never in debug, which would register the

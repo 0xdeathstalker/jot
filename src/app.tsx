@@ -12,11 +12,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Editor } from "@/editor/editor"
 import { type Notice, NoticeToast } from "@/editor/notice"
 import type { NoteText } from "@/features/notes/note-meta"
+import { NoteSwitcher } from "@/features/notes/note-switcher"
 import { NotesSidebar } from "@/features/notes/notes-sidebar"
+import { SidebarToggle } from "@/features/notes/sidebar-toggle"
 import { removeMember, unshareNote } from "@/features/sharing/api"
 import { caretUser } from "@/features/sharing/caret-user"
 import { type InviteLink, readInviteLink } from "@/features/sharing/invite-link"
@@ -26,6 +28,7 @@ import { ShareDialog } from "@/features/sharing/share-dialog"
 import { ShareLinkPage } from "@/features/sharing/share-link-page"
 import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
 import { useNoteId } from "@/hooks/use-note-id"
+import { lazyOrReload } from "@/lib/lazy"
 import { isDesktop } from "@/lib/platform"
 import {
   createNote,
@@ -53,7 +56,7 @@ function readDraft(noteId: string | null): string | null {
 }
 
 // Desktop-only code (Tauri) loads only inside the desktop app; web and phone never fetch it.
-const TitleBar = React.lazy(() => import("@/desktop/title-bar"))
+const TitleBar = lazyOrReload(() => import("@/desktop/title-bar"))
 
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
 function NotesApp({
@@ -169,6 +172,25 @@ function NotesApp({
     }
   }, [])
 
+  // Ctrl/⌘+P or +K: note switcher (everywhere; it replaces print on the web). Ctrl+N: new note,
+  // desktop only (browsers keep Ctrl+N for a new window and do not let pages take it).
+  const [switcherOpen, setSwitcherOpen] = React.useState(false)
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return
+      const key = event.key.toLowerCase()
+      if (key === "p" || key === "k") {
+        event.preventDefault()
+        setSwitcherOpen(true)
+      } else if (key === "n" && isDesktop()) {
+        event.preventDefault()
+        handleNewRef.current()
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
   // First real edit: the draft joins the list. The editor's debounced meta write then fills the title.
   const handleDraftEdited = () => {
     if (!draftId) return
@@ -255,10 +277,17 @@ function NotesApp({
             <TitleBar />
           </React.Suspense>
         )}
-        <div className="mx-auto w-full max-w-3xl p-4">
+        <NoteSwitcher
+          notes={notes}
+          open={switcherOpen}
+          onOpenChange={setSwitcherOpen}
+          onPick={openNote}
+        />
+        {/* Desktop: a small window, so tighter edges (the title bar sits above). */}
+        <div className="mx-auto w-full max-w-3xl p-4 desktop:px-3 desktop:pt-1">
           {/* Desktop: the title bar has the trigger instead. */}
           <div className="mb-2 flex items-center md:absolute md:top-2 md:left-2 md:mb-0 desktop:hidden">
-            <SidebarTrigger aria-label="Toggle notes" />
+            <SidebarToggle />
           </div>
           {share && (
             <ShareDialog

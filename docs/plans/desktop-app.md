@@ -106,11 +106,25 @@ frameless (without the drag bar of 3.3 the window could not be moved) and the tr
       the top (`data-tauri-drag-region`), with minimize and close.
 - [x] **3.3b** Tray **New note** (moved from 2.3): the shell emits an event, `src/desktop/` creates
       the note.
-- [ ] **3.4** Small-window layout: sidebar collapsed by default, compact spacing.
-- [ ] **3.5** Note switcher palette (`Ctrl+P` / `⌘K`; context §12 keeps `⌘K` free for it).
-      `Ctrl+N` new note. Opens on the last note with the caret ready.
-- [ ] **3.6** Hotkey setting in the gear menu (desktop only): record a key combo, register it, warn
-      if Windows says it is taken.
+- [x] **3.4** Small-window layout: compact spacing (`desktop:`). Below 768 px the sidebar is already
+      a sheet, so it starts closed with no extra code.
+- [x] **3.5** Note switcher (`src/features/notes/note-switcher.tsx`): `Ctrl+P` / `⌘K` opens it
+      **everywhere**, web and phone too (owner, 2026-11-22; on the web it replaces print). Same
+      search as the sidebar; arrows and Enter. `Ctrl+N` new note, desktop only (browsers keep it
+      for a new window). The page stays loaded while hidden, so it reopens on the same note.
+- [x] **3.6** Hotkey setting: gear menu **Global hotkey…** (desktop only,
+      `src/desktop/hotkey-dialog.tsx`). Press a combo with Ctrl or Alt; the shell registers the
+      new one before dropping the old, so "taken" keeps the current one. Saved by the shell in
+      `hotkey.txt` (works even if the page cannot load).
+- [x] **3.7** Owner feedback (2026-11-22):
+  - The switcher and the phone sidebar blur what is behind them instead of darkening it
+    (`overlayClassName` on `DialogContent`; the drawer backdrop in `sidebar.tsx`).
+  - The sidebar toggle shows its keys (Ctrl B) on hover, no label (`sidebar-toggle.tsx`). The
+    tooltip uses the popover colours, not the bright foreground.
+  - Fix: the first **Global hotkey…** click blanked the app. Its lazy chunk failed to load (the
+    dev server was bundling `@tauri-apps/api/core` for the first time), `React.lazy` threw, and
+    nothing caught it. `lazyOrReload()` (`src/lib/lazy.ts`) reloads once instead. The same
+    happens in production when a deploy replaces chunks while the window stays open.
 
 ### Phase 4: Packaging and updates
 

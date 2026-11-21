@@ -3,7 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { getCurrentWindow } from "@tauri-apps/api/window"
 
 import { Button } from "@/components/ui/button"
-import { SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarToggle } from "@/features/notes/sidebar-toggle"
 
 // The desktop window has no Windows frame: this bar drags it, and its buttons hide it to the tray
 // (the shell turns minimize and close into hide). Tauri drags only from the element that has
@@ -15,7 +15,7 @@ export default function TitleBar() {
       data-tauri-drag-region
       className="sticky top-0 z-20 flex h-10 shrink-0 items-center gap-1 bg-background px-2 select-none"
     >
-      <SidebarTrigger aria-label="Toggle notes" />
+      <SidebarToggle />
       <div data-tauri-drag-region className="h-full flex-1" />
       <Button
         variant="ghost"

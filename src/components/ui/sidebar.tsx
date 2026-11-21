@@ -200,7 +200,7 @@ function Sidebar({
           )}
         />
         <DrawerPrimitive.Portal>
-          <DrawerPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/80 opacity-[calc(1-var(--drawer-swipe-progress,0))] transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:transition-none supports-backdrop-filter:backdrop-blur-xs" />
+          <DrawerPrimitive.Backdrop className="fixed inset-0 z-50 bg-transparent opacity-[calc(1-var(--drawer-swipe-progress,0))] transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:transition-none supports-backdrop-filter:backdrop-blur-sm" />
           <DrawerPrimitive.Viewport className="fixed inset-0 z-50">
             <DrawerPrimitive.Popup
               dir={dir}
