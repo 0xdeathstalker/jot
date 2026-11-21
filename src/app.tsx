@@ -255,6 +255,13 @@ function NotesApp({
     if (id === noteId) openNote(null, { replace: true })
   }
 
+  // The ⋮ menu's actions: the same in the sidebar and the note switcher.
+  const noteActions = {
+    onTogglePin: (id: string) => togglePin(doc, id),
+    onShare: (id: string) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true })),
+    onDelete: handleDelete,
+  }
+
   return (
     // Phone (< 768 px): the sidebar is a sheet over the editor. Desktop: a column that hides fully
     // (trigger or Ctrl/⌘+B outside the editor); the provider remembers it in a cookie.
@@ -269,9 +276,7 @@ function NotesApp({
         activeId={noteId}
         onNew={handleNew}
         onOpen={openNote}
-        onTogglePin={(id) => togglePin(doc, id)}
-        onShare={(id) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true }))}
-        onDelete={handleDelete}
+        {...noteActions}
       />
 
       <SidebarInset className="min-w-0 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
@@ -282,6 +287,8 @@ function NotesApp({
         )}
         <NoteSwitcher
           notes={notes}
+          activeId={noteId}
+          {...noteActions}
           open={switcherOpen}
           onOpenChange={setSwitcherOpen}
           onPick={(id) => {

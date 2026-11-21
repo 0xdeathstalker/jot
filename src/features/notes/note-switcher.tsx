@@ -1,19 +1,27 @@
 import { cn } from "cn"
 import * as React from "react"
 
+import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { NoteActions, type NoteActionHandlers, NoteRowText } from "@/features/notes/note-list"
 import { useNoteSearch } from "@/hooks/use-note-search"
 import type { Note } from "@/sync/index-doc"
 
-// Ctrl+P / ⌘K: jump to a note by typing (app.tsx opens it). Same search as the sidebar; arrows
-// move, Enter opens. A combobox: focus stays in the input, the list follows aria-activedescendant.
+// Ctrl+P / ⌘K: jump to a note by typing (app.tsx opens it). Same search, rows and ⋮ menu as the
+// sidebar; arrows move, Enter opens. A combobox: focus stays in the input, the list follows
+// aria-activedescendant.
 export function NoteSwitcher({
   notes,
+  activeId,
   open,
   onOpenChange,
   onPick,
-}: {
+  onTogglePin,
+  onShare,
+  onDelete,
+}: NoteActionHandlers & {
   notes: Note[]
+  activeId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onPick: (id: string) => void
@@ -36,21 +44,26 @@ export function NoteSwitcher({
     onOpenChange(next)
   }
 
-  // Picked: the new note's editor focuses itself once mounted (app.tsx), so the dialog must not
-  // move focus: the old editor it would pick is about to be replaced (focus then fell to the title
-  // bar). Closed without a pick: back to the open note's editor.
-  const picked = React.useRef(false)
+  // Focus on close. After a pick the new note's editor focuses itself once mounted (app.tsx), and
+  // after Share / Delete their dialog takes focus: the switcher must not move it (the editor it
+  // would find is about to be replaced, and focus then fell to the title bar). Closed with Esc or
+  // a click outside: back to the open note's editor, never to the sidebar toggle.
+  const skipFocus = React.useRef(false)
   const finalFocus = () => {
-    const wasPicked = picked.current
-    picked.current = false
-    return wasPicked ? false : (document.querySelector<HTMLElement>(".ProseMirror") ?? false)
+    const skip = skipFocus.current
+    skipFocus.current = false
+    return skip ? false : (document.querySelector<HTMLElement>(".ProseMirror") ?? false)
+  }
+
+  // Close first, then act (no dialog stacked on the switcher).
+  const closeThen = (action: () => void) => {
+    skipFocus.current = true
+    handleOpenChange(false)
+    action()
   }
 
   const pick = (note: Note | undefined) => {
-    if (!note) return
-    picked.current = true
-    onPick(note.id)
-    handleOpenChange(false)
+    if (note) closeThen(() => onPick(note.id))
   }
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -63,8 +76,7 @@ export function NoteSwitcher({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {/* Blur, no darkening (owner, 2026-11-22).
-          Focus on close: see finalFocus above, never back to the sidebar toggle. */}
+      {/* Blur, no darkening (owner, 2026-11-22). */}
       <DialogContent
         showCloseButton={false}
         overlayClassName="bg-transparent supports-backdrop-filter:backdrop-blur-sm"
@@ -96,27 +108,43 @@ export function NoteSwitcher({
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">No notes found</p>
           ) : (
             results.map((note, i) => (
-              // oxlint-disable-next-line jsx-a11y/click-events-have-key-events
+              // The ⋮ button sits beside the option, not in it: an option holds no controls, and a
+              // click on ⋮ must not open the note. Mouse only (tabIndex -1): the keyboard stays in
+              // the search box; the sidebar has the same menu for keyboard use.
               <div
                 key={note.id}
-                id={optionId(i)}
-                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-                role="option"
-                aria-selected={i === active}
-                tabIndex={-1}
+                role="presentation"
                 onMouseMove={() => setActive(i)}
-                onClick={() => pick(note)}
-                className={cn(
-                  "flex cursor-default flex-col rounded-lg px-3 py-2 text-sm",
-                  i === active && "bg-accent text-accent-foreground",
-                )}
+                className={cn("flex items-center rounded-3xl", i === active && "bg-accent")}
               >
-                <span className={cn("truncate", !note.title && "text-muted-foreground")}>
-                  {note.title || "Untitled"}
-                </span>
-                {note.preview && (
-                  <span className="truncate text-xs text-muted-foreground">{note.preview}</span>
-                )}
+                {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events */}
+                <div
+                  id={optionId(i)}
+                  // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+                  role="option"
+                  aria-selected={i === active}
+                  aria-current={note.id === activeId ? "page" : undefined}
+                  tabIndex={-1}
+                  onClick={() => pick(note)}
+                  className="flex min-w-0 flex-1 cursor-default flex-col gap-0.5 px-3 py-2"
+                >
+                  <NoteRowText note={note} current={note.id === activeId} />
+                </div>
+                <NoteActions
+                  note={note}
+                  onTogglePin={onTogglePin}
+                  onShare={(id) => closeThen(() => onShare(id))}
+                  onDelete={(id) => closeThen(() => onDelete(id))}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      tabIndex={-1}
+                      aria-label={`Actions for ${note.title || "Untitled"}`}
+                      className="mr-1.5 shrink-0"
+                    />
+                  }
+                />
               </div>
             ))
           )}
