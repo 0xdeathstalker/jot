@@ -4,6 +4,7 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 
 use tauri::{
     AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent,
@@ -13,6 +14,7 @@ use tauri::{
 };
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
+use tauri_plugin_updater::{Update, UpdaterExt};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 // Passed by the launch-at-login entry: start in the tray, window hidden.
@@ -61,6 +63,37 @@ fn window_state_flags() -> StateFlags {
     StateFlags::SIZE | StateFlags::POSITION
 }
 
+// Shell updates come from GitHub Releases (latest.json, signed with the key in the
+// TAURI_SIGNING_PRIVATE_KEY secret; .github/workflows/desktop-release.yml). The web part updates
+// itself with each deploy. Checks at start and every 6 hours; downloads in the background, but
+// installing closes the app (the installer then starts the new version), so it waits until the
+// window is hidden: never in the middle of a note.
+const UPDATE_EVERY: Duration = Duration::from_secs(6 * 60 * 60);
+
+async fn download_update(app: &AppHandle) -> Option<(Update, Vec<u8>)> {
+    let update = app.updater().ok()?.check().await.ok()??;
+    let bytes = update.download(|_, _| {}, || {}).await.ok()?;
+    Some((update, bytes))
+}
+
+fn start_updater(app: AppHandle) {
+    std::thread::spawn(move || {
+        loop {
+            if let Some((update, bytes)) = tauri::async_runtime::block_on(download_update(&app)) {
+                while app
+                    .get_webview_window("main")
+                    .is_some_and(|w| w.is_visible().unwrap_or(false))
+                {
+                    std::thread::sleep(Duration::from_secs(60));
+                }
+                let _ = app.save_window_state(window_state_flags());
+                let _ = update.install(bytes);
+            }
+            std::thread::sleep(UPDATE_EVERY);
+        }
+    });
+}
+
 fn show(app: &AppHandle) {
     let Some(window) = app.get_webview_window("main") else {
         return;
@@ -102,6 +135,7 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             show(app)
         }))
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             Some(vec![HIDDEN_ARG]),
@@ -139,6 +173,11 @@ pub fn run() {
                 .decorations(false)
                 .visible(false)
                 .build()?;
+
+            // Debug builds are not installed: nothing to update.
+            if !cfg!(debug_assertions) {
+                start_updater(app.handle().clone());
+            }
 
             // The saved hotkey, else the default. If another app holds it, start anyway (the tray
             // still works) and let the user pick another.

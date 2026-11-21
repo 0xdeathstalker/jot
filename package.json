@@ -6,6 +6,8 @@
   "scripts": {
     "preinstall": "node -e \"if(!(process.env.npm_config_user_agent||'').startsWith('pnpm/')){console.error('This project requires pnpm. Run: npm i -g pnpm (or corepack enable), then pnpm install.');process.exit(1)}\"",
     "dev": "vite",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
     "build": "tsc -b && vite build",
     "preview": "pnpm run build && vite preview",
     "preview:worker": "pnpm run build && wrangler dev --local-upstream localhost:8787",

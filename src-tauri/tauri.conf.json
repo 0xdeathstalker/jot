@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "dev.deathstalker.jot",
   "build": {
-    "frontendDist": "../dist/client",
+    "frontendDist": "https://jot.deathstalker.dev",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "pnpm dev"
   },
@@ -17,6 +17,7 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -24,5 +25,14 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdFM0Y1QjhBRDFCNDM5QzUKUldURk9iVFJpbHMvZmgwZHVnZTJ4dlV3RW5acDJJOWFIUTJRVzF2a1FmZmppa1I3TlE4WDl1YkgK",
+      "endpoints": ["https://github.com/0xdeathstalker/jot/releases/latest/download/latest.json"],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

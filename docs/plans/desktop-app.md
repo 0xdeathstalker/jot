@@ -128,12 +128,30 @@ frameless (without the drag bar of 3.3 the window could not be moved) and the tr
 
 ### Phase 4: Packaging and updates
 
-- [ ] **4.1** `pnpm desktop:dev` (shell on `localhost:5173`) and `pnpm desktop:build` (installer).
-- [ ] **4.2** GitHub Actions on a Windows runner (free, public repo): build the NSIS installer on a
-      version tag and attach it to a GitHub Release.
-- [ ] **4.3** `tauri-plugin-updater` reading that release, so friends get shell updates.
-- [ ] **4.4** After a web deploy, the app picks up the new version when shown (reload if a service
-      worker update is waiting).
+**Order matters: merge to `main` (web deploy) before the first release.** The release app loads the
+live site, and without phase 3 deployed it has no title bar, so a frameless window could not be
+moved or closed.
+
+- [x] **4.1** `pnpm desktop:dev` (`tauri dev`: runs `pnpm dev` and the shell on `localhost:5173`)
+      and `pnpm desktop:build` (`tauri build`; locally it needs `TAURI_SIGNING_PRIVATE_KEY` set to
+      the key file path). Jot's icon from `public/icon-source.svg` (`pnpm tauri icon`), Windows
+      sizes only. `frontendDist` is the live site URL: nothing to build or embed.
+- [ ] **4.2** `.github/workflows/desktop-release.yml`: a `desktop-v*` tag builds on a Windows
+      runner (free, public repo) with `tauri-action` and publishes a GitHub Release with the NSIS
+      installer and `latest.json`. To release: bump `version` in `src-tauri/tauri.conf.json`,
+      commit, then tag `desktop-v<version>`. Needs the `TAURI_SIGNING_PRIVATE_KEY` repo secret.
+- [ ] **4.3** Updater (`tauri-plugin-updater`, release builds only): checks
+      `releases/latest/download/latest.json` at start and every 6 hours, downloads in the
+      background, installs only while the window is hidden (installing closes the app; the
+      installer starts the new version). Signed with a free minisign key, not Windows code
+      signing: private key at `%USERPROFILE%\.tauri\jot-updater.key` (back it up; losing it means
+      installed apps can never update), public key in `tauri.conf.json`. Note: `releases/latest`
+      means every GitHub Release in this repo must be a desktop release.
+- [ ] **4.4** After a web deploy: `main.tsx` already checks for a service worker update when the
+      page becomes visible and hourly, and `autoUpdate` reloads onto it. To verify: hiding the
+      window must make `document.visibilityState` "hidden" in WebView2.
+- [ ] **4.5** First release: install it, check launch at login (2.4), the tray icon, and that a
+      second release updates the first.
 
 ### Phase 5: Docs
 
