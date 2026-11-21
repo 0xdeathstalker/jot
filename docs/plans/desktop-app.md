@@ -97,14 +97,14 @@ frameless (without the drag bar of 3.3 the window could not be moved) and the tr
 
 ### Phase 3: Desktop UI in the shared React code
 
-- [ ] **3.1** `isDesktop()` in `src/lib/platform.ts`. When true, add `desktop` to `<html>` and a
+- [x] **3.1** `isDesktop()` in `src/lib/platform.ts`. When true, add `desktop` to `<html>` and a
       Tailwind `desktop:` variant (same pattern as `dark:`).
-- [ ] **3.2** `src/desktop/`: everything that talks to Tauri, loaded with a dynamic `import()` only
+- [x] **3.2** `src/desktop/`: everything that talks to Tauri, loaded with a dynamic `import()` only
       when `isDesktop()`. `@tauri-apps/api` is imported nowhere else (add a lint rule like the
       `fetch` one), so the web and phone bundles do not change.
-- [ ] **3.3** Frameless, rounded window (`decorations: false`, moved from 2.1) with a drag bar at
+- [x] **3.3** Frameless, rounded window (`decorations: false`, moved from 2.1) with a drag bar at
       the top (`data-tauri-drag-region`), with minimize and close.
-- [ ] **3.3b** Tray **New note** (moved from 2.3): the shell emits an event, `src/desktop/` creates
+- [x] **3.3b** Tray **New note** (moved from 2.3): the shell emits an event, `src/desktop/` creates
       the note.
 - [ ] **3.4** Small-window layout: sidebar collapsed by default, compact spacing.
 - [ ] **3.5** Note switcher palette (`Ctrl+P` / `⌘K`; context §12 keeps `⌘K` free for it).

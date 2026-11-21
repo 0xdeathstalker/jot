@@ -5,22 +5,11 @@
   "identifier": "dev.deathstalker.jot",
   "build": {
     "frontendDist": "../dist/client",
-    "devUrl": "http://localhost:5173"
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "pnpm dev"
   },
   "app": {
-    "windows": [
-      {
-        "label": "main",
-        "title": "Jot",
-        "url": "https://jot.deathstalker.dev",
-        "width": 480,
-        "height": 600,
-        "alwaysOnTop": true,
-        "visible": false,
-        "skipTaskbar": true,
-        "center": true
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": null
     }

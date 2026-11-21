@@ -26,6 +26,7 @@ import { ShareDialog } from "@/features/sharing/share-dialog"
 import { ShareLinkPage } from "@/features/sharing/share-link-page"
 import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
 import { useNoteId } from "@/hooks/use-note-id"
+import { isDesktop } from "@/lib/platform"
 import {
   createNote,
   markShared,
@@ -50,6 +51,9 @@ function readDraft(noteId: string | null): string | null {
     return null
   }
 }
+
+// Desktop-only code (Tauri) loads only inside the desktop app; web and phone never fetch it.
+const TitleBar = React.lazy(() => import("@/desktop/title-bar"))
 
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
 function NotesApp({
@@ -143,6 +147,28 @@ function NotesApp({
     }
   }
 
+  // Desktop tray "New note". The ref keeps the listener on the latest handleNew without
+  // re-subscribing every render.
+  const handleNewRef = React.useRef(handleNew)
+  React.useEffect(() => {
+    handleNewRef.current = handleNew
+  })
+  React.useEffect(() => {
+    if (!isDesktop()) return
+    let stop: (() => void) | undefined
+    let cancelled = false
+    void import("@/desktop/events")
+      .then(({ onTrayNewNote }) => onTrayNewNote(() => handleNewRef.current()))
+      .then((unlisten) => {
+        if (cancelled) unlisten()
+        else stop = unlisten
+      })
+    return () => {
+      cancelled = true
+      stop?.()
+    }
+  }, [])
+
   // First real edit: the draft joins the list. The editor's debounced meta write then fills the title.
   const handleDraftEdited = () => {
     if (!draftId) return
@@ -224,8 +250,14 @@ function NotesApp({
       />
 
       <SidebarInset className="min-w-0 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+        {isDesktop() && (
+          <React.Suspense fallback={<div className="h-10 shrink-0" />}>
+            <TitleBar />
+          </React.Suspense>
+        )}
         <div className="mx-auto w-full max-w-3xl p-4">
-          <div className="mb-2 flex items-center md:absolute md:top-2 md:left-2 md:mb-0">
+          {/* Desktop: the title bar has the trigger instead. */}
+          <div className="mb-2 flex items-center md:absolute md:top-2 md:left-2 md:mb-0 desktop:hidden">
             <SidebarTrigger aria-label="Toggle notes" />
           </div>
           {share && (

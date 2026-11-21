@@ -4,7 +4,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use tauri::{
-    AppHandle, Manager, WindowEvent,
+    AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent,
     menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     webview::PageLoadEvent,
@@ -83,6 +83,24 @@ pub fn run() {
                 .build(),
         )
         .setup(move |app| {
+            // Debug builds load `pnpm dev`, so React changes show up without a deploy. Release builds
+            // load the live site: same origin as the web app (cookies, sockets, service worker).
+            let url = if cfg!(debug_assertions) {
+                "http://localhost:5173"
+            } else {
+                "https://jot.deathstalker.dev"
+            };
+            // Frameless: the React title bar (src/desktop/title-bar.tsx) drags, minimizes, closes.
+            WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url.parse()?))
+                .title("Jot")
+                .inner_size(480.0, 600.0)
+                .center()
+                .always_on_top(true)
+                .skip_taskbar(true)
+                .decorations(false)
+                .visible(false)
+                .build()?;
+
             app.global_shortcut().register(hotkey)?;
 
             // Launch at login is on by default: enable it once, on the first run of an installed
@@ -109,6 +127,7 @@ pub fn run() {
             let menu = Menu::with_items(
                 app,
                 &[
+                    &MenuItem::with_id(app, "new-note", "New note", true, None::<&str>)?,
                     &MenuItem::with_id(app, "show", "Show Jot", true, None::<&str>)?,
                     &autostart,
                     &PredefinedMenuItem::separator(app)?,
@@ -121,6 +140,11 @@ pub fn run() {
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(move |app, event| match event.id.as_ref() {
+                    "new-note" => {
+                        show(app);
+                        // src/desktop/events.ts makes the note.
+                        let _ = app.emit_to("main", "new-note", ());
+                    }
                     "show" => show(app),
                     "autostart" => {
                         let launcher = app.autolaunch();

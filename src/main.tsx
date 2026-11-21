@@ -2,6 +2,7 @@ import * as React from "react"
 import { createRoot } from "react-dom/client"
 import { registerSW } from "virtual:pwa-register"
 
+import { isDesktop } from "@/lib/platform"
 import { wipeIfPending } from "@/sync/local-data"
 
 import "@/styles/index.css"
@@ -21,6 +22,9 @@ registerSW({
     })
   },
 })
+
+// Desktop app: the `desktop:` Tailwind variant keys off this class.
+if (isDesktop()) document.documentElement.classList.add("desktop")
 
 // After a sign-out the device's notes are deleted here, before anything opens them.
 void wipeIfPending().then(() => {
