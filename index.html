@@ -9,7 +9,31 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
     />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#F3EEE3" />
+    <!-- Theme before first paint (no cream flash). Same rule as src/hooks/use-theme.ts. -->
+    <script>
+      ;(function () {
+        var mql = matchMedia("(prefers-color-scheme: dark)")
+        function saved() {
+          try {
+            return localStorage.getItem("jot-theme")
+          } catch (e) {
+            return null
+          }
+        }
+        function apply() {
+          var s = saved()
+          var isDark = s ? s === "dark" : mql.matches
+          document.documentElement.classList.toggle("dark", isDark)
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute("content", isDark ? "#1E1E1C" : "#F3EEE3")
+        }
+        apply()
+        // Follow the system live until the user picks a theme (then apply() keeps the saved one).
+        mql.addEventListener("change", apply)
+      })()
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Jot" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />

@@ -96,10 +96,10 @@ looks right too. `pnpm check`.
 The app follows the system theme or a saved choice, with no flash on start. It can be tested
 from devtools before the menu exists.
 
-- [ ] **2.1 Meta tag.** `index.html`: replace `<meta name="theme-color" content="#ffffff" />` with
+- [x] **2.1 Meta tag.** `index.html`: replace `<meta name="theme-color" content="#ffffff" />` with
       one tag, `content="#F3EEE3"`. Media-query meta pairs cannot follow a manual choice, so the
       script and the hook update this one tag.
-- [ ] **2.2 Startup script.** An inline `<script>` in the `<head>` of `index.html`, so it runs
+- [x] **2.2 Startup script.** An inline `<script>` in the `<head>` of `index.html`, so it runs
       before anything paints (React runs too late). It:
   - reads `localStorage["jot-theme"]` (`"light"` or `"dark"`; missing means the user never
     toggled, so follow the system), inside `try`, because storage can be blocked;
@@ -109,7 +109,7 @@ from devtools before the menu exists.
 
   There is no CSP in the Worker or `public/`, so an inline script needs no header change.
 
-- [ ] **2.3 Hook.** New `src/hooks/use-theme.ts`: `useTheme(): [isDark, setDark]`.
+- [x] **2.3 Hook.** New `src/hooks/use-theme.ts`: `useTheme(): [isDark, setDark]`.
   - `isDark` starts from the class the script already set, so the first render is correct.
   - `setDark(on)` writes `localStorage["jot-theme"]`, toggles `.dark` and updates the meta. It
     uses the same rule as the script; keep both short so they are easy to compare.
