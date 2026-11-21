@@ -1,6 +1,6 @@
 # Plan: Warm colour theme, theme setting, account menu
 
-Status: planned (2026-11-18)
+Status: implemented (2026-11-21); device checks 6.1 and 6.2 still to do
 
 Goals:
 
@@ -201,7 +201,7 @@ Check: click through every screen in both modes. Each screen has at most one ink
 - [ ] **6.2 iPhone** (after deploy), installed app: the status bar area matches in both modes. If
       dark shows a white strip, try `apple-mobile-web-app-status-bar-style` = `black-translucent`
       (it needs `env(safe-area-inset-top)` padding at the top).
-- [ ] **6.3 Docs.** `docs/project-context.md` §12: add a "Colour theme" row (warm palette; Dark
+- [x] **6.3 Docs.** `docs/project-context.md` §12: add a "Colour theme" row (warm palette; Dark
       mode toggle in the gear menu, per device, follows the system until first toggled). §5: add
       `src/hooks/use-theme.ts`. Set this plan's Status to done.
 
