@@ -87,6 +87,9 @@ function NotesApp({
   const [draftId, setDraftId] = React.useState(() => readDraft(noteId))
   const isDraft = !!noteId && noteId === draftId && !currentNote
   const [focusKey, setFocusKey] = React.useState(0)
+  // A note picked in the switcher gets the caret, like a new draft (not on every open: on a phone
+  // that would pop the keyboard each time).
+  const [pickedId, setPickedId] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     try {
@@ -281,7 +284,11 @@ function NotesApp({
           notes={notes}
           open={switcherOpen}
           onOpenChange={setSwitcherOpen}
-          onPick={openNote}
+          onPick={(id) => {
+            openNote(id)
+            setPickedId(id)
+            setFocusKey((key) => key + 1)
+          }}
         />
         {/* Desktop: a small window, so tighter edges (the title bar sits above). */}
         <div className="mx-auto w-full max-w-3xl p-4 desktop:px-3 desktop:pt-1">
@@ -313,7 +320,7 @@ function NotesApp({
               noAccess={currentNote?.noAccess}
               caret={caretUser(user)}
               onEdited={isDraft ? handleDraftEdited : undefined}
-              focusKey={isDraft ? focusKey : undefined}
+              focusKey={isDraft || noteId === pickedId ? focusKey : undefined}
             />
           ) : (
             // Centred in the writing area (SidebarInset is `relative`); pointer-events-none so it

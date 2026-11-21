@@ -36,8 +36,19 @@ export function NoteSwitcher({
     onOpenChange(next)
   }
 
+  // Picked: the new note's editor focuses itself once mounted (app.tsx), so the dialog must not
+  // move focus: the old editor it would pick is about to be replaced (focus then fell to the title
+  // bar). Closed without a pick: back to the open note's editor.
+  const picked = React.useRef(false)
+  const finalFocus = () => {
+    const wasPicked = picked.current
+    picked.current = false
+    return wasPicked ? false : (document.querySelector<HTMLElement>(".ProseMirror") ?? false)
+  }
+
   const pick = (note: Note | undefined) => {
     if (!note) return
+    picked.current = true
     onPick(note.id)
     handleOpenChange(false)
   }
@@ -52,14 +63,13 @@ export function NoteSwitcher({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {/* Blur, no darkening (owner, 2026-11-22). On close, focus goes to the editor (the picked
-          note, or the one that was open), not back to whatever was focused before (often the
-          sidebar toggle). No editor: leave focus alone. */}
+      {/* Blur, no darkening (owner, 2026-11-22).
+          Focus on close: see finalFocus above, never back to the sidebar toggle. */}
       <DialogContent
         showCloseButton={false}
         overlayClassName="bg-transparent supports-backdrop-filter:backdrop-blur-sm"
         className="top-[15%] translate-y-0 gap-0 p-0"
-        finalFocus={() => document.querySelector<HTMLElement>(".ProseMirror") ?? false}
+        finalFocus={finalFocus}
       >
         <DialogTitle className="sr-only">Go to note</DialogTitle>
         {/* The dialog focuses this on open (first focusable element). */}
