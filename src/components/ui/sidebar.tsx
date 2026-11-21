@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Drawer as DrawerPrimitive } from "@base-ui/react/drawer"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -10,13 +11,6 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -183,30 +177,58 @@ function Sidebar({
   }
 
   if (isMobile) {
+    // Jot: a Base UI Drawer instead of shadcn's Sheet, for the iPhone-style edge swipe
+    // (docs/plans/sidebar-edge-swipe.md). Drag from the screen edge pulls the panel out under the
+    // finger; release past half its width or with a flick to open. Drag the panel or the backdrop
+    // back to close. Slides the full width with no fade, 150 ms linear (desktop: 200 ms).
+    // `transform`, not Tailwind's `translate-*`: Base UI reads the computed `transform`.
+    const closed =
+      side === "left"
+        ? "data-starting-style:[transform:translateX(-100%)] data-ending-style:[transform:translateX(-100%)]"
+        : "data-starting-style:[transform:translateX(100%)] data-ending-style:[transform:translateX(100%)]"
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <SheetContent
-          dir={dir}
-          data-sidebar="sidebar"
-          data-slot="sidebar"
-          data-mobile="true"
-          // Jot: slide the full width with no fade, like the desktop sidebar (Sheet default: fade + 2.5rem nudge).
-          // 150 ms, quicker than desktop's 200 ms: the panel covers less distance on a phone.
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground duration-150 ease-linear data-starting-style:opacity-100 data-ending-style:opacity-100 data-[side=left]:data-starting-style:-translate-x-full data-[side=left]:data-ending-style:-translate-x-full data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full [&>button]:hidden"
-          style={
-            {
-              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-            } as React.CSSProperties
-          }
-          side={side}
-        >
-          <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-          </SheetHeader>
-          <div className="flex h-full w-full flex-col">{children}</div>
-        </SheetContent>
-      </Sheet>
+      <DrawerPrimitive.Root
+        open={openMobile}
+        onOpenChange={setOpenMobile}
+        swipeDirection={side}
+      >
+        {/* Invisible strip along the edge that listens for the opening swipe. */}
+        <DrawerPrimitive.SwipeArea
+          className={cn(
+            "fixed inset-y-0 z-40 w-5",
+            side === "left" ? "left-0" : "right-0"
+          )}
+        />
+        <DrawerPrimitive.Portal>
+          <DrawerPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/80 opacity-[calc(1-var(--drawer-swipe-progress,0))] transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:transition-none supports-backdrop-filter:backdrop-blur-xs" />
+          <DrawerPrimitive.Viewport className="fixed inset-0 z-50">
+            <DrawerPrimitive.Popup
+              dir={dir}
+              data-sidebar="sidebar"
+              data-slot="sidebar"
+              data-mobile="true"
+              className={cn(
+                "fixed inset-y-0 flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground shadow-lg transition-transform duration-150 ease-linear [transform:translateX(var(--drawer-swipe-movement-x,0px))]",
+                side === "left" ? "left-0 border-r" : "right-0 border-l",
+                closed
+              )}
+              style={
+                {
+                  "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+                } as React.CSSProperties
+              }
+            >
+              <DrawerPrimitive.Title className="sr-only">
+                Sidebar
+              </DrawerPrimitive.Title>
+              <DrawerPrimitive.Description className="sr-only">
+                Displays the mobile sidebar.
+              </DrawerPrimitive.Description>
+              {children}
+            </DrawerPrimitive.Popup>
+          </DrawerPrimitive.Viewport>
+        </DrawerPrimitive.Portal>
+      </DrawerPrimitive.Root>
     )
   }
 

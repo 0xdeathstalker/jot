@@ -25,7 +25,8 @@ the sidebar from doing work the user never sees.
   size replaces the phone-only menu button. Collapsed = fully hidden everywhere (default
   `collapsible="offcanvas"`; an icon rail was tried and rejected by the owner, 2026-11-17).
   Open/closed on desktop is kept in the `sidebar_state` cookie the provider already writes.
-- Phones (< 768 px): the sidebar is a `Sheet`, mounted only while open.
+- Phones (< 768 px): the sidebar is a `Sheet`, mounted only while open. (Later replaced by a
+  Base UI `Drawer` for the edge swipe: `docs/plans/sidebar-edge-swipe.md`.)
 - `sidebar.tsx`: its Ctrl/⌘+B toggle ignores key presses the editor already handled, so Bold in
   the editor does not also toggle the sidebar. Its phone sheet slides the full width with no fade
   (linear like desktop, 150 ms vs desktop's 200 ms) instead of the Sheet's fade + 2.5rem nudge. Re-apply both if the
