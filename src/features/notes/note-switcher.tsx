@@ -52,11 +52,14 @@ export function NoteSwitcher({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {/* Blur, no darkening (owner, 2026-11-22). */}
+      {/* Blur, no darkening (owner, 2026-11-22). On close, focus goes to the editor (the picked
+          note, or the one that was open), not back to whatever was focused before (often the
+          sidebar toggle). No editor: leave focus alone. */}
       <DialogContent
         showCloseButton={false}
         overlayClassName="bg-transparent supports-backdrop-filter:backdrop-blur-sm"
         className="top-[15%] translate-y-0 gap-0 p-0"
+        finalFocus={() => document.querySelector<HTMLElement>(".ProseMirror") ?? false}
       >
         <DialogTitle className="sr-only">Go to note</DialogTitle>
         {/* The dialog focuses this on open (first focusable element). */}
