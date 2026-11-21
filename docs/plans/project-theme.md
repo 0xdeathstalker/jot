@@ -183,11 +183,13 @@ Sign out, **Delete / Leave note**, the share-dialog remove button, both **Remove
 Every default `<Button>` (no `variant`) is now **filled ink blue**. Keep ink blue for each screen's
 main action only.
 
-- [ ] **5.1 Screens with a main action** (keep ink blue; check how it looks): `login-screen`
-      (Continue with Google), `join-page` (Join), `share-link-page`, and `share-dialog` /
-      `invite-friend` (Copy link).
-- [ ] **5.2 Everyday actions** (likely `ghost` / `outline`): `notes-sidebar` (New note),
-      `toolbar`, `editor`, `link-box`, `install-hint`. Decide each one on screen with the owner.
+- [x] **5.1 Screens with a main action** (keep ink blue; check how it looks): `login-screen`
+      (Continue with Google), `join-page` / `share-link-page` (Go to my notes, error state only),
+      and `share-dialog` / `invite-friend` (Copy link). One ink button each; no change.
+- [x] **5.2 Everyday actions:** `notes-sidebar` **New note** stays filled ink blue, as the main
+      screen's main action (owner, 2026-11-21). The rest already have a variant: `toolbar` uses
+      toggles, `editor` reload is `outline`, `link-box` is `ghost` / `destructive`,
+      `install-hint` dismiss is `ghost`. No change.
 
 Check: click through every screen in both modes. Each screen has at most one ink-blue button.
 `pnpm check`.
