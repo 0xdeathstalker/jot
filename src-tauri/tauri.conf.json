@@ -16,6 +16,8 @@
         "width": 480,
         "height": 600,
         "alwaysOnTop": true,
+        "visible": false,
+        "skipTaskbar": true,
         "center": true
       }
     ],

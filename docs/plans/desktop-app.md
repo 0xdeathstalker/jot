@@ -77,13 +77,23 @@ its own sign-in once.
 
 ### Phase 2: Shell
 
-- [ ] **2.1** Frameless, rounded, always-on-top window. Hidden at start, shown once the page has
-      painted, with a background colour that matches the theme (no white flash).
-- [ ] **2.2** Global hotkey toggles show/hide (`global-shortcut` plugin). Showing focuses the editor.
-- [ ] **2.3** Close hides to the tray. Tray menu: New note, Show, Quit. No taskbar button
-      (`skipTaskbar`).
-- [ ] **2.4** Launch at login, hidden (`autostart`). One instance only (`single-instance`).
-- [ ] **2.5** Remember size and position per monitor (`window-state`).
+All in `src-tauri/src/lib.rs`. Two items moved to phase 3, because they need the React side:
+frameless (without the drag bar of 3.3 the window could not be moved) and the tray's New note.
+
+- [x] **2.1** Always-on-top window. Hidden at start, shown when the page has finished loading (no
+      blank flash, so no background colour needed).
+- [x] **2.2** Global hotkey (`Ctrl+Alt+J` until 3.6) toggles it, like Raycast: hides it if it is up
+      and focused, otherwise brings it up and focuses it.
+- [x] **2.3** Close and minimize hide to the tray (minimize too: without a taskbar button a
+      minimized window sits as a stub above the taskbar). No taskbar button (`skipTaskbar`). Tray:
+      left click toggles on visibility alone (the click itself takes focus from the window); menu
+      has Show Jot, Launch at login (checkbox), Quit Jot.
+- [ ] **2.4** Launch at login with `--hidden` (`autostart`): turned on once on the first run of a
+      release build, then the tray checkbox owns it. Never in debug builds. One instance only
+      (`single-instance`): a second launch brings up the running one. Single instance tested;
+      launch at login is written but needs an installed build to test (phase 4).
+- [x] **2.5** Remember size and position (`window-state`). Saved on every hide, not only on a
+      clean exit, so a kill or shutdown keeps them.
 
 ### Phase 3: Desktop UI in the shared React code
 
@@ -92,7 +102,10 @@ its own sign-in once.
 - [ ] **3.2** `src/desktop/`: everything that talks to Tauri, loaded with a dynamic `import()` only
       when `isDesktop()`. `@tauri-apps/api` is imported nowhere else (add a lint rule like the
       `fetch` one), so the web and phone bundles do not change.
-- [ ] **3.3** A drag bar at the top (`data-tauri-drag-region`), with minimize and close.
+- [ ] **3.3** Frameless, rounded window (`decorations: false`, moved from 2.1) with a drag bar at
+      the top (`data-tauri-drag-region`), with minimize and close.
+- [ ] **3.3b** Tray **New note** (moved from 2.3): the shell emits an event, `src/desktop/` creates
+      the note.
 - [ ] **3.4** Small-window layout: sidebar collapsed by default, compact spacing.
 - [ ] **3.5** Note switcher palette (`Ctrl+P` / `⌘K`; context §12 keeps `⌘K` free for it).
       `Ctrl+N` new note. Opens on the last note with the caret ready.
