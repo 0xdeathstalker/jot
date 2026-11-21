@@ -20,22 +20,23 @@ Both modes use a muted ink-blue accent, like fountain-pen ink on paper (owner, 2
 burnt orange, deep teal and acid moss; see `docs/design.md` §6). Light mode uses a deep ink and
 dark mode a soft blue-grey, so it stays readable as text in both (WCAG AA 4.5:1). Contrast ratios are against `--background`.
 
-| Token                                | Light                           | Dark      | Notes                                             |
-| ------------------------------------ | ------------------------------- | --------- | ------------------------------------------------- |
-| `--background`                       | `#F3EEE3`                       | `#1E1E1C` | cream / charcoal                                  |
-| `--foreground`                       | `#111111`                       | `#D8CBB3` | ink 16:1 / sand 10:1                              |
-| `--card`, `--popover`                | `#FAF7F0`                       | `#262624` | slightly lifted from the page                     |
-| `--primary`                          | `#2F4A7A`                       | `#9DB2D9` | 7.6:1 / 7.8:1; also the link colour and checkbox  |
-| `--primary-foreground`               | `#F3EEE3`                       | `#1E1E1C` | text on ink buttons (7.6:1 / 7.8:1)               |
-| `--secondary`, `--muted`, `--accent` | `#E9E2D3`                       | `#2A2926` | hover and selected backgrounds, code blocks       |
-| `--muted-foreground`                 | `#6B6355`                       | `#A39A8A` | 5.1:1 / 6.0:1                                     |
-| `--border`, `--input`                | `#DDD4C2`                       | `#33322F` |                                                   |
-| `--ring`                             | `#2F4A7A`                       | `#9DB2D9` | same as `--primary`                               |
-| `--destructive`                      | `#C8102E`                       | `#F0566A` | crimson, see "Destructive colour" (5.1:1 / 5.0:1) |
-| `--sidebar`                          | `#EBE4D6`                       | `#191918` | a shade off the page, like Raycast                |
-| `--sidebar-accent`                   | `#DFD6C4`                       | `#2A2926` | selected / hovered note row                       |
-| other `--sidebar-*`                  | same as the matching main token |           |                                                   |
-| `--chart-*`                          | unchanged                       | unchanged | not used anywhere                                 |
+| Token                    | Light                           | Dark      | Notes                                                          |
+| ------------------------ | ------------------------------- | --------- | -------------------------------------------------------------- |
+| `--background`           | `#F3EEE3`                       | `#1E1E1C` | cream / charcoal                                               |
+| `--foreground`           | `#111111`                       | `#D8CBB3` | ink 16:1 / sand 10:1                                           |
+| `--card`, `--popover`    | `#FAF7F0`                       | `#262624` | slightly lifted from the page                                  |
+| `--primary`              | `#2F4A7A`                       | `#9DB2D9` | 7.6:1 / 7.8:1; also the link colour and checkbox               |
+| `--primary-foreground`   | `#F3EEE3`                       | `#1E1E1C` | text on ink buttons (7.6:1 / 7.8:1)                            |
+| `--secondary`, `--muted` | `#E9E2D3`                       | `#2A2926` | code blocks, muted fills                                       |
+| `--accent`               | `#E9E2D3`                       | `#33312D` | hover and selected backgrounds (dark raised, 4.7:1 muted text) |
+| `--muted-foreground`     | `#6B6355`                       | `#A39A8A` | 5.1:1 / 6.0:1                                                  |
+| `--border`, `--input`    | `#DDD4C2`                       | `#33322F` |                                                                |
+| `--ring`                 | `#2F4A7A`                       | `#9DB2D9` | same as `--primary`                                            |
+| `--destructive`          | `#C8102E`                       | `#F0566A` | crimson, see "Destructive colour" (5.1:1 / 5.0:1)              |
+| `--sidebar`              | `#EBE4D6`                       | `#191918` | a shade off the page, like Raycast                             |
+| `--sidebar-accent`       | `#DFD6C4`                       | `#33312D` | selected / hovered note row                                    |
+| other `--sidebar-*`      | same as the matching main token |           |                                                                |
+| `--chart-*`              | unchanged                       | unchanged | not used anywhere                                              |
 
 Use hex values directly. Tailwind v4's `/opacity` modifiers (`bg-destructive/10`,
 `ring-foreground/5`) use `color-mix`, which accepts hex.
@@ -163,13 +164,13 @@ Check:
 
 Every action that removes something is crimson, and nothing else is.
 
-- [ ] **4.1 Link box, edit field.** `src/editor/link-box.tsx` (~271) **Remove link**:
+- [x] **4.1 Link box, edit field.** `src/editor/link-box.tsx` (~271) **Remove link**:
       `variant="ghost"` → `variant="destructive"`.
-- [ ] **4.2 Link box, preview.** Same file (~214): give `PreviewButton` an optional `variant`
+- [x] **4.2 Link box, preview.** Same file (~214): give `PreviewButton` an optional `variant`
       prop (default `"ghost"`), and pass `"destructive"` only for **Remove link**.
-- [ ] **4.3 No-access screen.** `src/features/sharing/no-access.tsx` **Remove from my list**:
+- [x] **4.3 No-access screen.** `src/features/sharing/no-access.tsx` **Remove from my list**:
       `variant="destructive"`.
-- [ ] **4.4 Confirm the rest.** Note list **Delete / Leave note**, the share dialog's remove
+- [x] **4.4 Confirm the rest.** Note list **Delete / Leave note**, the share dialog's remove
       button, and the leave/delete and sign-out alert buttons are already destructive. They only
       need a look.
 
