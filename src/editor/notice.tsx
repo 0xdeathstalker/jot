@@ -21,7 +21,7 @@ export function NoticeToast({ notice, onClose }: { notice: Notice | null; onClos
   return (
     <output aria-live="polite">
       {notice && (
-        <div className="fixed bottom-4 left-1/2 z-50 flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-start gap-3 rounded-xl bg-popover px-4 py-3 text-popover-foreground shadow-2xl ring-1 ring-foreground/10 max-sm:bottom-[calc(max(0.5rem,env(safe-area-inset-bottom))+3rem)]">
+        <div className="fixed bottom-4 left-1/2 z-50 flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-start gap-3 rounded-xl bg-popover px-4 py-3 text-popover-foreground shadow-2xl ring-1 ring-foreground/10 max-sm:bottom-[calc(max(0.5rem,env(safe-area-inset-bottom))+3.5rem)]">
           <button
             type="button"
             aria-label="Dismiss"
