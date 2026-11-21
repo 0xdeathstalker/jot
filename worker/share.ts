@@ -1,5 +1,5 @@
 import { getUser, type Role } from "./auth/gate.ts"
-import { fail, json, newToken, readJson, WEEK_MS, writeAllowed } from "./http.ts"
+import { fail, json, NEVER, newToken, readJson, writeAllowed } from "./http.ts"
 import { kickUser } from "./rooms/kick.ts"
 
 // At most this many people besides the owner on one note.
@@ -19,29 +19,19 @@ async function roleOn(env: Env, noteId: string, userId: string) {
   return row?.role ?? null
 }
 
-const othersOn = async (env: Env, noteId: string) =>
-  (
-    await env.DB.prepare(
-      "SELECT count(*) AS n FROM note_members WHERE note_id = ? AND role != 'owner'",
-    )
-      .bind(noteId)
-      .first<{ n: number }>()
-  )?.n ?? 0
-
-const revokeLinks = (env: Env, noteId: string, now: number, role?: InviteRole) =>
+// Kills both of a note's links. The owner's next GET makes new ones (new URLs).
+const revokeLinks = (env: Env, noteId: string, now: number) =>
   env.DB.prepare(
-    `UPDATE note_invites SET revoked_at = ? WHERE note_id = ? AND revoked_at IS NULL${role ? " AND role = ?" : ""}`,
-  ).bind(...(role ? [now, noteId, role] : [now, noteId]))
+    "UPDATE note_invites SET revoked_at = ? WHERE note_id = ? AND revoked_at IS NULL",
+  ).bind(now, noteId)
 
 // /api/share/...: share links and members of a note. docs/plans/phase-6-sharing.md, C1 to C7.
 //   GET    /mine                       notes shared with me
 //   POST   /accept                     { token } open a share link
-//   GET    /:noteId                    members + live links (owner)
+//   GET    /:noteId                    members + both links, made on first view (owner)
 //   DELETE /:noteId                    stop sharing: remove everyone, revoke links (owner)
-//   POST   /:noteId/invite             { role } make a link (owner)
-//   DELETE /:noteId/invite/:role       turn a link off (owner)
 //   PATCH  /:noteId/members/:userId    { role } raise or lower someone (owner)
-//   DELETE /:noteId/members/:userId    remove someone (owner), or yourself to leave
+//   DELETE /:noteId/members/:userId    remove someone (owner: also new links), or yourself to leave
 export async function handleShare(request: Request, env: Env): Promise<Response> {
   if (!writeAllowed(request)) return fail(403, "bad_origin")
   const user = await getUser(request, env)
@@ -122,6 +112,21 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
   if (myRole !== "owner") return fail(403, "forbidden")
 
   if (!b && method === "GET") {
+    // One permanent view link and one edit link per note, made on first view. The UPDATE makes
+    // older 7-day links permanent (same URL); each INSERT is skipped when that role already has a
+    // live link (unique index note_invite_live). NOTE_LIMIT is checked on every accept, so a link
+    // that spreads further admits nobody once the note is full.
+    const insert = (role: InviteRole) =>
+      env.DB.prepare(
+        "INSERT OR IGNORE INTO note_invites (token, note_id, role, created_by, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)",
+      ).bind(newToken(), noteId, role, user.id, now, NEVER)
+    await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE note_invites SET expires_at = ? WHERE note_id = ? AND revoked_at IS NULL",
+      ).bind(NEVER, noteId),
+      insert("viewer"),
+      insert("editor"),
+    ])
     const members = await env.DB.prepare(
       `SELECT m.user_id AS userId, m.role AS role, u.name AS name, u.email AS email
        FROM note_members m JOIN user u ON u.id = m.user_id WHERE m.note_id = ? ORDER BY m.created_at`,
@@ -129,17 +134,13 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
       .bind(noteId)
       .all()
     const links = await env.DB.prepare(
-      "SELECT role, token, expires_at AS expiresAt FROM note_invites WHERE note_id = ? AND revoked_at IS NULL AND expires_at > ?",
+      "SELECT role, token FROM note_invites WHERE note_id = ? AND revoked_at IS NULL",
     )
-      .bind(noteId, now)
-      .all<{ role: string; token: string; expiresAt: number }>()
+      .bind(noteId)
+      .all<{ role: string; token: string }>()
     return json({
       members: members.results,
-      links: links.results.map((l) => ({
-        role: l.role,
-        url: `${url.origin}/share/${l.token}`,
-        expiresAt: l.expiresAt,
-      })),
+      links: links.results.map((l) => ({ role: l.role, url: `${url.origin}/share/${l.token}` })),
       limit: NOTE_LIMIT,
     })
   }
@@ -155,25 +156,6 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
       revokeLinks(env, noteId, now),
     ])
     for (const { userId } of others.results) await kickUser(env, noteId, userId)
-    return json({ ok: true })
-  }
-
-  if (b === "invite" && !c && method === "POST") {
-    const { role } = await readJson(request)
-    if (!isInviteRole(role)) return fail(400, "bad_role")
-    if ((await othersOn(env, noteId)) >= NOTE_LIMIT) return fail(409, "full")
-    const token = newToken()
-    await env.DB.batch([
-      revokeLinks(env, noteId, now, role),
-      env.DB.prepare(
-        "INSERT INTO note_invites (token, note_id, role, created_by, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)",
-      ).bind(token, noteId, role, user.id, now, now + WEEK_MS),
-    ])
-    return json({ role, url: `${url.origin}/share/${token}`, expiresAt: now + WEEK_MS })
-  }
-
-  if (b === "invite" && isInviteRole(c) && !d && method === "DELETE") {
-    await revokeLinks(env, noteId, now, c).run()
     return json({ ok: true })
   }
 
@@ -196,9 +178,12 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
   if (b === "members" && c && !d && method === "DELETE") {
     // The owner removes someone else. Removing yourself as owner was refused above.
     if ((await roleOn(env, noteId, c)) === "owner") return fail(400, "owner_cannot_leave")
-    await env.DB.prepare("DELETE FROM note_members WHERE note_id = ? AND user_id = ?")
-      .bind(noteId, c)
-      .run()
+    // New links too: the removed person (or anyone they passed a link to) cannot take the freed
+    // place again. People still on the note keep their access; it never depended on the link.
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM note_members WHERE note_id = ? AND user_id = ?").bind(noteId, c),
+      revokeLinks(env, noteId, now),
+    ])
     await kickUser(env, noteId, c)
     return json({ ok: true })
   }

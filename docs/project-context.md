@@ -9,6 +9,7 @@
 > - `CLAUDE.md`: short working rules for AI agents (auto-loaded)
 > - `README.md`: setup, run and deploy, for humans
 > - `docs/project-context.md`: this file (architecture, decisions, traps)
+> - `docs/design.md`: design brief (aim, feel, colour rules, palettes tried)
 > - `docs/plans/`: one plan per task (setup, features, critical fixes)
 
 ---
@@ -124,6 +125,7 @@ jot/
 │   ├── components/ui/        ← shadcn/ui components (generated, add on demand)
 │   ├── editor/               ← TipTap editor + our own toolbar/UI
 │   ├── hooks/                ← React hooks, one per file (`use-*.ts`)
+│   │   └── use-theme.ts      ← dark/light; same rule as the inline script in index.html
 │   ├── sync/
 │   │   ├── provider.ts       ← the ONLY module that imports y-partyserver
 │   │   └── index-doc.ts      ← per-user note list (phase 3)
@@ -144,21 +146,21 @@ jot/
 
 ## 6. Dependencies (add them only when their phase starts)
 
-| Package                                                                                                | Phase         | Purpose                                                                                                                                                                                 |
-| ------------------------------------------------------------------------------------------------------ | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tailwindcss`, `@tailwindcss/vite`, shadcn/ui deps (`class-variance-authority`, `tw-animate-css`, ...) | 0             | Styling + UI kit. Installed by `shadcn init`.                                                                                                                                           |
-| `oxlint`, `oxfmt`, `husky`, `lint-staged`                                                              | 0             | Lint, format, pre-commit                                                                                                                                                                |
-| `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`                                                   | 1             | Editor                                                                                                                                                                                  |
-| `@tiptap/extension-collaboration`                                                                      | 1             | Binds the editor to Yjs. Install any peer dependency pnpm asks for.                                                                                                                     |
-| `yjs`                                                                                                  | 1             | CRDT                                                                                                                                                                                    |
-| `partyserver`, `y-partyserver`                                                                         | 1             | Durable Object server + client `YProvider`                                                                                                                                              |
-| `y-indexeddb`                                                                                          | 2             | Local persistence / offline                                                                                                                                                             |
-| `minisearch`                                                                                           | 3             | Local search                                                                                                                                                                            |
-| `better-auth`                                                                                          | 4             | Google login + sessions, with D1 as its database. Needs the `nodejs_compat` flag.                                                                                                       |
-| `vite-plugin-pwa`                                                                                      | 5             | Manifest + service worker. **Not earlier**, since caching confuses dev.                                                                                                                 |
-| `@vite-pwa/assets-generator` (dev)                                                                     | 5             | `pnpm pwa:icons`: makes every icon size from `public/icon-source.svg`.                                                                                                                  |
-| `@tiptap/extension-collaboration-caret`                                                                | 6             | Other people's cursors                                                                                                                                                                  |
-| `@tiptap/extension-list`, `@tiptap/extension-image`, `@tiptap/markdown`                                | editor blocks | Checklists, images inside the note, Markdown copy/download/paste (`docs/plans/editor-blocks.md`). Keep every `@tiptap/*` package on the same version: they peer on exact `@tiptap/core` |
+| Package                                                                                                | Phase         | Purpose                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tailwindcss`, `@tailwindcss/vite`, shadcn/ui deps (`class-variance-authority`, `tw-animate-css`, ...) | 0             | Styling + UI kit. Installed by `shadcn init`.                                                                                                                             |
+| `oxlint`, `oxfmt`, `husky`, `lint-staged`                                                              | 0             | Lint, format, pre-commit                                                                                                                                                  |
+| `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`                                                   | 1             | Editor                                                                                                                                                                    |
+| `@tiptap/extension-collaboration`                                                                      | 1             | Binds the editor to Yjs. Install any peer dependency pnpm asks for.                                                                                                       |
+| `yjs`                                                                                                  | 1             | CRDT                                                                                                                                                                      |
+| `partyserver`, `y-partyserver`                                                                         | 1             | Durable Object server + client `YProvider`                                                                                                                                |
+| `y-indexeddb`                                                                                          | 2             | Local persistence / offline                                                                                                                                               |
+| `minisearch`                                                                                           | 3             | Local search                                                                                                                                                              |
+| `better-auth`                                                                                          | 4             | Google login + sessions, with D1 as its database. Needs the `nodejs_compat` flag.                                                                                         |
+| `vite-plugin-pwa`                                                                                      | 5             | Manifest + service worker. **Not earlier**, since caching confuses dev.                                                                                                   |
+| `@vite-pwa/assets-generator` (dev)                                                                     | 5             | `pnpm pwa:icons`: makes every icon size from `public/icon-source.svg`.                                                                                                    |
+| `@tiptap/extension-collaboration-caret`                                                                | 6             | Other people's cursors                                                                                                                                                    |
+| `@tiptap/extension-list`, `@tiptap/extension-image`, `@tiptap/markdown`                                | editor blocks | Checklists, images inside the note, Markdown paste (`docs/plans/editor-blocks.md`). Keep every `@tiptap/*` package on the same version: they peer on exact `@tiptap/core` |
 
 Don't add: `nanoid` (use `crypto.randomUUID()`), any `@tiptap-pro/*` package, or Hocuspocus packages.
 
@@ -175,11 +177,11 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 - **One Y.Doc per note.** Room name: plain `<noteId>` (URL `/parties/note-room/<noteId>`). Holds the rich text (a `Y.XmlFragment` bound to TipTap).
 - **One "index" Y.Doc per user.** Party `index-room` (class `IndexRoom`, migration `v2`), room `index-<userId>`, IndexedDB `jot-index-<userId>`. A `Y.Map` named `notes`, one nested `Y.Map` per note (so concurrent edits to different fields both survive):
   ```ts
-  { [noteId]: { title: string, preview: string, createdAt: number, updatedAt: number, pinned: boolean, deleted: boolean,
+  { [noteId]: { title: string, preview: string, chars?: number, createdAt: number, updatedAt: number, pinned: boolean, deleted: boolean,
                 role?: 'editor' | 'viewer', shared?: boolean, noAccess?: boolean } }
   ```
   The last three are Phase 6 UI hints, never permissions: `role` is set when someone else owns the note, `shared` when you own it and made a share link, `noAccess` when its owner removed you (learned from the server). D1 `note_members` is the truth.
-  The title is the first line of the note and the preview its next ~200 characters, both written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`src/sync/legacy-index.ts`).
+  The title is the first line of the note, the preview its next ~200 characters (search only; the list shows the title, then "Edited … / Current • N characters" from `chars`, the note's length without line breaks), all written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`src/sync/legacy-index.ts`).
 - IDs are generated on the client with `crypto.randomUUID()`, so notes can be created offline.
 - **Drafts:** New note writes nothing to the index. The note is a draft (its id in React state and `sessionStorage` `jot-draft`, this tab only) until the first local edit that leaves it non-blank (anything but one empty paragraph); then `createNote(doc, id)` lists it. Leaving an untouched draft deletes its empty IndexedDB copy. Only a note made by New note on this device is ever a draft, so a listed note can never be re-created over its pin or sharing marks (`createNote` also never overwrites an entry). Plan: `docs/plans/blank-notes.md`.
 
@@ -204,8 +206,8 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 
 There are two kinds of link, both plain URLs with an unguessable token that the owner sends through any chat app (no email service, nothing paid):
 
-- **Join link** (`/join/<token>`): makes a stranger a Jot user. Only "original users" (emails on `ALLOWED_EMAILS`) can make one: one live link each, valid 7 days, admits at most **3 people** in total (`JOIN_LIMIT` in `worker/auth/invites.ts`). Invited users are full users (they can create and share notes) but cannot make join links, so the total stays bounded. The login screen leaves the token in a short-lived cookie (`jot-invite`) for the Google round trip; the sign-up hook in `worker/auth/auth.ts` reads it.
-- **Share link** (`/share/<token>`): gives an existing user access to one note, as **editor** or **viewer**. One live link per note and role, valid 7 days, the owner can turn it off. It never creates an account: someone with no Jot account is told to ask for a join link first. A note holds the owner plus at most **2 other people** (`NOTE_LIMIT` in `worker/share.ts`). A second link can only raise a role.
+- **Join link** (`/join/<token>`): makes a stranger a Jot user. Only "original users" (emails on `ALLOWED_EMAILS`) have one: a single permanent link each, made by the server the first time they open Invites (no create, no expiry, no turn-off; the same URL for everyone they invite). It admits at most **3 people** in total, checked on every join, so a link that spreads further admits nobody once the places are used (`JOIN_LIMIT` in `worker/auth/invites.ts`). Invited users are full users (they can create and share notes) but cannot make join links, so the total stays bounded. The login screen leaves the token in a short-lived cookie (`jot-invite`) for the Google round trip; the sign-up hook in `worker/auth/auth.ts` reads it.
+- **Share link** (`/share/<token>`): gives an existing user access to one note, as **editor** or **viewer**. Each note has one permanent view link and one permanent edit link, made by the server the first time the owner opens Share (no create, no expiry, no turn-off). Removing someone gives the note two new links, so the freed place cannot be retaken with the old URL; people still on the note keep their access. The list marks a note "Shared" once someone besides the owner has joined. It never creates an account: someone with no Jot account is told to ask for a join link first. A note holds the owner plus at most **2 other people** (`NOTE_LIMIT` in `worker/share.ts`). A second link can only raise a role.
 
 Rules:
 
@@ -286,7 +288,7 @@ Rules:
 - [ ] Version history (our own Yjs snapshots)
 - [ ] Comments (a `Y.Map` inside the note doc)
 - [ ] Tauri wrapper for a global hotkey on Windows
-- [ ] Editor blocks ([issue #1](https://github.com/0xdeathstalker/jot/issues/1), `docs/plans/editor-blocks.md`): checklists, Raycast-style toolbar, link box, images inside the note, Markdown copy/download/paste. Built; browser checks pending
+- [ ] Editor blocks ([issue #1](https://github.com/0xdeathstalker/jot/issues/1), `docs/plans/editor-blocks.md`): checklists, Raycast-style toolbar, link box, images inside the note, Markdown paste (copy/download removed 2026-11-15). Built; browser checks pending
 
 ---
 
@@ -328,22 +330,24 @@ Rules:
 - DOs have per-request CPU limits, so don't run heavy work on the server.
 - y-partyserver is young: when stuck, read its source and examples in GitHub `cloudflare/partykit`.
 - A Windows PWA can't register a global hotkey. That needs Tauri later.
+- Plain `wrangler dev` makes the Worker see the custom-domain route (`http://jot.deathstalker.dev`) as its origin, so Better Auth sends Google that redirect URI and Google login fails ("Access blocked: this app's request is invalid"). Use `pnpm preview:worker` (passes `--local-upstream localhost:8787`), open `http://localhost:8787` (not `127.0.0.1`), and keep `http://localhost:8787/api/auth/callback/google` in the Google client's redirect URIs.
 
 ---
 
 ## 12. Open decisions
 
-| Decision                         | Status      | Notes                                                                                                                                                                                                                                                                     |
-| -------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Usage limits before going public | Not decided | Caps on accounts, notes per user and note size, per-user rate limits. Partly covered by Phase 6: 3 invited people per original user, invited users cannot invite, 2 other people per note. No cap yet on notes per user or note size                                      |
-| Sharing by email                 | Decided: no | Link only (a join link, a share link). No email service, so nothing paid. Can be added later without changing the tables                                                                                                                                                  |
-| Who can invite                   | Decided     | Only original users (`ALLOWED_EMAILS`) make join links, 3 people each. Only a note's owner makes share links and manages people                                                                                                                                           |
-| Share links                      | Decided     | Reusable until turned off, 7 days, one per note and role; they never create accounts. The owner deleting a shared note removes everyone's access                                                                                                                          |
-| Image storage                    | Decided     | Inside the note: shrunk on the device (1280 px, WebP or JPEG, max 300 KB), max 4 MB per note. Free, offline, no new service. Server uploads (R2) only if notes become image-heavy                                                                                         |
-| Markdown                         | Decided     | Both directions: copy / download a note as `.md`; paste Markdown (plain text, or a VS Code copy of a Markdown/MDX file) as formatted text. No `.md` file import                                                                                                           |
-| Code blocks                      | Decided     | Plain code block, no language picker or highlighting                                                                                                                                                                                                                      |
-| Blank notes (issue #2)           | Decided     | New note is a draft until its first real edit, never synced while blank. Not a `blank` flag plus cleanup (reverted). An old draft id reopened by URL after leaving it stays unlisted even if typed into (rare, accepted). Blank notes made before the fix: delete by hand |
-| Command palette (⌘K / Ctrl+K)    | Not decided | Raycast-style action list (new note, pin, browse…). Keep ⌘K free for it; the link box uses Ctrl/⌘+L                                                                                                                                                                       |
+| Decision                         | Status      | Notes                                                                                                                                                                                                                                                                                |
+| -------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Usage limits before going public | Not decided | Caps on accounts, notes per user and note size, per-user rate limits. Partly covered by Phase 6: 3 invited people per original user, invited users cannot invite, 2 other people per note. No cap yet on notes per user or note size                                                 |
+| Sharing by email                 | Decided: no | Link only (a join link, a share link). No email service, so nothing paid. Can be added later without changing the tables                                                                                                                                                             |
+| Who can invite                   | Decided     | Only original users (`ALLOWED_EMAILS`) have a join link: one permanent link each, 3 people each (owner, 2026-11-15). Only a note's owner makes share links and manages people                                                                                                        |
+| Share links                      | Decided     | Permanent, one per note and role, new URLs when the owner removes someone (owner, 2026-11-16); they never create accounts. The owner deleting a shared note removes everyone's access                                                                                                |
+| Image storage                    | Decided     | Inside the note: shrunk on the device (1280 px, WebP or JPEG, max 300 KB), max 4 MB per note. Free, offline, no new service. Server uploads (R2) only if notes become image-heavy                                                                                                    |
+| Markdown                         | Decided     | Paste only (owner, 2026-11-15: the toolbar `…` menu with copy / download as `.md` is removed). Paste Markdown (plain text, or a VS Code copy of a Markdown/MDX file) as formatted text. No `.md` file import                                                                         |
+| Code blocks                      | Decided     | Plain code block, no language picker or highlighting                                                                                                                                                                                                                                 |
+| Blank notes (issue #2)           | Decided     | New note is a draft until its first real edit, never synced while blank. Not a `blank` flag plus cleanup (reverted). An old draft id reopened by URL after leaving it stays unlisted even if typed into (rare, accepted). Blank notes made before the fix: delete by hand            |
+| Colour theme                     | Decided     | Warm "paper and ink" palette, one ink-blue accent; crimson only for delete/remove/sign out (`docs/plans/project-theme.md`). Moon/sun Mode switch in the account gear menu, saved per device; follows the system until first picked, with no way back to "system" (owner, 2026-11-18) |
+| Command palette (⌘K / Ctrl+K)    | Not decided | Raycast-style action list (new note, pin, browse…). Keep ⌘K free for it; the link box uses Ctrl/⌘+L                                                                                                                                                                                  |
 
 ---
 

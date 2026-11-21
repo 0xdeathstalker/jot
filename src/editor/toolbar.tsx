@@ -5,13 +5,10 @@ import {
   Heading01Icon,
   Heading02Icon,
   Heading03Icon,
-  Copy01Icon,
-  Download01Icon,
   HeadingIcon,
   Image01Icon,
   LeftToRightListBulletIcon,
   LeftToRightListNumberIcon,
-  MoreHorizontalIcon,
   QuoteDownIcon,
   SourceCodeIcon,
   TextBoldIcon,
@@ -27,18 +24,17 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Kbd } from "@/components/ui/kbd"
 import { Toggle, toggleVariants } from "@/components/ui/toggle"
 import { imageFiles } from "@/editor/images"
 import { LinkBox } from "@/editor/link-box"
-import { copyMarkdown, downloadMarkdown } from "@/editor/markdown"
 import type { Notify } from "@/editor/notice"
-import { formatShortcut as shortcut } from "@/lib/platform"
+import { formatShortcut as shortcut, shortcutKeys } from "@/lib/platform"
 import { cn } from "@/lib/utils"
 
 type Item = {
@@ -142,7 +138,7 @@ const lists: Item[] = [
 
 const flags = (editor: Editor, items: Item[]) => items.map((item) => item.isActive(editor))
 
-// Raycast Notes layout: H ▾ | I ▾ | link | image | <> | quote, code block | lists ▾ … Markdown ▸
+// Raycast Notes layout: H ▾ | I ▾ | link | image | <> | quote, code block | lists ▾
 // No undo/redo buttons: Collaboration owns undo/redo (keyboard shortcuts still work).
 export function Toolbar({
   editor,
@@ -174,7 +170,11 @@ export function Toolbar({
     <div
       role="toolbar"
       aria-label="Formatting"
-      className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b bg-background py-2"
+      // As wide as its buttons, centred, sticky at the top. Phones (below sm): pinned to the bottom of
+      // the screen (inset-x + mx-auto centres it; left-1/2 would halve the width it may use), with
+      // smaller buttons, icons and gaps so it stays on one line down to ~320px; it
+      // still wraps (centred) if even that does not fit.
+      className="sticky top-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-[12px] border bg-popover p-1 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:gap-0.5 max-sm:p-0.5 max-sm:[&_button]:h-7 max-sm:[&_button]:min-w-7 max-sm:[&_button]:px-1.5 max-sm:[&_svg:not([class*='size-'])]:size-3.5"
     >
       <Group>
         <Menu
@@ -220,32 +220,7 @@ export function Toolbar({
           disabled={disabled}
         />
       </Group>
-      <MarkdownMenu editor={editor} notify={notify} />
     </div>
-  )
-}
-
-// Copy / download the note as Markdown. Enabled for viewers too: reading is allowed.
-function MarkdownMenu({ editor, notify }: { editor: Editor; notify: Notify }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="More"
-        className={cn(toggleVariants({ size: "sm" }), "ml-auto px-2")}
-      >
-        <HugeiconsIcon icon={MoreHorizontalIcon} />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" finalFocus={false} className="w-auto">
-        <DropdownMenuItem onClick={() => void copyMarkdown(editor, notify)}>
-          <HugeiconsIcon icon={Copy01Icon} />
-          Copy as Markdown
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => downloadMarkdown(editor)}>
-          <HugeiconsIcon icon={Download01Icon} />
-          Download .md
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }
 
@@ -289,7 +264,11 @@ function ImageButton({
 }
 
 function Group({ children }: { children: React.ReactNode }) {
-  return <div className="flex items-center gap-1 not-first:border-l not-first:pl-1">{children}</div>
+  return (
+    <div className="flex items-center gap-1 not-first:border-l not-first:pl-1 max-sm:gap-0 max-sm:not-first:pl-0.5">
+      {children}
+    </div>
+  )
 }
 
 type Common = { editor: Editor; disabled: boolean }
@@ -314,7 +293,7 @@ function Button({ item, pressed, editor, disabled }: Common & { item: Item; pres
 // checked state for screen readers but show it as an accent background, not a tick. Font weight tells
 // it apart from the hover highlight, which uses the same accent colour in this theme.
 const itemClass =
-  "pr-3 data-checked:bg-accent data-checked:font-medium data-checked:text-accent-foreground *:data-[slot$=indicator]:hidden"
+  "pr-3 data-checked:bg-accent data-checked:font-medium data-checked:text-accent-foreground *:data-[slot$=indicator]:hidden rounded-4xl"
 function Menu({
   label,
   icon,
@@ -337,8 +316,12 @@ function Menu({
         <HugeiconsIcon icon={item.icon} />
         {item.label}
         {/* Hidden on touch screens: no keyboard to press them on. */}
-        <DropdownMenuShortcut className="pl-4 pointer-coarse:hidden">
-          {shortcut(item.keys)}
+        <DropdownMenuShortcut className="flex gap-0.5 pl-4 tracking-normal pointer-coarse:hidden">
+          {shortcutKeys(item.keys).map((key) => (
+            <Kbd key={key} size="sm" className="border border-muted-foreground/60">
+              {key}
+            </Kbd>
+          ))}
         </DropdownMenuShortcut>
       </>
     )
@@ -382,7 +365,7 @@ function Menu({
       </DropdownMenuTrigger>
       {/* finalFocus false: the command already put the cursor back in the editor; returning focus
           to the trigger would take it away again. */}
-      <DropdownMenuContent finalFocus={false} className="w-auto">
+      <DropdownMenuContent finalFocus={false} className="w-auto rounded-[12px]">
         {single ? (
           <DropdownMenuRadioGroup value={items[checked.indexOf(true)]?.label ?? ""}>
             {entries}

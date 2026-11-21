@@ -1,15 +1,22 @@
-import { Add01Icon, Menu01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
 import * as React from "react"
 
-import { AccountFooter } from "@/auth/account-footer"
 import { LoginScreen } from "@/auth/login-screen"
 import { InstallHint } from "@/components/install-hint"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Editor } from "@/editor/editor"
-import { NoteList } from "@/features/notes/note-list"
+import { type Notice, NoticeToast } from "@/editor/notice"
+import type { NoteText } from "@/features/notes/note-meta"
+import { NotesSidebar } from "@/features/notes/notes-sidebar"
 import { removeMember, unshareNote } from "@/features/sharing/api"
 import { caretUser } from "@/features/sharing/caret-user"
 import { type InviteLink, readInviteLink } from "@/features/sharing/invite-link"
@@ -19,7 +26,6 @@ import { ShareDialog } from "@/features/sharing/share-dialog"
 import { ShareLinkPage } from "@/features/sharing/share-link-page"
 import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
 import { useNoteId } from "@/hooks/use-note-id"
-import { useNoteSearch } from "@/hooks/use-note-search"
 import {
   createNote,
   markShared,
@@ -55,15 +61,22 @@ function NotesApp({
   shareToken: string | null
   onShareDone: () => void
 }) {
-  const { doc } = useIndexSession(user.id)
+  const { doc, loaded } = useIndexSession(user.id)
   const notes = useNotes(doc)
-  const [query, setQuery] = React.useState("")
-  const visibleNotes = useNoteSearch(notes, query)
   const { noteId, openNote } = useNoteId()
-  // Only the owner can share (a note with a `role` belongs to someone else).
   const currentNote = notes.find((note) => note.id === noteId)
-  const ownedNote = currentNote && !currentNote.role ? currentNote : undefined
-  const [sidebarOpen, setSidebarOpen] = React.useState(false)
+  // Share dialog opened from the note list. `n` changes on each open: a fresh dialog, no stale details.
+  const [share, setShare] = React.useState<{ id: string; n: number; open: boolean } | null>(null)
+  // Toast at the bottom (same as the editor's), for a leave or delete the server refused.
+  const [notice, setNotice] = React.useState<Notice | null>(null)
+  const clearNotice = React.useCallback(() => setNotice(null), [])
+  // The note waiting for "Leave" / "Delete" in the confirmation dialog. Kept after closing (open:
+  // false) so the text does not change during the close animation.
+  const [confirmDelete, setConfirmDelete] = React.useState<{
+    id: string
+    kind: "leave" | "shared"
+    open: boolean
+  } | null>(null)
   const [draftId, setDraftId] = React.useState(() => readDraft(noteId))
   const isDraft = !!noteId && noteId === draftId && !currentNote
   const [focusKey, setFocusKey] = React.useState(0)
@@ -128,7 +141,6 @@ function NotesApp({
       setDraftId(id)
       openNote(id)
     }
-    setSidebarOpen(false)
   }
 
   // First real edit: the draft joins the list. The editor's debounced meta write then fills the title.
@@ -140,16 +152,11 @@ function NotesApp({
 
   // Stable per (doc, noteId): the editor re-subscribes when this changes.
   const handleMeta = React.useCallback(
-    (meta: { title: string; preview: string }) => {
+    (meta: NoteText) => {
       if (noteId) updateMeta(doc, noteId, meta)
     },
     [doc, noteId],
   )
-
-  const handleOpen = (id: string) => {
-    openNote(id)
-    setSidebarOpen(false)
-  }
 
   // Access to a shared note was taken away: drop it from the list and from this device.
   const handleRemoveLost = (id: string) => {
@@ -161,9 +168,18 @@ function NotesApp({
   // Soft delete. If it was the open note, clear the URL: the effect above then opens the next one.
   // Shared notes need the server: leaving removes our place, and deleting your own shared note
   // takes everyone else's access away first (the data itself is never hard-deleted).
-  const handleDelete = async (id: string) => {
+  // Leaving a shared note, or deleting one you shared, asks first (AlertDialog below).
+  // A note only you can see is soft-deleted straight away.
+  const handleDelete = (id: string) => {
     const note = notes.find((n) => n.id === id)
     if (note?.noAccess) return handleRemoveLost(id) // nothing to tell the server
+    if (note?.role) setConfirmDelete({ id, kind: "leave", open: true })
+    else if (note?.shared) setConfirmDelete({ id, kind: "shared", open: true })
+    else void deleteNote(id)
+  }
+
+  const deleteNote = async (id: string) => {
+    const note = notes.find((n) => n.id === id)
 
     const needsServer = async (
       action: () => Promise<{ ok: boolean; status?: number; error?: string }>,
@@ -171,80 +187,56 @@ function NotesApp({
       const result = await action()
       // 404: the server has no record (never synced, or already gone): nothing to undo there.
       if (result.ok || result.status === 404) return true
-      window.alert(
+      setNotice(
         result.error === "offline"
-          ? "Go online to do this with a shared note."
-          : "That did not work. Try again.",
+          ? { title: "You are offline", description: "Go online to do this with a shared note." }
+          : { title: "That did not work", description: "Try again." },
       )
       return false
     }
 
     if (note?.role) {
-      if (!window.confirm("Leave this note? You will lose access to it.")) return
       if (await needsServer(() => removeMember(id, user.id))) handleRemoveLost(id)
       return
     }
-    if (note?.shared) {
-      if (!window.confirm("This note is shared. Deleting it removes access for everyone.")) return
-      if (!(await needsServer(() => unshareNote(id)))) return
-    }
+    if (note?.shared && !(await needsServer(() => unshareNote(id)))) return
     softDelete(doc, id)
     if (id === noteId) openNote(null, { replace: true })
   }
 
   return (
-    <div className="flex h-dvh pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
-      {/* Phone: slides over the editor. Desktop: fixed column. */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-20 w-64 shrink-0 flex-col gap-2 border-r bg-background p-2 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))] md:static md:flex ${sidebarOpen ? "flex" : "hidden"}`}
-      >
-        <Button onClick={handleNew}>
-          <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" />
-          New note
-        </Button>
-        <Input
-          type="search"
-          placeholder="Search notes"
-          aria-label="Search notes"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <ScrollArea className="min-h-0 flex-1">
-          {query.trim() && visibleNotes.length === 0 && (
-            <p className="px-3 py-2 text-sm text-muted-foreground">No matching notes</p>
-          )}
-          <NoteList
-            notes={visibleNotes}
-            activeId={noteId}
-            onOpen={handleOpen}
-            onTogglePin={(id) => togglePin(doc, id)}
-            onDelete={(id) => void handleDelete(id)}
-          />
-        </ScrollArea>
-        <AccountFooter user={user} />
-      </aside>
+    // Phone (< 768 px): the sidebar is a sheet over the editor. Desktop: a column that hides fully
+    // (trigger or Ctrl/⌘+B outside the editor); the provider remembers it in a cookie.
+    <SidebarProvider
+      defaultOpen={!document.cookie.includes("sidebar_state=false")}
+      className="h-dvh min-h-0 pr-[env(safe-area-inset-right)]"
+    >
+      <NotesSidebar
+        user={user}
+        notes={notes}
+        loading={!loaded}
+        activeId={noteId}
+        onNew={handleNew}
+        onOpen={openNote}
+        onTogglePin={(id) => togglePin(doc, id)}
+        onShare={(id) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true }))}
+        onDelete={handleDelete}
+      />
 
-      <main className="flex-1 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto max-w-3xl p-4">
-          <div className="mb-2 flex items-center">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="md:hidden"
-              aria-label="Show notes"
-              onClick={() => setSidebarOpen((open) => !open)}
-            >
-              <HugeiconsIcon icon={Menu01Icon} />
-            </Button>
-            {ownedNote && !shareToken && (
-              <div className="ml-auto">
-                <ShareDialog
-                  noteId={ownedNote.id}
-                  onLinkMade={() => markShared(doc, ownedNote.id)}
-                />
-              </div>
-            )}
+      <SidebarInset className="min-w-0 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto w-full max-w-3xl p-4">
+          <div className="mb-2 flex items-center md:absolute md:top-2 md:left-2 md:mb-0">
+            <SidebarTrigger aria-label="Toggle notes" />
           </div>
+          {share && (
+            <ShareDialog
+              key={share.n}
+              noteId={share.id}
+              open={share.open}
+              onOpenChange={(open) => setShare({ ...share, open })}
+              onShared={() => markShared(doc, share.id)}
+            />
+          )}
 
           {shareToken ? (
             <ShareLinkPage token={shareToken} doc={doc} onOpen={openSharedNote} />
@@ -263,13 +255,49 @@ function NotesApp({
               focusKey={isDraft ? focusKey : undefined}
             />
           ) : (
-            <p className="text-muted-foreground">No notes yet. Create one with “New note”.</p>
+            // Centred in the writing area (SidebarInset is `relative`); pointer-events-none so it
+            // never blocks the sidebar toggle under it.
+            <p className="pointer-events-none absolute inset-0 flex items-center justify-center p-4 text-center text-muted-foreground">
+              No notes yet. Create one with “New note”.
+            </p>
           )}
         </div>
-      </main>
+      </SidebarInset>
 
+      <AlertDialog
+        open={!!confirmDelete?.open}
+        onOpenChange={(open) => setConfirmDelete((c) => c && { ...c, open })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmDelete?.kind === "leave" ? "Leave this note?" : "Delete this shared note?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDelete?.kind === "leave"
+                ? "You will lose access to it. The owner can share it with you again."
+                : "Deleting it removes access for everyone it is shared with."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (!confirmDelete) return
+                setConfirmDelete({ ...confirmDelete, open: false })
+                void deleteNote(confirmDelete.id)
+              }}
+            >
+              {confirmDelete?.kind === "leave" ? "Leave" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <NoticeToast notice={notice} onClose={clearNotice} />
       <InstallHint />
-    </div>
+    </SidebarProvider>
   )
 }
 

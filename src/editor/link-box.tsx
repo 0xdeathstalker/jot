@@ -131,9 +131,16 @@ export function LinkBox({
   const [dismissedAt, setDismissedAt] = React.useState<number | null>(null)
   const showPreview = !!preview?.href && !open && !disabled && preview.at !== dismissedAt
 
+  // Copied: the copy button shows a tick for 2 s instead of a toast. A refusal still gets a toast.
+  const [copied, setCopied] = React.useState(false)
+  React.useEffect(() => {
+    if (!copied) return
+    const timer = setTimeout(() => setCopied(false), 2000)
+    return () => clearTimeout(timer)
+  }, [copied])
   const copyLink = (href: string) => {
     navigator.clipboard.writeText(href).then(
-      () => notify({ title: "Link copied" }),
+      () => setCopied(true),
       () => notify({ title: "Could not copy", description: "The browser did not allow it." }),
     )
   }
@@ -183,7 +190,7 @@ export function LinkBox({
             <Popover.Popup
               initialFocus={false}
               finalFocus={false}
-              className="flex items-center gap-0.5 rounded-2xl bg-popover p-1 pl-3 text-popover-foreground shadow-2xl ring-1 ring-foreground/5 outline-none dark:ring-foreground/10"
+              className="flex items-center gap-0.5 rounded-[10px] bg-popover p-1 pl-3 text-popover-foreground shadow-2xl ring-1 ring-foreground/5 outline-none dark:ring-foreground/10"
             >
               <span
                 className="mr-1 max-w-48 truncate text-sm text-muted-foreground"
@@ -193,8 +200,8 @@ export function LinkBox({
               </span>
               <PreviewButton label="Edit link" icon={PencilEdit02Icon} onClick={show} />
               <PreviewButton
-                label="Copy link"
-                icon={Copy01Icon}
+                label={copied ? "Copied" : "Copy link"}
+                icon={copied ? Tick02Icon : Copy01Icon}
                 onClick={() => preview && copyLink(preview.href)}
               />
               <PreviewButton
@@ -204,7 +211,12 @@ export function LinkBox({
                   preview && window.open(preview.href, "_blank", "noopener,noreferrer")
                 }
               />
-              <PreviewButton label="Remove link" icon={Delete02Icon} onClick={unlinkAtCursor} />
+              <PreviewButton
+                label="Remove link"
+                icon={Delete02Icon}
+                variant="destructive"
+                onClick={unlinkAtCursor}
+              />
             </Popover.Popup>
           </Popover.Positioner>
         </Popover.Portal>
@@ -260,7 +272,7 @@ export function LinkBox({
                   <Button
                     type="button"
                     size="icon-sm"
-                    variant="ghost"
+                    variant="destructive"
                     aria-label="Remove link"
                     onClick={remove}
                   >
@@ -279,17 +291,19 @@ export function LinkBox({
 function PreviewButton({
   label,
   icon,
+  variant = "ghost",
   onClick,
 }: {
   label: string
   icon: IconSvgElement
+  variant?: "ghost" | "destructive"
   onClick: () => void
 }) {
   return (
     <Button
       type="button"
       size="icon-sm"
-      variant="ghost"
+      variant={variant}
       aria-label={label}
       title={label}
       onMouseDown={(event) => event.preventDefault()}

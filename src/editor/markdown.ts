@@ -1,11 +1,10 @@
 import { Plugin } from "@tiptap/pm/state"
-import { Extension, type Editor, type JSONContent } from "@tiptap/react"
+import { Extension, type JSONContent } from "@tiptap/react"
 import type { Doc } from "yjs"
 
 import { NOTE_FULL, fitsInNote } from "@/editor/images"
 import type { Notify } from "@/editor/notice"
 import { MAX_IMAGE_BYTES } from "@/editor/shrink-image"
-import { getTitleAndPreview } from "@/features/notes/note-meta"
 
 // A line that starts like Markdown: heading, list, checklist, quote, fence, divider.
 const BLOCK = /^\s{0,3}(#{1,6}\s|[-*+]\s|\d+[.)]\s|>\s?|```|~~~|\[[ xX]\]\s|(---|\*\*\*|___)\s*$)/m
@@ -106,29 +105,3 @@ export const MarkdownPaste = Extension.create<{ doc: Doc | null; notify: Notify 
     ]
   },
 })
-
-export async function copyMarkdown(editor: Editor, notify: Notify) {
-  try {
-    await navigator.clipboard.writeText(editor.getMarkdown())
-    notify({ title: "Copied as Markdown" })
-  } catch {
-    notify({ title: "Could not copy", description: "The browser did not allow it." })
-  }
-}
-
-// File name from the note's first line, without characters file systems refuse.
-export function downloadMarkdown(editor: Editor) {
-  const { title } = getTitleAndPreview(editor.getText())
-  const name =
-    title
-      .replace(/[\\/:*?"<>|]+/g, "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 80) || "note"
-  const url = URL.createObjectURL(new Blob([editor.getMarkdown()], { type: "text/markdown" }))
-  const link = document.createElement("a")
-  link.href = url
-  link.download = `${name}.md`
-  link.click()
-  setTimeout(() => URL.revokeObjectURL(url), 0)
-}

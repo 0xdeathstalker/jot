@@ -10,7 +10,9 @@ export function NoAccess({ onRemove }: { onRemove: () => void }) {
       <p className="max-w-sm text-sm text-muted-foreground">
         The owner removed you. Removing it from your list also deletes the copy on this device.
       </p>
-      <Button onClick={onRemove}>Remove from my list</Button>
+      <Button variant="destructive" onClick={onRemove}>
+        Remove from my list
+      </Button>
     </div>
   )
 }

@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "pnpm run build && vite preview",
+    "preview:worker": "pnpm run build && wrangler dev --local-upstream localhost:8787",
     "deploy": "pnpm run build && wrangler deploy",
     "cf-typegen": "wrangler types",
     "db:migrate": "wrangler d1 migrations apply jot-db --local",

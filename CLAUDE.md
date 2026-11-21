@@ -15,6 +15,7 @@ Local-first notes PWA. React + TipTap + Yjs, synced via Cloudflare Durable Objec
 ## Commands (pnpm only)
 
 - `pnpm dev`: app + Worker locally
+- `pnpm preview:worker`: build + `wrangler dev` on `http://localhost:8787` (real Worker-first routing)
 - `pnpm check`: lint + format check + typecheck. Run before saying work is done.
 - `pnpm lint:fix` / `pnpm format:fix`: apply fixes
 - `pnpm run deploy`: build + deploy (never `pnpm deploy`, a different built-in command)
@@ -44,4 +45,4 @@ A pre-commit hook lints and formats staged files. Never bypass it with `--no-ver
 - Put secrets in `wrangler.jsonc` or git. Local: `.dev.vars`; production: `wrangler secret put`.
 - Cache `/api/*` or `/parties/*` in the service worker, or drop them from `navigateFallbackDenylist` (the Google callback and sockets must reach the Worker). `/privacy` and `/terms` (static pages in `public/`) are in it too; never add `/join/` or `/share/`, which are app routes.
 - Let a precached file pass 2 MiB (Workbox skips it silently and offline start breaks). Test the service worker with `pnpm build && pnpm preview`, never `pnpm dev`.
-- Test the permission guard only with `pnpm dev`: also check it against `wrangler dev` (`pnpm build` first), where the Worker-first routing is real.
+- Test the permission guard only with `pnpm dev`: also check it against `pnpm preview:worker` (build + `wrangler dev` on `http://localhost:8787`), where the Worker-first routing is real. Plain `wrangler dev` breaks Google login (context §11).

@@ -23,22 +23,14 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<Ap
 export type Role = "owner" | "editor" | "viewer"
 export type LinkRole = "editor" | "viewer"
 export type Member = { userId: string; role: Role; name: string; email: string }
-export type ShareLink = { role: LinkRole; url: string; expiresAt: number }
+export type ShareLink = { role: LinkRole; url: string }
 export type ShareInfo = { members: Member[]; links: ShareLink[]; limit: number }
-export type JoinInfo = {
-  link: { url: string; expiresAt: number } | null
-  used: number
-  limit: number
-}
+export type JoinInfo = { url: string; used: number; limit: number }
 
 const note = (noteId: string) => `/api/share/${encodeURIComponent(noteId)}`
 
-// Share a note (owner only).
+// Share a note (owner only). Also makes the note's permanent view and edit links on first call.
 export const getShareInfo = (noteId: string) => call<ShareInfo>("GET", note(noteId))
-export const makeShareLink = (noteId: string, role: LinkRole) =>
-  call<ShareLink>("POST", `${note(noteId)}/invite`, { role })
-export const turnOffShareLink = (noteId: string, role: LinkRole) =>
-  call<{ ok: true }>("DELETE", `${note(noteId)}/invite/${role}`)
 export const unshareNote = (noteId: string) => call<{ ok: true }>("DELETE", note(noteId))
 // The owner raises or lowers someone's role.
 export const changeMemberRole = (noteId: string, userId: string, role: LinkRole) =>
@@ -55,9 +47,7 @@ export const acceptShareLink = (token: string) =>
 export const sharedWithMe = () =>
   call<{ notes: { noteId: string; role: LinkRole }[] }>("GET", "/api/share/mine")
 
-// "Join Jot" links. Making and viewing one is for original users only (others get 403).
+// "Join Jot" link: one permanent link per original user, made on first view (others get 403).
 export const getJoinInfo = () => call<JoinInfo>("GET", "/api/join")
-export const makeJoinLink = () => call<JoinInfo>("POST", "/api/join")
-export const turnOffJoinLink = () => call<JoinInfo>("DELETE", "/api/join")
 export const acceptJoinLink = (token: string) =>
   call<{ ok: true }>("POST", "/api/join/accept", { token })

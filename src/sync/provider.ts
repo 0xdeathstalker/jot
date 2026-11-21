@@ -22,15 +22,18 @@ function createSession({ party, room }: RoomOptions): RoomSession {
 }
 
 // One session per mount: key the calling component by room.
-// Typing never waits on the network.
-function useRoomSession(options: RoomOptions): RoomSession {
+// Typing never waits on the network. `loaded`: this device's saved copy is in the doc.
+function useRoomSession(options: RoomOptions): { session: RoomSession; loaded: boolean } {
   const [session] = React.useState(() => createSession(options))
+  const [loaded, setLoaded] = React.useState(false)
   const { idbName } = options
 
   React.useEffect(() => {
     const { doc, provider } = session
     // Created here (not in createSession) so Strict Mode's cleanup + remount gets a live one.
     const persistence = new IndexeddbPersistence(idbName, doc)
+    let live = true
+    void persistence.whenSynced.then(() => live && setLoaded(true))
     void provider.connect()
 
     // iOS has no background sync: reconnect when the app returns or the network is back.
@@ -49,12 +52,13 @@ function useRoomSession(options: RoomOptions): RoomSession {
       window.removeEventListener("pageshow", reconnect)
       // disconnect(), not destroy(): destroy leaks a reconnect timer (partykit #402),
       // and disconnect lets React Strict Mode remount reconnect the same provider.
+      live = false
       provider.disconnect()
       void persistence.destroy()
     }
   }, [session, idbName])
 
-  return session
+  return { session, loaded }
 }
 
 // Calls `onClosed(code)` each time this room's socket closes: the server closes with 4403 when
@@ -75,14 +79,15 @@ export function stopSyncing(session: RoomSession) {
 
 // One Y.Doc per note: /parties/note-room/<noteId>.
 export function useNoteSession(noteId: string): RoomSession {
-  return useRoomSession({ party: "note-room", room: noteId, idbName: `jot-note-${noteId}` })
+  return useRoomSession({ party: "note-room", room: noteId, idbName: `jot-note-${noteId}` }).session
 }
 
 // One note list per user: /parties/index-room/index-<userId>, IndexedDB jot-index-<userId>.
 // These names are permanent. The Phase 3 placeholder `index-default` is carried over once per
 // device (legacy-index.ts) and the server no longer allows it (step D).
-export function useIndexSession(userId: string): RoomSession {
-  const session = useRoomSession({
+// `loaded`: the list saved on this device is in (a new device then fills in from the server).
+export function useIndexSession(userId: string): RoomSession & { loaded: boolean } {
+  const { session, loaded } = useRoomSession({
     party: "index-room",
     room: `index-${userId}`,
     idbName: `jot-index-${userId}`,
@@ -92,7 +97,7 @@ export function useIndexSession(userId: string): RoomSession {
     void carryOverLegacyIndex(session.doc)
   }, [session.doc])
 
-  return session
+  return { ...session, loaded }
 }
 
 const SYNC_TIMEOUT_MS = 6000

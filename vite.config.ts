@@ -15,8 +15,8 @@ export default defineConfig({
     // Production builds only: the plugin is off in `pnpm dev`. Test with `pnpm build && pnpm preview`.
     VitePWA({
       registerType: "autoUpdate",
-      // Icons come from `pnpm pwa:icons` (public/). The theme and background colours are white
-      // because the app has no dark mode yet.
+      // Icons come from `pnpm pwa:icons` (public/). The manifest takes one colour: the light
+      // theme's cream (splash and first paint). The theme-color meta tag follows dark mode.
       manifest: {
         id: "/",
         name: "Jot",
@@ -25,8 +25,8 @@ export default defineConfig({
         start_url: "/",
         scope: "/",
         display: "standalone",
-        theme_color: "#ffffff",
-        background_color: "#ffffff",
+        theme_color: "#F3EEE3",
+        background_color: "#F3EEE3",
         icons: [
           { src: "pwa-64x64.png", sizes: "64x64", type: "image/png" },
           { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
