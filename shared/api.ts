@@ -1,5 +1,5 @@
 // The share/join REST API's shapes, shared by the Worker (worker/share.ts, worker/join.ts) and the
-// client (src/features/sharing/api.ts). Types only: import with `import type`, never runtime code
+// client (app/src/features/sharing/api.ts). Types only: import with `import type`, never runtime code
 // (it would have to run in both the browser and workerd). docs/plans/repo-layout.md
 
 export type Role = "owner" | "editor" | "viewer"

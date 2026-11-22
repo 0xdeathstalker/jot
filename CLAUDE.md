@@ -21,7 +21,7 @@ Local-first notes PWA. React + TipTap + Yjs, synced via Cloudflare Durable Objec
 - `pnpm run deploy`: build + deploy (never `pnpm deploy`, a different built-in command)
 - `pnpm db:migrate` / `pnpm db:migrate:remote`: apply `migrations/` to local / real D1
 - `pnpm desktop:dev`: Windows desktop app against `pnpm dev` (needs Rust). Releases: a `desktop-v*` tag (README)
-- `pnpm dlx shadcn@latest add <name>`: add a shadcn component, only when a feature needs it
+- `pnpm dlx shadcn@latest add <name> -c app`: add a shadcn component (`-c app`: `components.json` lives in `app/`), only when a feature needs it
 
 A pre-commit hook lints and formats staged files. Never bypass it with `--no-verify`.
 

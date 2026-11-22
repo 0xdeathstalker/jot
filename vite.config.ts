@@ -7,7 +7,11 @@ import { defineConfig } from "vite"
 import { VitePWA } from "vite-plugin-pwa"
 
 // https://vite.dev/config/
+// The Vite root stays the repo root (index.html lives here): the Cloudflare plugin writes the deploy
+// redirect (.wrangler/deploy/config.json) and local state into the root, where wrangler looks for
+// them. The app's own files are in app/ (docs/plans/repo-layout.md).
 export default defineConfig({
+  publicDir: "app/public",
   plugins: [
     react(),
     cloudflare(),
@@ -15,7 +19,7 @@ export default defineConfig({
     // Production builds only: the plugin is off in `pnpm dev`. Test with `pnpm build && pnpm preview`.
     VitePWA({
       registerType: "autoUpdate",
-      // Icons come from `pnpm pwa:icons` (public/). The manifest takes one colour: the light
+      // Icons come from `pnpm pwa:icons` (app/public/). The manifest takes one colour: the light
       // theme's cream (splash and first paint). The theme-color meta tag follows dark mode.
       manifest: {
         id: "/",
@@ -42,7 +46,7 @@ export default defineConfig({
       workbox: {
         // Never answer these from the cached app shell: the Google callback is a browser
         // navigation, and rooms/auth must always reach the Worker. /privacy and /terms are real
-        // static pages (public/), linked from Google's consent screen.
+        // static pages (app/public/), linked from Google's consent screen.
         navigateFallbackDenylist: [/^\/api\//, /^\/parties\//, /^\/privacy/, /^\/terms/],
         cleanupOutdatedCaches: true,
         // Default is js, css and html only: add the self-hosted fonts, icons and manifest so the
@@ -53,6 +57,6 @@ export default defineConfig({
     }),
   ],
   resolve: {
-    alias: { "@": path.resolve(import.meta.dirname, "./src") },
+    alias: { "@": path.resolve(import.meta.dirname, "./app/src") },
   },
 })

@@ -22,7 +22,6 @@ jot/
 ├── app/
 │   ├── src/                 (was src/, unchanged inside)
 │   ├── public/
-│   ├── index.html
 │   ├── components.json
 │   ├── pwa-assets.config.ts
 │   └── tsconfig.json        (was tsconfig.app.json)
@@ -35,6 +34,7 @@ jot/
 │   └── api.ts               share/join API types (Role, Member, ShareInfo, JoinInfo, ...)
 ├── tauri/                   (was src-tauri/)
 ├── docs/
+├── index.html               Vite entry: stays at the Vite root (phase 3)
 ├── vite.config.ts
 ├── wrangler.jsonc
 ├── tsconfig.json            references app/, worker/, tsconfig.node.json
@@ -68,24 +68,34 @@ after each one.
       `cp tauri/target/release/bundle/nsis/...`. Missing the second one breaks the `Jot-setup.exe`
       upload, found only on the next tag. Also every `src-tauri` path in CLAUDE.md, README,
       `project-context.md` and `src/desktop/` comments (old plans keep the old name: history).
-- [ ] **2.3** Check: `pnpm desktop:dev` opens the window; `pnpm desktop:build` puts the installer in
-      `tauri/target/release/bundle/nsis/`. Build checked (2026-11-22): `Jot_0.1.1_x64-setup.exe`
-      lands there; the local run ends on the missing signing key, expected (CI has it).
-      `pnpm desktop:dev` still to check.
+- [x] **2.3** Check: `pnpm desktop:dev` opens the window; `pnpm desktop:build` puts the installer in
+      `tauri/target/release/bundle/nsis/`. Both checked (2026-11-22): `Jot_0.1.1_x64-setup.exe`
+      lands there; the local run ends on the missing signing key, expected (CI has it). A first
+      local build needs NSIS from GitHub, which can time out on a slow link (`timeout: global`):
+      unzip `nsis-3.13.zip` into `%LOCALAPPDATA%\tauri\NSIS` and put `nsis_tauri_utils.dll`
+      (v0.5.3) in its `Plugins/x86-unicode/additional/`.
 
 ### Phase 3: web into `app/`
 
-- [ ] **3.1** `git mv` `src/`, `public/`, `index.html`, `components.json`, `pwa-assets.config.ts`,
+**Changed (owner, 2026-11-22): the Vite root stays the repo root, and `index.html` stays there.**
+The Cloudflare plugin writes the deploy redirect (`.wrangler/deploy/config.json`) and local D1/DO
+state into the Vite root. With `root: "app"` the redirect lands in `app/.wrangler/`, which
+`wrangler deploy` run from the repo root never finds (it looks upwards): it would ship the Worker
+without the site, silently.
+
+- [x] **3.1** `git mv` `src/`, `public/`, `components.json`, `pwa-assets.config.ts` and
       `tsconfig.app.json` (as `tsconfig.json`) into `app/`.
-- [ ] **3.2** `vite.config.ts`: `root: "app"`, `build.outDir: "../dist"` (`emptyOutDir: true`),
-      `@` alias to `app/src`, `cloudflare({ configPath: "../wrangler.jsonc" })` (verify the path
-      base), and keep local D1/DO state in the root `.wrangler/` (`persistState`) or re-run
-      `pnpm db:migrate`.
-- [ ] **3.3** `.oxlintrc.json` globs: `src/**` to `app/src/**`. `.oxfmtrc.json`: Tailwind stylesheet
-      and `components/ui` ignore paths. `components.json`: CSS path.
-- [ ] **3.4** `pwa:icons`: run the generator from `app/` (or keep the config at the root if the CLI
-      cannot be pointed at it). The shadcn CLI needs `--cwd app`; update the command in CLAUDE.md.
-- [ ] **3.5** Tauri `beforeDevCommand` (`pnpm dev`): check it still starts on port 5173.
+- [x] **3.2** `vite.config.ts`: `publicDir: "app/public"`, `@` alias to `app/src`. `index.html`
+      loads `/app/src/main.tsx`. Root `tsconfig.json` references `./app`; the app tsconfig points
+      `tsBuildInfoFile` and `@shared` one level up.
+- [x] **3.3** `.oxlintrc.json` globs `app/src/**`. `.oxfmtrc.json`: Tailwind stylesheet and the
+      `components/ui` ignore. `components.json` unchanged (its paths are relative to itself).
+- [x] **3.4** `pwa:icons` runs `pwa-assets-generator --root app` (config and images resolve from
+      `app/`). The shadcn CLI needs `-c app`.
+- [x] **3.5** Checked: build output unchanged in shape (`dist/client`, `dist/jot`, redirect still in
+      the root `.wrangler/deploy/`), every `app/public` file in the precache (30 entries), none
+      over 2 MiB, nothing written under `app/`. `pnpm dev` serves `/`, `/app/src/main.tsx`,
+      `/favicon.svg`, `/privacy` and `/api/auth/get-session`.
 
 ### Phase 4: Worker into `worker/src/`
 

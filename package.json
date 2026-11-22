@@ -15,7 +15,7 @@
     "cf-typegen": "wrangler types",
     "db:migrate": "wrangler d1 migrations apply jot-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply jot-db --remote",
-    "pwa:icons": "pwa-assets-generator",
+    "pwa:icons": "pwa-assets-generator --root app",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt --check",
