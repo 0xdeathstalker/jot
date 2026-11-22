@@ -41,8 +41,17 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: Jot desktop ${{ github.ref_name }}
           releaseBody: |
-            Windows installer: download the `.exe` below and run it.
+            Windows installer: download `Jot-setup.exe` below (under Assets) and run it.
             Windows may warn "Windows protected your PC" (the app is not code-signed):
             choose More info, then Run anyway. Installed apps update themselves.
           releaseDraft: false
           prerelease: false
+      # The installer's name carries the version, so also publish it as Jot-setup.exe: then
+      # releases/latest/download/Jot-setup.exe (README) always gets the newest one.
+      - name: Upload Jot-setup.exe
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp src-tauri/target/release/bundle/nsis/Jot_*_x64-setup.exe Jot-setup.exe
+          gh release upload "${{ github.ref_name }}" Jot-setup.exe --clobber

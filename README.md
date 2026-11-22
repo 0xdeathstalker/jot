@@ -2,9 +2,11 @@
 
 A fast, local-first notes app that syncs across your devices (Windows, iPhone, anything with a browser) within about a second, and works offline.
 
-Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Objects. It runs entirely on Cloudflare's free plan.
+Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Objects, plus a small Windows desktop app. It runs entirely on Cloudflare's free plan.
 
-> Early development. See the build plan in [`docs/project-context.md`](docs/project-context.md#10-build-plan-do-these-in-order-each-phase-gets-a-plan-in-docsplans).
+**Use it:** [jot.deathstalker.dev](https://jot.deathstalker.dev) (sign-up needs an invite) · **Windows app:** [download `Jot-setup.exe`](https://github.com/0xdeathstalker/jot/releases/latest/download/Jot-setup.exe)
+
+> The build plan is done (phases 0 to 6, plus the desktop app). What may come next is under "Later" in [`docs/project-context.md`](docs/project-context.md#10-build-plan-do-these-in-order-each-phase-gets-a-plan-in-docsplans).
 
 ---
 
@@ -13,9 +15,11 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 - **Instant**: every edit is saved locally first, so typing never waits on the network
 - **Real-time sync** across devices over WebSockets
 - **Offline-first**: edits made offline merge automatically on reconnect (Yjs CRDTs)
+- **Rich notes**: headings, lists, checklists, code blocks, links, images inside the note, and Markdown paste
 - **Installable** on Windows (Edge/Chrome) and iPhone (Safari → Add to Home Screen)
 - **Windows desktop app**: a global hotkey brings Jot up over everything, Raycast-style; lives in the tray
-- **Note switcher**: Ctrl+P / ⌘K jumps to any note by typing
+- **Note switcher**: Ctrl+P or Ctrl+K (⌘P / ⌘K on a Mac) jumps to any note by typing; Ctrl+B shows or hides the notes list
+- **Light and dark**: follows the system until you pick one in the gear menu
 - **Private**: sign in with Google; the server checks every connection, and only listed emails, or people holding an invite link, can sign up
 - **Sharing**: send a link to share a note with up to 2 other people, as viewer or editor, with live cursors; send a join link to bring up to 3 friends into Jot (no email service needed)
 
@@ -39,6 +43,7 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 ### Prerequisites
 
 - Node.js 20+ and [pnpm](https://pnpm.io/installation) (`corepack enable` works)
+- Desktop app only: [Rust](https://rustup.rs) and the Visual Studio C++ build tools ([Tauri prerequisites](https://v2.tauri.app/start/prerequisites/))
 - A free [Cloudflare account](https://dash.cloudflare.com/sign-up) (only needed to deploy)
 
 ### Install and run
@@ -113,8 +118,8 @@ Later deploys are just `pnpm run deploy`; secrets stay in Cloudflare. If a chang
 
 Two kinds of link, sent through any chat app:
 
-- **Invite a friend to Jot** (sidebar footer, original users only): one link, valid 7 days, lets up to 3 people sign up. Invited users are full users but cannot invite more people.
-- **Share** (button above a note you own): choose **Can view** or **Can edit** and copy the link. A note holds you plus at most 2 other people. A share link never creates an account, so a new person needs a join link first. In the dialog you can raise or lower someone's access, remove them, or turn a link off. Anyone can **Leave note**; deleting a note you shared removes everyone's access.
+- **Invite a friend to Jot** (sidebar footer, original users only): one permanent link that lets up to 3 people sign up in total. Invited users are full users but cannot invite more people.
+- **Share** (button above a note you own): choose **Can view** or **Can edit** and copy the link. A note holds you plus at most 2 other people. A share link never creates an account, so a new person needs a join link first. Each note has one permanent view link and one edit link. In the dialog you can raise or lower someone's access or remove them; removing someone gives the note new links, so the old ones stop working. Anyone can **Leave note**; deleting a note you shared removes everyone's access.
 
 Viewers are read-only on the server, not just in the editor. See [`docs/project-context.md`](docs/project-context.md#8-sharing-and-permissions-phase-6) for the rules.
 
@@ -127,11 +132,11 @@ The app shell is cached, so an installed Jot opens with no network and updates i
 
 ### Windows desktop app
 
-1. Download the latest `.exe` from [Releases](https://github.com/0xdeathstalker/jot/releases/latest) and run it.
+1. Download [**`Jot-setup.exe`**](https://github.com/0xdeathstalker/jot/releases/latest/download/Jot-setup.exe) (always the latest version) and run it. On the [Releases](https://github.com/0xdeathstalker/jot/releases/latest) page it is under **Assets**; "Source code" is not the app.
 2. Windows may say "Windows protected your PC" (the app is not code-signed): **More info → Run anyway**.
 3. Sign in with Google once (the app keeps its own sign-in, separate from your browser).
 
-Press **Ctrl+Alt+J** to show or hide it (change it in the gear menu → **Global hotkey…**). Closing the window keeps Jot in the tray; quit from the tray icon. It starts with Windows (untick **Launch at login** in the tray menu to stop that) and updates itself.
+Press **Ctrl+Alt+J** to show or hide it (change it in the gear menu → **Global hotkey…**). It stays on top of other windows; **Ctrl+N** makes a new note. Closing or minimizing the window keeps Jot in the tray (left-click the tray icon to toggle it, right-click for New note, Launch at login and Quit). It starts with Windows, hidden, and updates itself while it is hidden.
 
 **Changing the icon:** replace `public/icon-source.svg` (and the rounded `public/favicon.svg`), run `pnpm pwa:icons`, commit the generated files in `public/`, deploy. For the desktop app also run `pnpm tauri icon public/icon-source.svg` and delete the generated `android/`, `ios/` and `64x64.png` in `src-tauri/icons/`. On iPhone, delete and re-add the Home Screen icon.
 
@@ -144,9 +149,10 @@ src/                React PWA
   components/ui/    shadcn/ui components (generated, not formatted)
   editor/           TipTap editor and its UI
   desktop/          desktop-only UI (title bar, hotkey dialog); the only place that imports @tauri-apps/*
+  hooks/            React hooks, one per file (use-*.ts)
   auth/             login screen, session gate, account footer
   sync/             Yjs providers, note-list store, local-data wipe
-  features/         notes (list, search), sharing (share dialog, link pages, cursors)
+  features/         notes (list, search, note switcher), sharing (share dialog, link pages, cursors)
   lib/              shared helpers
 src-tauri/          Windows desktop shell (Rust): window, tray, global hotkey, updater
 worker/             Cloudflare Worker, NoteRoom / IndexRoom Durable Objects, auth/ (Better Auth + permission checks), share.ts and join.ts (link APIs)
@@ -193,7 +199,7 @@ Only the shell (`src-tauri/`) is released; the UI comes from the live site, so a
 
 1. Bump `version` in `src-tauri/tauri.conf.json` and commit.
 2. `git tag desktop-v<version>` and `git push origin desktop-v<version>`.
-3. `.github/workflows/desktop-release.yml` builds the installer and publishes the release; installed apps update within 6 hours.
+3. `.github/workflows/desktop-release.yml` builds the installer and publishes the release (also as `Jot-setup.exe`, the link above); installed apps update at their next start or within 6 hours, while hidden.
 
 Needs the `TAURI_SIGNING_PRIVATE_KEY` repo secret (the updater key, kept outside the repo and backed up). A change that needs a new shell command: release the shell before deploying the site.
 
