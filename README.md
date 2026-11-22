@@ -138,7 +138,7 @@ The app shell is cached, so an installed Jot opens with no network and updates i
 
 Press **Ctrl+Alt+J** to show or hide it (change it in the gear menu → **Global hotkey…**). It stays on top of other windows; **Ctrl+N** makes a new note. Closing or minimizing the window keeps Jot in the tray (left-click the tray icon to toggle it, right-click for New note, Launch at login and Quit). It starts with Windows, hidden, and updates itself while it is hidden.
 
-**Changing the icon:** replace `public/icon-source.svg` (and the rounded `public/favicon.svg`), run `pnpm pwa:icons`, commit the generated files in `public/`, deploy. For the desktop app also run `pnpm tauri icon public/icon-source.svg` and delete the generated `android/`, `ios/` and `64x64.png` in `src-tauri/icons/`. On iPhone, delete and re-add the Home Screen icon.
+**Changing the icon:** replace `public/icon-source.svg` (and the rounded `public/favicon.svg`), run `pnpm pwa:icons`, commit the generated files in `public/`, deploy. For the desktop app also run `pnpm tauri icon public/icon-source.svg` and delete the generated `android/`, `ios/` and `64x64.png` in `tauri/icons/`. On iPhone, delete and re-add the Home Screen icon.
 
 ---
 
@@ -154,7 +154,7 @@ src/                React PWA
   sync/             Yjs providers, note-list store, local-data wipe
   features/         notes (list, search, note switcher), sharing (share dialog, link pages, cursors)
   lib/              shared helpers
-src-tauri/          Windows desktop shell (Rust): window, tray, global hotkey, updater
+tauri/              Windows desktop shell (Rust): window, tray, global hotkey, updater
 worker/             Cloudflare Worker, NoteRoom / IndexRoom Durable Objects, auth/ (Better Auth + permission checks), share.ts and join.ts (link APIs)
 migrations/         D1 SQL (auth tables, note_members, invite links), append-only
 docs/               Project context and per-task plans
@@ -195,9 +195,9 @@ A Husky pre-commit hook runs lint-staged: staged files are linted (`oxlint --fix
 
 ## Desktop releases
 
-Only the shell (`src-tauri/`) is released; the UI comes from the live site, so a normal deploy updates the desktop app too.
+Only the shell (`tauri/`) is released; the UI comes from the live site, so a normal deploy updates the desktop app too.
 
-1. Bump `version` in `src-tauri/tauri.conf.json` and commit.
+1. Bump `version` in `tauri/tauri.conf.json` and commit.
 2. `git tag desktop-v<version>` and `git push origin desktop-v<version>`.
 3. `.github/workflows/desktop-release.yml` builds the installer and publishes the release (also as `Jot-setup.exe`, the link above); installed apps update at their next start or within 6 hours, while hidden.
 

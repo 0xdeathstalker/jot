@@ -120,7 +120,7 @@ jot/
 ├── .oxfmtrc.json             ← formatter rules
 ├── vite.config.ts            ← includes the PWA plugin (manifest, Workbox)
 ├── pwa-assets.config.ts      ← icon generation (`pnpm pwa:icons`)
-├── src-tauri/                ← Windows desktop shell (Rust): window, tray, hotkey, updater
+├── tauri/                    ← Windows desktop shell (Rust): window, tray, hotkey, updater
 │   ├── src/lib.rs            ← all shell code
 │   ├── tauri.conf.json       ← app id, version (release tag must match), updater key
 │   └── capabilities/         ← what the live site may call (keep it harmless)
@@ -171,7 +171,7 @@ jot/
 | `@tiptap/extension-collaboration-caret`                                                                | 6             | Other people's cursors                                                                                                                                                    |
 | `@tiptap/extension-list`, `@tiptap/extension-image`, `@tiptap/markdown`                                | editor blocks | Checklists, images inside the note, Markdown paste (`docs/plans/editor-blocks.md`). Keep every `@tiptap/*` package on the same version: they peer on exact `@tiptap/core` |
 
-| `@tauri-apps/cli` (dev), `@tauri-apps/api` | desktop | Desktop shell (`docs/plans/desktop-app.md`). The Rust side adds Tauri plugins in `src-tauri/Cargo.toml`: global-shortcut, single-instance, autostart, window-state, updater |
+| `@tauri-apps/cli` (dev), `@tauri-apps/api` | desktop | Desktop shell (`docs/plans/desktop-app.md`). The Rust side adds Tauri plugins in `tauri/Cargo.toml`: global-shortcut, single-instance, autostart, window-state, updater |
 
 Don't add: `nanoid` (use `crypto.randomUUID()`), any `@tiptap-pro/*` package, or Hocuspocus packages.
 
@@ -327,14 +327,14 @@ Rules:
 
 ### Desktop app traps
 
-- ⚠️ The live site can call the shell's commands (`src-tauri/capabilities/`): an XSS on the site reaches whatever they expose. Only harmless commands (window, hotkey); never file system or shell access.
+- ⚠️ The live site can call the shell's commands (`tauri/capabilities/`): an XSS on the site reaches whatever they expose. Only harmless commands (window, hotkey); never file system or shell access.
 - ❌ Don't import `@tauri-apps/*` outside `src/desktop/` (lint error): the web and phone bundles must not change.
 - ⚠️ The installed shell can be older than the site. A feature that needs a new shell command: release the shell first, deploy the web part after, and let the site cope if the command is missing.
 - ⚠️ Hiding the window does not make the page "hidden" (WebView2): `visibilitychange` never fires on hide or show. Use window `focus` for "user came back" (the shell focuses the window on every show).
 - ⚠️ The window stays open for days: a deploy can delete a lazy chunk it still needs. Load lazy parts with `lazyOrReload` (`src/lib/lazy.ts`).
 - ❌ Never lose or commit the updater key (`%USERPROFILE%.taurijot-updater.key`, repo secret `TAURI_SIGNING_PRIVATE_KEY`). Without it installed apps can never update.
 - ⚠️ The updater reads the repo's _latest_ GitHub Release: every release in this repo must be a desktop release.
-- The release tag (`desktop-v0.2.0`) must match `version` in `src-tauri/tauri.conf.json`.
+- The release tag (`desktop-v0.2.0`) must match `version` in `tauri/tauri.conf.json`.
 
 ### iOS / PWA traps
 

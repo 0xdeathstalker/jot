@@ -62,12 +62,16 @@ after each one.
 
 ### Phase 2: `src-tauri/` to `tauri/`
 
-- [ ] **2.1** `git mv src-tauri tauri`. Delete the old `target/` (a cold Rust build follows once).
-- [ ] **2.2** `.github/workflows/desktop-release.yml`: `workspaces: tauri` (Rust cache) and
+- [x] **2.1** Moved `src-tauri/` to `tauri/` (whole folder, `target/` included; git sees 24
+      renames). The Tauri CLI finds `tauri/tauri.conf.json` on its own (`pnpm tauri info`).
+- [x] **2.2** `.github/workflows/desktop-release.yml`: `workspaces: tauri` (Rust cache) and
       `cp tauri/target/release/bundle/nsis/...`. Missing the second one breaks the `Jot-setup.exe`
-      upload, found only on the next tag.
+      upload, found only on the next tag. Also every `src-tauri` path in CLAUDE.md, README,
+      `project-context.md` and `src/desktop/` comments (old plans keep the old name: history).
 - [ ] **2.3** Check: `pnpm desktop:dev` opens the window; `pnpm desktop:build` puts the installer in
-      `tauri/target/release/bundle/nsis/`.
+      `tauri/target/release/bundle/nsis/`. Build checked (2026-11-22): `Jot_0.1.1_x64-setup.exe`
+      lands there; the local run ends on the missing signing key, expected (CI has it).
+      `pnpm desktop:dev` still to check.
 
 ### Phase 3: web into `app/`
 

@@ -43,7 +43,7 @@ A pre-commit hook lints and formats staged files. Never bypass it with `--no-ver
 - Store note content outside Yjs, or put all notes in one Y.Doc.
 - Trust the client for permissions or roles. The Worker checks every connection and overwrites `x-jot-role` / `x-jot-user` itself; after changing someone's role, close their connections (code 4401) so they reconnect with it.
 - Enable TipTap's own undo/redo alongside Collaboration.
-- Expose file system, shell or other powerful Tauri commands to the site (`src-tauri/capabilities/`): an XSS would reach them. Never commit the updater key.
+- Expose file system, shell or other powerful Tauri commands to the site (`tauri/capabilities/`): an XSS would reach them. Never commit the updater key.
 - Edit an existing Durable Object migration or an applied D1 file in `migrations/`. Add a new tag / file.
 - Put secrets in `wrangler.jsonc` or git. Local: `.dev.vars`; production: `wrangler secret put`.
 - Cache `/api/*` or `/parties/*` in the service worker, or drop them from `navigateFallbackDenylist` (the Google callback and sockets must reach the Worker). `/privacy` and `/terms` (static pages in `public/`) are in it too; never add `/join/` or `/share/`, which are app routes.
