@@ -1,6 +1,7 @@
 # Plan: Note list never saved on the server, and false "not synced" at sign-out
 
-Status (2026-11-23): **code done, browser checks left.** Branch `fix/note-list-sync` (from `main`).
+Status (2026-11-23): **tasks 1 to 5 done and checked; task 6 (sign-out wipes only your own data)
+planned, not started.** Branch `fix/note-list-sync` (from `main`).
 
 ## What is wrong
 
@@ -16,6 +17,10 @@ Status (2026-11-23): **code done, browser checks left.** Branch `fix/note-list-s
    the sign-out button, e.g. expired; on localhost, signing out on one port ends the session on all
    ports, but only wipes that port's IndexedDB) is refused by the server and counted, so the dialog
    says "1 note is not synced" while online.
+3. **Sign-out deletes every account's data in the browser.** Found by the browser checks: the wipe
+   (`wipeIfPending`, next page load) deletes every `jot-*` database, so another account's notes,
+   kept since task 2, are gone as soon as anyone signs out on that browser, offline edits included,
+   with no warning to their owner.
 
 ## Decisions (owner, 2026-11-23)
 
@@ -23,6 +28,7 @@ Status (2026-11-23): **code done, browser checks left.** Branch `fix/note-list-s
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Another account's data on device | **Keep it, ignore it.** Not wiped when a different account signs in (that could silently lose its offline edits). Invisible in the UI, skipped at sign-out, back when that account returns |
 | Lists lost since 2026-11-11      | **Auto-rebuild** from the notes the user owns on the server (D1 `note_members`), titled from each note's content                                                                           |
+| What sign-out deletes            | **Only the signed-out account's own data** (its list and the notes in it). Another account's databases stay until that account comes back or signs out itself                              |
 
 ## Tasks
 
@@ -37,21 +43,49 @@ Status (2026-11-23): **code done, browser checks left.** Branch `fix/note-list-s
       note at a time. Restored notes show as edited now. Blank notes (one empty paragraph, the
       editor's rule; 7 of 36 in local data, made before drafts existed) stay out.
 - [x] **5** Docs: `project-context.md` §11 trap (the guard must set the role for every room class).
+- [ ] **6** Sign-out deletes only the signed-out account's own data. Not started.
+  - At sign-out (`signOut` in `use-auth-user.ts`), work out the account's databases:
+    `jot-index-<userId>`, the `jot-note-*` of every note in its list (owned and shared, `noAccess`
+    too, deleted too), and the Phase 3 placeholder `jot-index-default`. Store those names as the
+    pending wipe in localStorage, instead of today's `"1"`.
+  - `wipeIfPending` (next page load) deletes only the stored names. An old `"1"` (left pending by an
+    older app version) still means wipe everything, as before.
+  - Edge: a note shared between two accounts on the same browser is one database. It goes with
+    whoever signs out; the other account gets it back from the server (only its unsynced offline
+    edits to that one note are at risk).
+  - Docs: the `project-context.md` §11 sign-out note becomes accurate with this task ("other `jot-*`
+    databases are left alone"); `local-data.ts` header and the phase-4 B6 wording ("the next person
+    using this browser finds nothing") change to "finds none of your notes".
+  - **Once task 6 is implemented, review `docs/project-context.md` and update it where needed:**
+    the §11 sign-out note (check that it matches what was built), any wording that says sign-out
+    leaves the browser empty, and §12 if the decision needs a row. Until then that §11 note is
+    only half true: sync skips other accounts' data, but the wipe still deletes it.
 
 ## Check
 
 - [ ] `pnpm check` (lint + typecheck pass; format: CRLF working copies, see repo-layout)
-- [ ] `pnpm preview:worker`: make notes, sign out, sign back in: all notes listed, titles right
+
+Browser checks (2026-11-23) ran in headless Chrome over CDP against `pnpm preview:worker`, signed
+in with a temporary local session (removed afterwards).
+
+- [x] `pnpm preview:worker`: fresh device rebuilds the lost list (the server list went from empty to
+      both owned notes, titled from their content); sign out, sign back in: all notes listed.
 - [x] Server saves the list: a value written over a real socket reads back on a fresh connection
       (fails on `main`: "synced", value gone). Other user's list still refused. Checked with a
       temporary local session against fresh `pnpm dev` servers.
-- [ ] Two tabs, one offline: a new note appears in the other tab's list after reconnecting
-- [ ] Sign-out with another account's note in IndexedDB: no "not synced" dialog
-- [ ] Sign-out offline with an edited note: the dialog still appears (real unsynced work)
+- [x] Two tabs, one offline: a new note appears in the other tab's list after reconnecting, and in
+      the server list. Weak spot: the offline tab already had it before reconnecting (same-browser
+      channel), so this does not prove the reconnect path on its own.
+- [x] Sign-out with another account's note in IndexedDB: no "not synced" dialog.
+- [x] Sign-out offline: the dialog appears; "Stay signed in" keeps the session.
+- [ ] Task 6: with another account's note and list in IndexedDB, sign out: your databases are gone,
+      the other account's remain. Then sign in as the other account: its notes are there.
+- [ ] Task 6: an old pending wipe (`"1"`) still deletes everything.
 
 ## Known limits
 
 - A note deleted from a list that was then lost can come back once (the deletion was part of the
   lost list). Delete it again.
-- Another account's notes stay readable in this browser's DevTools until that account signs out
-  (accepted: privacy over silent data loss).
+- Another account's notes stay readable in this browser's DevTools until that account signs out,
+  even after someone else signs out (accepted, owner 2026-11-23: no silent data loss over a clean
+  browser).
