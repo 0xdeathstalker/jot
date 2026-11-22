@@ -46,6 +46,8 @@ export const acceptShareLink = (token: string) =>
   call<{ noteId: string; role: Role }>("POST", "/api/share/accept", { token })
 export const sharedWithMe = () =>
   call<{ notes: { noteId: string; role: LinkRole }[] }>("GET", "/api/share/mine")
+// Ids of the notes I own, to rebuild a list the server lost (docs/plans/note-list-sync.md).
+export const ownedNotes = () => call<{ notes: string[] }>("GET", "/api/share/owned")
 
 // "Join Jot" link: one permanent link per original user, made on first view (others get 403).
 export const getJoinInfo = () => call<JoinInfo>("GET", "/api/join")

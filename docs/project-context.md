@@ -319,6 +319,8 @@ Rules:
 - ❌ Don't enable TipTap's normal undo/redo alongside Collaboration. They conflict.
 - ⚠️ Save compacted state (`Y.encodeStateAsUpdate`), not an ever-growing list of updates.
 - ❌ Don't copy a role or user id from a client header: `guardRoom` always overwrites `x-jot-role` / `x-jot-user`.
+- ❌ **A room without `x-jot-role` is read-only and saves nothing**, yet the client still reports "synced". Every room class `guardRoom` passes on (`IndexRoom` too: it extends `NoteRoom`) must get both headers (`withIdentity`). Missing on `IndexRoom` from 2026-11-11 to 2026-11-23 lost note lists (`docs/plans/note-list-sync.md`).
+- ⚠️ Sign-out syncs only the user's own list and the notes in it. Other `jot-*` databases in the browser (another account whose session ended without signing out) are left alone: syncing them is refused, wiping them could lose that account's offline edits.
 - ⚠️ A WebSocket keeps the role it was opened with: after any role change, close the person's connections (4401), don't just update the row.
 - ⚠️ Link tokens are passwords: never log them, and drop them from the address bar once used.
 - ❌ **An older app version deletes blocks it does not know.** `y-tiptap` removes shared content its schema cannot show, for everyone. Keep `enableContentCheck` on (it stops sync and shows "Reload to update" instead), ship new node types together, and never rename a node type or attribute that notes already use.
