@@ -1,7 +1,7 @@
 # Plan: Windows desktop app (Raycast Notes style)
 
-Status (2026-11-22): merged (PR #8) and released as `desktop-v0.1.0`. Left: the install test (4.5,
-with 2.4) and the first self-update, which needs a second release (4.3).
+Status (2026-11-22): **done.** Released (`desktop-v0.1.1`), installed, launch at login and self-update
+tested. Follow-ups get their own plans (see "Watch out").
 
 Goal: a Windows app that a global hotkey brings up, like Raycast Notes, with everything the web app
 already does (editor, offline, sync, sharing, theme, Google login). The web app and the iPhone PWA
@@ -89,7 +89,7 @@ frameless (without the drag bar of 3.3 the window could not be moved) and the tr
       minimized window sits as a stub above the taskbar). No taskbar button (`skipTaskbar`). Tray:
       left click toggles on visibility alone (the click itself takes focus from the window); menu
       has Show Jot, Launch at login (checkbox), Quit Jot.
-- [ ] **2.4** Launch at login with `--hidden` (`autostart`): turned on once on the first run of a
+- [x] **2.4** Launch at login with `--hidden` (`autostart`): turned on once on the first run of a
       release build, then the tray checkbox owns it. Never in debug builds. One instance only
       (`single-instance`): a second launch brings up the running one. Single instance tested;
       launch at login is written but needs an installed build to test (phase 4).
@@ -144,21 +144,21 @@ moved or closed.
       Also uploads the installer as `Jot-setup.exe`, so
       `releases/latest/download/Jot-setup.exe` is a download link that never changes (README).
       Done: `desktop-v0.1.0` built in about 7 minutes (2026-11-22).
-- [ ] **4.3** Updater (`tauri-plugin-updater`, release builds only): checks
+- [x] **4.3** Updater (`tauri-plugin-updater`, release builds only): checks
       `releases/latest/download/latest.json` at start and every 6 hours, downloads in the
       background, installs only while the window is hidden (installing closes the app; the
       installer starts the new version). Signed with a free minisign key, not Windows code
       signing: private key at `%USERPROFILE%\.tauri\jot-updater.key` (back it up; losing it means
       installed apps can never update), public key in `tauri.conf.json`. Note: `releases/latest`
-      means every GitHub Release in this repo must be a desktop release. Half done: v0.1.0
-      published a signed `latest.json` (the CI key works). Tick it when an installed v0.1.0
-      updates itself to the next release.
+      means every GitHub Release in this repo must be a desktop release. Done (2026-11-22): an installed v0.1.0
+      updated itself to `desktop-v0.1.1`.
 - [x] **4.4** After a web deploy: `main.tsx` checks for a service worker update hourly, when the
       page becomes visible, and (new) on window `focus`; `autoUpdate` reloads onto it. Tested
       2026-11-22: a hidden Tauri window leaves the page "visible" in WebView2 (no
       `visibilitychange`), but the shell focuses the window on every show and `focus` fires.
-- [ ] **4.5** First release: install it, check launch at login (2.4), the tray icon, and that a
-      second release updates the first.
+- [x] **4.5** First release: install it, check launch at login (2.4), the tray icon, and that a
+      second release updates the first. Install, tray, hotkey, position, single instance and
+      launch at login tested by the owner (2026-11-22); the update part is 4.3.
 
 ### Phase 5: Docs
 
