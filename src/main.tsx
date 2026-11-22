@@ -20,6 +20,9 @@ registerSW({
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") check()
     })
+    // The desktop window hides without the page becoming "hidden" (WebView2 keeps it visible), so
+    // visibilitychange never fires there; the shell focuses the window on every show.
+    window.addEventListener("focus", check)
   },
 })
 

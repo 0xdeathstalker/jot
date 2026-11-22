@@ -14,6 +14,8 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 - **Real-time sync** across devices over WebSockets
 - **Offline-first**: edits made offline merge automatically on reconnect (Yjs CRDTs)
 - **Installable** on Windows (Edge/Chrome) and iPhone (Safari → Add to Home Screen)
+- **Windows desktop app**: a global hotkey brings Jot up over everything, Raycast-style; lives in the tray
+- **Note switcher**: Ctrl+P / ⌘K jumps to any note by typing
 - **Private**: sign in with Google; the server checks every connection, and only listed emails, or people holding an invite link, can sign up
 - **Sharing**: send a link to share a note with up to 2 other people, as viewer or editor, with live cursors; send a join link to bring up to 3 friends into Jot (no email service needed)
 
@@ -28,6 +30,7 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 | Storage | IndexedDB (client), Durable Object SQLite + D1 (server) |
 | Tooling | pnpm, oxlint, oxfmt, Husky + lint-staged                |
 | Hosting | Cloudflare Workers                                      |
+| Desktop | Tauri v2 (Rust shell around the live site), Windows     |
 
 ---
 
@@ -122,7 +125,15 @@ Viewers are read-only on the server, not just in the editor. See [`docs/project-
 
 The app shell is cached, so an installed Jot opens with no network and updates itself silently on the next launch after a deploy. The service worker only exists in production builds: test it with `pnpm build && pnpm preview`, not `pnpm dev`.
 
-**Changing the icon:** replace `public/icon-source.svg` (and the rounded `public/favicon.svg`), run `pnpm pwa:icons`, commit the generated files in `public/`, deploy. On iPhone, delete and re-add the Home Screen icon.
+### Windows desktop app
+
+1. Download the latest `.exe` from [Releases](https://github.com/0xdeathstalker/jot/releases/latest) and run it.
+2. Windows may say "Windows protected your PC" (the app is not code-signed): **More info → Run anyway**.
+3. Sign in with Google once (the app keeps its own sign-in, separate from your browser).
+
+Press **Ctrl+Alt+J** to show or hide it (change it in the gear menu → **Global hotkey…**). Closing the window keeps Jot in the tray; quit from the tray icon. It starts with Windows (untick **Launch at login** in the tray menu to stop that) and updates itself.
+
+**Changing the icon:** replace `public/icon-source.svg` (and the rounded `public/favicon.svg`), run `pnpm pwa:icons`, commit the generated files in `public/`, deploy. For the desktop app also run `pnpm tauri icon public/icon-source.svg` and delete the generated `android/`, `ios/` and `64x64.png` in `src-tauri/icons/`. On iPhone, delete and re-add the Home Screen icon.
 
 ---
 
@@ -132,10 +143,12 @@ The app shell is cached, so an installed Jot opens with no network and updates i
 src/                React PWA
   components/ui/    shadcn/ui components (generated, not formatted)
   editor/           TipTap editor and its UI
+  desktop/          desktop-only UI (title bar, hotkey dialog); the only place that imports @tauri-apps/*
   auth/             login screen, session gate, account footer
   sync/             Yjs providers, note-list store, local-data wipe
   features/         notes (list, search), sharing (share dialog, link pages, cursors)
   lib/              shared helpers
+src-tauri/          Windows desktop shell (Rust): window, tray, global hotkey, updater
 worker/             Cloudflare Worker, NoteRoom / IndexRoom Durable Objects, auth/ (Better Auth + permission checks), share.ts and join.ts (link APIs)
 migrations/         D1 SQL (auth tables, note_members, invite links), append-only
 docs/               Project context and per-task plans
@@ -169,8 +182,20 @@ pnpm dlx shadcn@latest add <component>
 | `pnpm pwa:icons`         | Regenerate PWA icons from `public/icon-source.svg`            |
 | `pnpm db:migrate`        | Apply `migrations/` to the local D1 database                  |
 | `pnpm db:migrate:remote` | Apply `migrations/` to the real D1 database                   |
+| `pnpm desktop:dev`       | Desktop app against `pnpm dev` (needs Rust)                   |
+| `pnpm desktop:build`     | Build the desktop installer locally (needs the updater key)   |
 
 A Husky pre-commit hook runs lint-staged: staged files are linted (`oxlint --fix`) and formatted (`oxfmt`). A lint error blocks the commit.
+
+## Desktop releases
+
+Only the shell (`src-tauri/`) is released; the UI comes from the live site, so a normal deploy updates the desktop app too.
+
+1. Bump `version` in `src-tauri/tauri.conf.json` and commit.
+2. `git tag desktop-v<version>` and `git push origin desktop-v<version>`.
+3. `.github/workflows/desktop-release.yml` builds the installer and publishes the release; installed apps update within 6 hours.
+
+Needs the `TAURI_SIGNING_PRIVATE_KEY` repo secret (the updater key, kept outside the repo and backed up). A change that needs a new shell command: release the shell before deploying the site.
 
 ## Documentation
 

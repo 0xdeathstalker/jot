@@ -1,6 +1,6 @@
 # Plan: Windows desktop app (Raycast Notes style)
 
-Status: phase 1 (spike) done, go (2026-11-22). Next: phase 2.
+Status (2026-11-22): phases 1–3 and 5 done; 4.1 and 4.4 done, 4.2–4.3 written (first tested by the release). Left: merge, release `desktop-v0.1.0` and 4.5. Built for real on `spike/desktop-app` (only phase 1 was a spike).
 
 Goal: a Windows app that a global hotkey brings up, like Raycast Notes, with everything the web app
 already does (editor, offline, sync, sharing, theme, Google login). The web app and the iPhone PWA
@@ -48,7 +48,7 @@ it. This is auth code: it gets its own review.
 
 Each phase ends in something that works and is its own commit. Tick a task when it is done.
 
-### Phase 1: Spike (about a day, throwaway branch)
+### Phase 1: Spike (about a day)
 
 Answer the unknowns before building anything for real.
 
@@ -147,19 +147,20 @@ moved or closed.
       signing: private key at `%USERPROFILE%\.tauri\jot-updater.key` (back it up; losing it means
       installed apps can never update), public key in `tauri.conf.json`. Note: `releases/latest`
       means every GitHub Release in this repo must be a desktop release.
-- [ ] **4.4** After a web deploy: `main.tsx` already checks for a service worker update when the
-      page becomes visible and hourly, and `autoUpdate` reloads onto it. To verify: hiding the
-      window must make `document.visibilityState` "hidden" in WebView2.
+- [x] **4.4** After a web deploy: `main.tsx` checks for a service worker update hourly, when the
+      page becomes visible, and (new) on window `focus`; `autoUpdate` reloads onto it. Tested
+      2026-11-22: a hidden Tauri window leaves the page "visible" in WebView2 (no
+      `visibilitychange`), but the shell focuses the window on every show and `focus` fires.
 - [ ] **4.5** First release: install it, check launch at login (2.4), the tray icon, and that a
       second release updates the first.
 
 ### Phase 5: Docs
 
-- [ ] **5.1** `docs/project-context.md`: §1 (native apps are no longer a non-goal for Windows), §2
+- [x] **5.1** `docs/project-context.md`: §1 (native apps are no longer a non-goal for Windows), §2
       (desktop shell row), §5 (`src-tauri/`, `src/desktop/`), §6 (Tauri packages), §11 (traps below).
-- [ ] **5.2** `CLAUDE.md`: desktop commands, and the rule that `@tauri-apps/api` stays in
+- [x] **5.2** `CLAUDE.md`: desktop commands, and the rule that `@tauri-apps/api` stays in
       `src/desktop/`.
-- [ ] **5.3** README: how a friend installs it (and the SmartScreen click-through).
+- [x] **5.3** README: how a friend installs it (and the SmartScreen click-through).
 
 ## Watch out
 
