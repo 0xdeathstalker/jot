@@ -21,13 +21,14 @@ Build a lightweight notes app that:
 - **Feels instant.** Typing never waits on the network.
 - **Syncs quickly.** An edit on one device shows up on the others within about a second.
 - **Works offline.** Edits made offline merge automatically when the device reconnects.
-- **Runs on Windows and iPhone** as one installable **PWA**, with no app stores.
+- **Runs on Windows and iPhone** as one installable **PWA**, with no app stores. On Windows also a
+  small desktop app (Tauri) that a global hotkey brings up; it loads the same site.
 - **Costs ₹0/month to run**, using free Cloudflare services only.
 - **Allows sharing later.** A note can be shared with a few known people, who can edit it together live.
 
 ### Non-goals (for now)
 
-- Native apps (Electron, Tauri, Swift). Tauri may wrap the same React app later, for a global hotkey on Windows.
+- Native apps (Electron, Swift). The one exception: the Windows desktop app, a thin Tauri shell around the live site (`docs/plans/desktop-app.md`).
 - Large teams, workspaces or enterprise features.
 - AI features, comments and version history in v1. These can come later, built by us (see Traps).
 - Public sharing links that anyone can view.
@@ -50,6 +51,7 @@ Build a lightweight notes app that:
 | Package manager | **pnpm**                                                          | Enforced by a `preinstall` guard. Lockfile is `pnpm-lock.yaml`.                                                                                                                                       |
 | UI kit          | **Tailwind CSS v4 + shadcn/ui**                                   | Components are copied into `src/components/ui/`, so we own them. Add one only when a feature needs it.                                                                                                |
 | Lint / format   | **oxlint + oxfmt**, Husky + lint-staged pre-commit                | Fast, one config each. A lint error blocks the commit.                                                                                                                                                |
+| Desktop app     | **Tauri v2 shell loading the live site** (Windows)                | Global hotkey, tray, always on top. Same origin as the web app, so auth, sockets and offline work unchanged and a web deploy updates it. Only the shell ships as an installer (GitHub Releases)       |
 | Auth            | **Google OAuth via Better Auth + D1**, session cookie (no JWT)    | Free, runs in the Worker. Same origin, so the browser sends the cookie on the WebSocket upgrade and the Worker checks it. Access is limited to an `ALLOWED_EMAILS` allowlist plus Google Testing mode |
 
 Rejected alternatives: Hocuspocus (needs a paid always-on Node server or a flaky free VM), Render's free tier (sleeps, wipes files), Tiptap Cloud (paid).
@@ -118,12 +120,18 @@ jot/
 ├── .oxfmtrc.json             ← formatter rules
 ├── vite.config.ts            ← includes the PWA plugin (manifest, Workbox)
 ├── pwa-assets.config.ts      ← icon generation (`pnpm pwa:icons`)
+├── src-tauri/                ← Windows desktop shell (Rust): window, tray, hotkey, updater
+│   ├── src/lib.rs            ← all shell code
+│   ├── tauri.conf.json       ← app id, version (release tag must match), updater key
+│   └── capabilities/         ← what the live site may call (keep it harmless)
+├── .github/workflows/        ← CI, desktop-release.yml (a desktop-v* tag builds the installer)
 ├── src/                      ← client (React PWA)
 │   ├── main.tsx              ← registers the service worker (phase 5)
 │   ├── app.tsx
 │   ├── styles/index.css      ← Tailwind + shadcn theme variables
 │   ├── components/ui/        ← shadcn/ui components (generated, add on demand)
 │   ├── editor/               ← TipTap editor + our own toolbar/UI
+│   ├── desktop/              ← the ONLY place that imports @tauri-apps/* (lazy, desktop only)
 │   ├── hooks/                ← React hooks, one per file (`use-*.ts`)
 │   │   └── use-theme.ts      ← dark/light; same rule as the inline script in index.html
 │   ├── sync/
@@ -161,6 +169,8 @@ jot/
 | `@vite-pwa/assets-generator` (dev)                                                                     | 5             | `pnpm pwa:icons`: makes every icon size from `public/icon-source.svg`.                                                                                                    |
 | `@tiptap/extension-collaboration-caret`                                                                | 6             | Other people's cursors                                                                                                                                                    |
 | `@tiptap/extension-list`, `@tiptap/extension-image`, `@tiptap/markdown`                                | editor blocks | Checklists, images inside the note, Markdown paste (`docs/plans/editor-blocks.md`). Keep every `@tiptap/*` package on the same version: they peer on exact `@tiptap/core` |
+
+| `@tauri-apps/cli` (dev), `@tauri-apps/api` | desktop | Desktop shell (`docs/plans/desktop-app.md`). The Rust side adds Tauri plugins in `src-tauri/Cargo.toml`: global-shortcut, single-instance, autostart, window-state, updater |
 
 Don't add: `nanoid` (use `crypto.randomUUID()`), any `@tiptap-pro/*` package, or Hocuspocus packages.
 
@@ -287,7 +297,7 @@ Rules:
 
 - [ ] Version history (our own Yjs snapshots)
 - [ ] Comments (a `Y.Map` inside the note doc)
-- [ ] Tauri wrapper for a global hotkey on Windows
+- [x] Windows desktop app (Tauri): `docs/plans/desktop-app.md`
 - [ ] Editor blocks ([issue #1](https://github.com/0xdeathstalker/jot/issues/1), `docs/plans/editor-blocks.md`): checklists, Raycast-style toolbar, link box, images inside the note, Markdown paste (copy/download removed 2026-11-15). Built; browser checks pending
 
 ---
@@ -314,6 +324,17 @@ Rules:
 - ❌ **An older app version deletes blocks it does not know.** `y-tiptap` removes shared content its schema cannot show, for everyone. Keep `enableContentCheck` on (it stops sync and shows "Reload to update" instead), ship new node types together, and never rename a node type or attribute that notes already use.
 - ⚠️ **Images live inside the note** (base64 in the Y.Doc). Keep the 4 MB note cap (`MAX_NOTE_BYTES`) and 300 KB per image: the server saves a note as one SQLite row (8 MB max), and a save that fails is lost on the server side.
 
+### Desktop app traps
+
+- ⚠️ The live site can call the shell's commands (`src-tauri/capabilities/`): an XSS on the site reaches whatever they expose. Only harmless commands (window, hotkey); never file system or shell access.
+- ❌ Don't import `@tauri-apps/*` outside `src/desktop/` (lint error): the web and phone bundles must not change.
+- ⚠️ The installed shell can be older than the site. A feature that needs a new shell command: release the shell first, deploy the web part after, and let the site cope if the command is missing.
+- ⚠️ Hiding the window does not make the page "hidden" (WebView2): `visibilitychange` never fires on hide or show. Use window `focus` for "user came back" (the shell focuses the window on every show).
+- ⚠️ The window stays open for days: a deploy can delete a lazy chunk it still needs. Load lazy parts with `lazyOrReload` (`src/lib/lazy.ts`).
+- ❌ Never lose or commit the updater key (`%USERPROFILE%.taurijot-updater.key`, repo secret `TAURI_SIGNING_PRIVATE_KEY`). Without it installed apps can never update.
+- ⚠️ The updater reads the repo's _latest_ GitHub Release: every release in this repo must be a desktop release.
+- The release tag (`desktop-v0.2.0`) must match `version` in `src-tauri/tauri.conf.json`.
+
 ### iOS / PWA traps
 
 - No background sync: reconnect the provider on `visibilitychange`.
@@ -329,26 +350,27 @@ Rules:
 - The DO binding name maps to a kebab-case party name on the client (`NoteRoom` → `note-room`).
 - DOs have per-request CPU limits, so don't run heavy work on the server.
 - y-partyserver is young: when stuck, read its source and examples in GitHub `cloudflare/partykit`.
-- A Windows PWA can't register a global hotkey. That needs Tauri later.
+- A Windows PWA can't register a global hotkey. The Tauri desktop app does it.
 - Plain `wrangler dev` makes the Worker see the custom-domain route (`http://jot.deathstalker.dev`) as its origin, so Better Auth sends Google that redirect URI and Google login fails ("Access blocked: this app's request is invalid"). Use `pnpm preview:worker` (passes `--local-upstream localhost:8787`), open `http://localhost:8787` (not `127.0.0.1`), and keep `http://localhost:8787/api/auth/callback/google` in the Google client's redirect URIs.
 
 ---
 
 ## 12. Open decisions
 
-| Decision                         | Status      | Notes                                                                                                                                                                                                                                                                                |
-| -------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Usage limits before going public | Not decided | Caps on accounts, notes per user and note size, per-user rate limits. Partly covered by Phase 6: 3 invited people per original user, invited users cannot invite, 2 other people per note. No cap yet on notes per user or note size                                                 |
-| Sharing by email                 | Decided: no | Link only (a join link, a share link). No email service, so nothing paid. Can be added later without changing the tables                                                                                                                                                             |
-| Who can invite                   | Decided     | Only original users (`ALLOWED_EMAILS`) have a join link: one permanent link each, 3 people each (owner, 2026-11-15). Only a note's owner makes share links and manages people                                                                                                        |
-| Share links                      | Decided     | Permanent, one per note and role, new URLs when the owner removes someone (owner, 2026-11-16); they never create accounts. The owner deleting a shared note removes everyone's access                                                                                                |
-| Image storage                    | Decided     | Inside the note: shrunk on the device (1280 px, WebP or JPEG, max 300 KB), max 4 MB per note. Free, offline, no new service. Server uploads (R2) only if notes become image-heavy                                                                                                    |
-| Markdown                         | Decided     | Paste only (owner, 2026-11-15: the toolbar `…` menu with copy / download as `.md` is removed). Paste Markdown (plain text, or a VS Code copy of a Markdown/MDX file) as formatted text. No `.md` file import                                                                         |
-| Code blocks                      | Decided     | Plain code block, no language picker or highlighting                                                                                                                                                                                                                                 |
-| Blank notes (issue #2)           | Decided     | New note is a draft until its first real edit, never synced while blank. Not a `blank` flag plus cleanup (reverted). An old draft id reopened by URL after leaving it stays unlisted even if typed into (rare, accepted). Blank notes made before the fix: delete by hand            |
-| Colour theme                     | Decided     | Warm "paper and ink" palette, one ink-blue accent; crimson only for delete/remove/sign out (`docs/plans/project-theme.md`). Moon/sun Mode switch in the account gear menu, saved per device; follows the system until first picked, with no way back to "system" (owner, 2026-11-18) |
-| Phone sidebar edge swipe         | Decided     | Swipe from the left edge opens the sidebar on phones, iOS-style. Base UI `Drawer` + `SwipeArea` (already installed) replaces the Sheet (`docs/plans/sidebar-edge-swipe.md`). In Safari, outside the installed app, the edge swipe means Back and Safari keeps it (2026-11-21)        |
-| Command palette (⌘K / Ctrl+K)    | Not decided | Raycast-style action list (new note, pin, browse…). Keep ⌘K free for it; the link box uses Ctrl/⌘+L                                                                                                                                                                                  |
+| Decision                         | Status      | Notes                                                                                                                                                                                                                                                                                                         |
+| -------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Usage limits before going public | Not decided | Caps on accounts, notes per user and note size, per-user rate limits. Partly covered by Phase 6: 3 invited people per original user, invited users cannot invite, 2 other people per note. No cap yet on notes per user or note size                                                                          |
+| Sharing by email                 | Decided: no | Link only (a join link, a share link). No email service, so nothing paid. Can be added later without changing the tables                                                                                                                                                                                      |
+| Who can invite                   | Decided     | Only original users (`ALLOWED_EMAILS`) have a join link: one permanent link each, 3 people each (owner, 2026-11-15). Only a note's owner makes share links and manages people                                                                                                                                 |
+| Share links                      | Decided     | Permanent, one per note and role, new URLs when the owner removes someone (owner, 2026-11-16); they never create accounts. The owner deleting a shared note removes everyone's access                                                                                                                         |
+| Image storage                    | Decided     | Inside the note: shrunk on the device (1280 px, WebP or JPEG, max 300 KB), max 4 MB per note. Free, offline, no new service. Server uploads (R2) only if notes become image-heavy                                                                                                                             |
+| Markdown                         | Decided     | Paste only (owner, 2026-11-15: the toolbar `…` menu with copy / download as `.md` is removed). Paste Markdown (plain text, or a VS Code copy of a Markdown/MDX file) as formatted text. No `.md` file import                                                                                                  |
+| Code blocks                      | Decided     | Plain code block, no language picker or highlighting                                                                                                                                                                                                                                                          |
+| Blank notes (issue #2)           | Decided     | New note is a draft until its first real edit, never synced while blank. Not a `blank` flag plus cleanup (reverted). An old draft id reopened by URL after leaving it stays unlisted even if typed into (rare, accepted). Blank notes made before the fix: delete by hand                                     |
+| Colour theme                     | Decided     | Warm "paper and ink" palette, one ink-blue accent; crimson only for delete/remove/sign out (`docs/plans/project-theme.md`). Moon/sun Mode switch in the account gear menu, saved per device; follows the system until first picked, with no way back to "system" (owner, 2026-11-18)                          |
+| Phone sidebar edge swipe         | Decided     | Swipe from the left edge opens the sidebar on phones, iOS-style. Base UI `Drawer` + `SwipeArea` (already installed) replaces the Sheet (`docs/plans/sidebar-edge-swipe.md`). In Safari, outside the installed app, the edge swipe means Back and Safari keeps it (2026-11-21)                                 |
+| Windows desktop app              | Decided     | Tauri v2 shell loading the live site; global user-set hotkey, one always-on-top window, tray only, close hides to tray; friends too, unsigned for now (owner, 2026-11-21). Spike done 2026-11-22: Google login works in WebView2. Note switcher (Ctrl+P / ⌘K) on every platform (`docs/plans/desktop-app.md`) |
+| Command palette (⌘K / Ctrl+K)    | Not decided | Raycast-style action list (new note, pin, browse…). ⌘K / Ctrl+K now opens the note switcher (2026-11-22): a palette would grow out of it. The link box uses Ctrl/⌘+L                                                                                                                                          |
 
 ---
 

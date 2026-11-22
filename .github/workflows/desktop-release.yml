@@ -1,0 +1,48 @@
+# Builds the Windows desktop app (src-tauri/) and publishes it as a GitHub Release when a
+# `desktop-v*` tag is pushed (docs/plans/desktop-app.md phase 4). The release holds the NSIS
+# installer for friends and `latest.json`, which installed apps poll for updates.
+# Secret (repo Settings > Secrets and variables > Actions): TAURI_SIGNING_PRIVATE_KEY, the
+# contents of the updater key (no password). Losing it means installed apps can no longer update.
+# Version: bump "version" in src-tauri/tauri.conf.json first; the tag must match (desktop-v0.2.0).
+name: Desktop release
+
+on:
+  push:
+    tags: ["desktop-v*"]
+
+permissions:
+  contents: write # create the release
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: pnpm install --frozen-lockfile
+      # The app loads the live site, so there is no web build here: only the shell is compiled.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Jot desktop ${{ github.ref_name }}
+          releaseBody: |
+            Windows installer: download the `.exe` below and run it.
+            Windows may warn "Windows protected your PC" (the app is not code-signed):
+            choose More info, then Run anyway. Installed apps update themselves.
+          releaseDraft: false
+          prerelease: false

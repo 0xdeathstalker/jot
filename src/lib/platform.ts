@@ -29,3 +29,8 @@ export function shortcutKeys(keys: string[]): string[] {
 export function formatShortcut(keys: string[]): string {
   return shortcutKeys(keys).join(isApple() ? "" : "+")
 }
+
+// True inside the Windows desktop app (the Tauri shell injects this global before the page runs).
+export function isDesktop(): boolean {
+  return "__TAURI_INTERNALS__" in window
+}

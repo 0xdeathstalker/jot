@@ -2,6 +2,7 @@ import * as React from "react"
 import { createRoot } from "react-dom/client"
 import { registerSW } from "virtual:pwa-register"
 
+import { isDesktop } from "@/lib/platform"
 import { wipeIfPending } from "@/sync/local-data"
 
 import "@/styles/index.css"
@@ -19,8 +20,14 @@ registerSW({
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") check()
     })
+    // The desktop window hides without the page becoming "hidden" (WebView2 keeps it visible), so
+    // visibilitychange never fires there; the shell focuses the window on every show.
+    window.addEventListener("focus", check)
   },
 })
+
+// Desktop app: the `desktop:` Tailwind variant keys off this class.
+if (isDesktop()) document.documentElement.classList.add("desktop")
 
 // After a sign-out the device's notes are deleted here, before anything opens them.
 void wipeIfPending().then(() => {

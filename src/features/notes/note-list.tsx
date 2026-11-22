@@ -7,6 +7,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { cn } from "cn"
+import * as React from "react"
 
 import {
   DropdownMenu,
@@ -23,15 +24,18 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Note } from "@/sync/index-doc"
 
-type Props = {
+export type NoteActionHandlers = {
+  onTogglePin: (id: string) => void
+  onShare: (id: string) => void
+  onDelete: (id: string) => void
+}
+
+type Props = NoteActionHandlers & {
   notes: Note[]
   // The list saved on this device is still loading: show placeholder rows.
   loading?: boolean
   activeId: string | null
   onOpen: (id: string) => void
-  onTogglePin: (id: string) => void
-  onShare: (id: string) => void
-  onDelete: (id: string) => void
 }
 
 const SKELETON_ROWS = 6
@@ -79,6 +83,79 @@ function SkeletonRows() {
   )
 }
 
+// A note's two lines, shared by the sidebar list and the note switcher: title (pin, badge) and
+// details (current or last edit, characters).
+export function NoteRowText({ note, current }: { note: Note; current: boolean }) {
+  return (
+    <>
+      <span
+        className={cn(
+          "flex items-center gap-1.5 truncate text-sm font-medium",
+          !note.title && "text-muted-foreground",
+        )}
+      >
+        {note.pinned && <HugeiconsIcon icon={PinIcon} className="size-3! shrink-0" />}
+        <span className="truncate">{note.title || "Untitled"}</span>
+        {(note.shared || note.role || note.noAccess) && (
+          <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] font-normal text-muted-foreground">
+            {note.noAccess ? "No access" : note.role === "viewer" ? "View only" : "Shared"}
+          </span>
+        )}
+      </span>
+      <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+        {current ? (
+          <>
+            <span className="size-1.5 shrink-0 rounded-full bg-primary" />
+            Current
+          </>
+        ) : (
+          `Edited ${timeAgo(note.updatedAt)}`
+        )}
+        {` • ${characters(note)}`}
+      </span>
+    </>
+  )
+}
+
+// The ⋮ menu (pin, share, delete / leave), shared by the sidebar list and the note switcher.
+// `trigger` is the button element it renders as.
+export function NoteActions({
+  note,
+  trigger,
+  onTogglePin,
+  onShare,
+  onDelete,
+}: NoteActionHandlers & { note: Note; trigger: React.ReactElement }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={trigger}>
+        <HugeiconsIcon icon={MoreVerticalIcon} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="rounded-[12px]">
+        <DropdownMenuItem onClick={() => onTogglePin(note.id)} className="rounded-4xl">
+          <HugeiconsIcon icon={note.pinned ? PinOffIcon : PinIcon} />
+          {note.pinned ? "Unpin" : "Pin"}
+        </DropdownMenuItem>
+        {/* Only the owner shares (a note with a `role` belongs to someone else). */}
+        {!note.role && (
+          <DropdownMenuItem onClick={() => onShare(note.id)} className="rounded-4xl">
+            <HugeiconsIcon icon={Share08Icon} />
+            Share
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={() => onDelete(note.id)}
+          className="rounded-4xl"
+        >
+          <HugeiconsIcon icon={Delete02Icon} />
+          {note.role ? "Leave note" : "Delete"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 // Presentational only: the caller owns the Y.Doc and passes plain callbacks.
 export function NoteList({
   notes,
@@ -101,66 +178,20 @@ export function NoteList({
             onClick={() => onOpen(note.id)}
             className="h-auto flex-col items-stretch gap-0.5 rounded-3xl py-2 font-normal data-active:font-normal"
           >
-            <span
-              className={cn(
-                "flex items-center gap-1.5 truncate text-sm font-medium",
-                !note.title && "text-muted-foreground",
-              )}
-            >
-              {note.pinned && <HugeiconsIcon icon={PinIcon} className="size-3! shrink-0" />}
-              <span className="truncate">{note.title || "Untitled"}</span>
-              {(note.shared || note.role || note.noAccess) && (
-                <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] font-normal text-muted-foreground">
-                  {note.noAccess ? "No access" : note.role === "viewer" ? "View only" : "Shared"}
-                </span>
-              )}
-            </span>
-            <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-              {note.id === activeId ? (
-                <>
-                  <span className="size-1.5 shrink-0 rounded-full bg-primary" />
-                  Current
-                </>
-              ) : (
-                `Edited ${timeAgo(note.updatedAt)}`
-              )}
-              {` • ${characters(note)}`}
-            </span>
+            <NoteRowText note={note} current={note.id === activeId} />
           </SidebarMenuButton>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <SidebarMenuAction
-                  aria-label={`Actions for ${note.title || "Untitled"}`}
-                  className="top-2.5! right-1.5"
-                />
-              }
-            >
-              <HugeiconsIcon icon={MoreVerticalIcon} />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-[12px]">
-              <DropdownMenuItem onClick={() => onTogglePin(note.id)} className="rounded-4xl">
-                <HugeiconsIcon icon={note.pinned ? PinOffIcon : PinIcon} />
-                {note.pinned ? "Unpin" : "Pin"}
-              </DropdownMenuItem>
-              {/* Only the owner shares (a note with a `role` belongs to someone else). */}
-              {!note.role && (
-                <DropdownMenuItem onClick={() => onShare(note.id)} className="rounded-4xl">
-                  <HugeiconsIcon icon={Share08Icon} />
-                  Share
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => onDelete(note.id)}
-                className="rounded-4xl"
-              >
-                <HugeiconsIcon icon={Delete02Icon} />
-                {note.role ? "Leave note" : "Delete"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NoteActions
+            note={note}
+            onTogglePin={onTogglePin}
+            onShare={onShare}
+            onDelete={onDelete}
+            trigger={
+              <SidebarMenuAction
+                aria-label={`Actions for ${note.title || "Untitled"}`}
+                className="top-2.5! right-1.5"
+              />
+            }
+          />
         </SidebarMenuItem>
       ))}
     </SidebarMenu>

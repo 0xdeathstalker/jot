@@ -1,0 +1,18 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "remote-site",
+  "description": "What the Jot site may ask of the shell. Only harmless window actions: this is reachable by any script on the site (docs/plans/desktop-app.md).",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["https://jot.deathstalker.dev/*", "http://localhost:5173/*"]
+  },
+  "permissions": [
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-close",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "allow-get-hotkey",
+    "allow-set-hotkey"
+  ]
+}

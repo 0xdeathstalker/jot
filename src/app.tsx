@@ -12,11 +12,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Editor } from "@/editor/editor"
 import { type Notice, NoticeToast } from "@/editor/notice"
 import type { NoteText } from "@/features/notes/note-meta"
+import { NoteSwitcher } from "@/features/notes/note-switcher"
 import { NotesSidebar } from "@/features/notes/notes-sidebar"
+import { SidebarToggle } from "@/features/notes/sidebar-toggle"
 import { removeMember, unshareNote } from "@/features/sharing/api"
 import { caretUser } from "@/features/sharing/caret-user"
 import { type InviteLink, readInviteLink } from "@/features/sharing/invite-link"
@@ -26,6 +28,8 @@ import { ShareDialog } from "@/features/sharing/share-dialog"
 import { ShareLinkPage } from "@/features/sharing/share-link-page"
 import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
 import { useNoteId } from "@/hooks/use-note-id"
+import { lazyOrReload } from "@/lib/lazy"
+import { isDesktop } from "@/lib/platform"
 import {
   createNote,
   markShared,
@@ -50,6 +54,9 @@ function readDraft(noteId: string | null): string | null {
     return null
   }
 }
+
+// Desktop-only code (Tauri) loads only inside the desktop app; web and phone never fetch it.
+const TitleBar = lazyOrReload(() => import("@/desktop/title-bar"))
 
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
 function NotesApp({
@@ -80,6 +87,9 @@ function NotesApp({
   const [draftId, setDraftId] = React.useState(() => readDraft(noteId))
   const isDraft = !!noteId && noteId === draftId && !currentNote
   const [focusKey, setFocusKey] = React.useState(0)
+  // A note picked in the switcher gets the caret, like a new draft (not on every open: on a phone
+  // that would pop the keyboard each time).
+  const [pickedId, setPickedId] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     try {
@@ -143,6 +153,47 @@ function NotesApp({
     }
   }
 
+  // Desktop tray "New note". The ref keeps the listener on the latest handleNew without
+  // re-subscribing every render.
+  const handleNewRef = React.useRef(handleNew)
+  React.useEffect(() => {
+    handleNewRef.current = handleNew
+  })
+  React.useEffect(() => {
+    if (!isDesktop()) return
+    let stop: (() => void) | undefined
+    let cancelled = false
+    void import("@/desktop/events")
+      .then(({ onTrayNewNote }) => onTrayNewNote(() => handleNewRef.current()))
+      .then((unlisten) => {
+        if (cancelled) unlisten()
+        else stop = unlisten
+      })
+    return () => {
+      cancelled = true
+      stop?.()
+    }
+  }, [])
+
+  // Ctrl/⌘+P or +K: note switcher (everywhere; it replaces print on the web). Ctrl+N: new note,
+  // desktop only (browsers keep Ctrl+N for a new window and do not let pages take it).
+  const [switcherOpen, setSwitcherOpen] = React.useState(false)
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return
+      const key = event.key.toLowerCase()
+      if (key === "p" || key === "k") {
+        event.preventDefault()
+        setSwitcherOpen(true)
+      } else if (key === "n" && isDesktop()) {
+        event.preventDefault()
+        handleNewRef.current()
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
   // First real edit: the draft joins the list. The editor's debounced meta write then fills the title.
   const handleDraftEdited = () => {
     if (!draftId) return
@@ -204,6 +255,13 @@ function NotesApp({
     if (id === noteId) openNote(null, { replace: true })
   }
 
+  // The ⋮ menu's actions: the same in the sidebar and the note switcher.
+  const noteActions = {
+    onTogglePin: (id: string) => togglePin(doc, id),
+    onShare: (id: string) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true })),
+    onDelete: handleDelete,
+  }
+
   return (
     // Phone (< 768 px): the sidebar is a sheet over the editor. Desktop: a column that hides fully
     // (trigger or Ctrl/⌘+B outside the editor); the provider remembers it in a cookie.
@@ -218,15 +276,32 @@ function NotesApp({
         activeId={noteId}
         onNew={handleNew}
         onOpen={openNote}
-        onTogglePin={(id) => togglePin(doc, id)}
-        onShare={(id) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true }))}
-        onDelete={handleDelete}
+        {...noteActions}
       />
 
       <SidebarInset className="min-w-0 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto w-full max-w-3xl p-4">
-          <div className="mb-2 flex items-center md:absolute md:top-2 md:left-2 md:mb-0">
-            <SidebarTrigger aria-label="Toggle notes" />
+        {isDesktop() && (
+          <React.Suspense fallback={<div className="h-10 shrink-0" />}>
+            <TitleBar />
+          </React.Suspense>
+        )}
+        <NoteSwitcher
+          notes={notes}
+          activeId={noteId}
+          {...noteActions}
+          open={switcherOpen}
+          onOpenChange={setSwitcherOpen}
+          onPick={(id) => {
+            openNote(id)
+            setPickedId(id)
+            setFocusKey((key) => key + 1)
+          }}
+        />
+        {/* Desktop: a small window, so tighter edges (the title bar sits above). */}
+        <div className="mx-auto w-full max-w-3xl p-4 desktop:px-3 desktop:pt-1">
+          {/* Desktop: the title bar has the trigger instead. */}
+          <div className="mb-2 flex items-center md:absolute md:top-2 md:left-2 md:mb-0 desktop:hidden">
+            <SidebarToggle />
           </div>
           {share && (
             <ShareDialog
@@ -252,7 +327,7 @@ function NotesApp({
               noAccess={currentNote?.noAccess}
               caret={caretUser(user)}
               onEdited={isDraft ? handleDraftEdited : undefined}
-              focusKey={isDraft ? focusKey : undefined}
+              focusKey={isDraft || noteId === pickedId ? focusKey : undefined}
             />
           ) : (
             // Centred in the writing area (SidebarInset is `relative`); pointer-events-none so it

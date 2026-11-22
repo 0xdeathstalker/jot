@@ -17,7 +17,24 @@
     {
       "files": ["src/**"],
       "rules": {
-        "import/no-relative-parent-imports": "error"
+        "import/no-relative-parent-imports": "error",
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@tauri-apps/**"],
+                "message": "Tauri code lives in src/desktop/, loaded with import() only when isDesktop(), so the web and phone bundles stay free of it (docs/plans/desktop-app.md 3.2)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/desktop/**"],
+      "rules": {
+        "no-restricted-imports": "off"
       }
     },
     {

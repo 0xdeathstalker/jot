@@ -4,6 +4,8 @@
 @import "@fontsource-variable/figtree";
 
 @custom-variant dark (&:is(.dark *));
+/* Inside the Windows desktop app (main.tsx sets the class). */
+@custom-variant desktop (&:is(.desktop *));
 
 @theme inline {
   --font-heading: var(--font-sans);

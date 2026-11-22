@@ -1,5 +1,11 @@
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
-import { Logout03Icon, Moon02Icon, Settings02Icon, Sun03Icon } from "@hugeicons/core-free-icons"
+import {
+  KeyboardIcon,
+  Logout03Icon,
+  Moon02Icon,
+  Settings02Icon,
+  Sun03Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import * as React from "react"
 
@@ -24,7 +30,12 @@ import {
 import { InviteFriend } from "@/features/sharing/invite-friend"
 import { type AuthUser, signOut } from "@/hooks/use-auth-user"
 import { useTheme } from "@/hooks/use-theme"
+import { lazyOrReload } from "@/lib/lazy"
+import { isDesktop } from "@/lib/platform"
 import { syncAllLocalData } from "@/sync/provider"
+
+// Desktop app only (Tauri): never fetched on the web or phone.
+const HotkeyDialog = lazyOrReload(() => import("@/desktop/hotkey-dialog"))
 
 // Moon first, then sun (owner's sketch).
 const THEMES = [
@@ -37,6 +48,7 @@ export function AccountFooter({ user }: { user: AuthUser }) {
   // Notes that could not be synced: set while the "discard them?" dialog is open.
   const [unsynced, setUnsynced] = React.useState<number | null>(null)
   const [isDark, setDark] = useTheme()
+  const [hotkeyOpen, setHotkeyOpen] = React.useState(false)
   const label = user.name ? `${user.name} (${user.email})` : user.email
 
   // Push everything to the server first. Only if something could not be synced do we ask before
@@ -113,6 +125,12 @@ export function AccountFooter({ user }: { user: AuthUser }) {
                 ))}
               </MenuPrimitive.RadioGroup>
             </div>
+            {isDesktop() && (
+              <DropdownMenuItem onClick={() => setHotkeyOpen(true)} className="rounded-4xl">
+                <HugeiconsIcon icon={KeyboardIcon} />
+                Global hotkey…
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
@@ -125,6 +143,12 @@ export function AccountFooter({ user }: { user: AuthUser }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {hotkeyOpen && (
+        <React.Suspense>
+          <HotkeyDialog open onOpenChange={setHotkeyOpen} />
+        </React.Suspense>
+      )}
 
       <AlertDialog open={unsynced !== null} onOpenChange={handleDialogChange}>
         <AlertDialogContent>
