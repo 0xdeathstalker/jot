@@ -1,6 +1,6 @@
 # Plan: Repository layout (app / worker / shared / tauri)
 
-Status (2026-11-22): **planned.**
+Status (2026-11-22): **phase 1 done.**
 
 Goal: a root that reads as "app, worker, shared types, desktop shell", and one source of truth for the
 types the client and the Worker both use. No change to what ships, how it deploys or how it runs.
@@ -32,7 +32,7 @@ jot/
 │   ├── worker-configuration.d.ts
 │   └── tsconfig.json        (was tsconfig.worker.json)
 ├── shared/
-│   └── api.ts               Role, LinkRole, Member, ShareLink, ShareInfo, JoinInfo, JoinStatus
+│   └── api.ts               share/join API types (Role, Member, ShareInfo, JoinInfo, ...)
 ├── tauri/                   (was src-tauri/)
 ├── docs/
 ├── vite.config.ts
@@ -49,13 +49,16 @@ after each one.
 
 ### Phase 1: `shared/` types
 
-- [ ] **1.1** `shared/api.ts` with the types both sides use: `Role` (now in `worker/auth/gate.ts:25`
-      and `src/features/sharing/api.ts:23`), `LinkRole`, `Member`, `ShareLink`, `ShareInfo`,
-      `JoinInfo`, `JoinStatus` (`worker/auth/invites.ts`).
-- [ ] **1.2** `@shared/*` path in the app and Worker tsconfigs, `shared` in both `include`s.
-- [ ] **1.3** Both sides import them with `import type`. Type the Worker's share/join responses with
-      them, so a changed field fails `tsc -b` on the client.
-- [ ] **1.4** oxlint: `shared/**` may not import from `src/` or `worker/`, nor any runtime package.
+- [x] **1.1** `shared/api.ts` with the types both sides use: `Role` (was in `worker/auth/gate.ts`
+      and `src/features/sharing/api.ts`), `LinkRole` (was `InviteRole` in `worker/share.ts`),
+      `Member`, `ShareLink`, `ShareInfo`, `AcceptedShare`, `SharedNotes`, `JoinInfo`. `JoinStatus`
+      stays in `worker/auth/invites.ts`: it never leaves the Worker.
+- [x] **1.2** `@shared/*` path in the app and Worker tsconfigs, `shared` in both `include`s. No Vite
+      alias: `import type` is erased, so the bundler never resolves it.
+- [x] **1.3** Both sides import them with `import type` (the Worker as `@shared/api.ts`, like its
+      other imports). The Worker's share/join responses use `satisfies`. Checked: a changed field
+      fails `tsc -b` in both the Worker and the client.
+- [x] **1.4** oxlint: `shared/**` may import nothing but its own files (checked with a `yjs` import).
 
 ### Phase 2: `src-tauri/` to `tauri/`
 

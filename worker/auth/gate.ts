@@ -1,3 +1,4 @@
+import type { Role } from "@shared/api.ts"
 import type { Lobby } from "partyserver"
 
 import { createAuth } from "./auth.ts"
@@ -21,8 +22,6 @@ export async function getUser(request: Request, env: Env): Promise<User | null> 
   const user = await getSignedInUser(request, env)
   return user && (await isActiveUser(env, user)) ? user : null
 }
-
-export type Role = "owner" | "editor" | "viewer"
 
 // First logged-in user to open a note becomes its owner. Safe against two simultaneous first
 // connections: the unique index `note_one_owner` lets only one INSERT win. Note ids are random

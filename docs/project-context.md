@@ -142,6 +142,7 @@ jot/
 │   │   └── sharing/          ← share dialog, /share and /join pages, API client, cursors (phase 6)
 │   └── lib/                  ← utils (cn), shared helpers
 ├── public/                   ← icons, fonts, and the static /privacy and /terms pages
+├── shared/api.ts             ← share/join API types for client and Worker (`@shared/*`, types only)
 └── worker/                   ← server
     ├── index.ts              ← entry: auth, share/join APIs, then routePartykitRequest
     ├── share.ts, join.ts     ← REST: share links and members, "join Jot" links (phase 6)

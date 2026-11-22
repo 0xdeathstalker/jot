@@ -32,6 +32,22 @@
       }
     },
     {
+      "files": ["shared/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["*", "!./*"],
+                "message": "shared/ is types only and stands alone: no packages, no src/ or worker/ code (docs/plans/repo-layout.md)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["src/desktop/**"],
       "rules": {
         "no-restricted-imports": "off"
