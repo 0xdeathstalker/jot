@@ -60,11 +60,12 @@ export function useAuthUser(): AuthState {
   return { status: "signedOut" }
 }
 
-// Ends the session and removes this device's notes. The wipe runs on the next page load (see
-// local-data.ts); callers should have tried `syncAllLocalData` first.
-export async function signOut() {
+// Ends the session and removes this account's notes from this device (other accounts' stay). The
+// wipe runs on the next page load (see local-data.ts); callers should have tried
+// `syncAllLocalData` first.
+export async function signOut(userId: string) {
   writeCached(null)
-  requestWipe()
+  await requestWipe(userId)
   try {
     await authClient.signOut()
   } catch {

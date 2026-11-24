@@ -1,7 +1,7 @@
 # Plan: Note list never saved on the server, and false "not synced" at sign-out
 
-Status (2026-11-23): **tasks 1 to 5 done and checked; task 6 (sign-out wipes only your own data)
-planned, not started.** Branch `fix/note-list-sync` (from `main`).
+Status (2026-11-24): **done.** All six tasks implemented and checked. Branch `fix/note-list-sync`
+(from `main`).
 
 ## What is wrong
 
@@ -43,7 +43,10 @@ planned, not started.** Branch `fix/note-list-sync` (from `main`).
       note at a time. Restored notes show as edited now. Blank notes (one empty paragraph, the
       editor's rule; 7 of 36 in local data, made before drafts existed) stay out.
 - [x] **5** Docs: `project-context.md` §11 trap (the guard must set the role for every room class).
-- [ ] **6** Sign-out deletes only the signed-out account's own data. Not started.
+- [x] **6** Sign-out deletes only the signed-out account's own data. Done 2026-11-24:
+      `signOut(userId)` → `requestWipe(userId)` stores the names (`local-data.ts`, which also
+      gives `provider.ts` its `readLocalList`); if the list cannot be read it falls back to wiping
+      everything rather than leaving this account's notes behind.
   - At sign-out (`signOut` in `use-auth-user.ts`), work out the account's databases:
     `jot-index-<userId>`, the `jot-note-*` of every note in its list (owned and shared, `noAccess`
     too, deleted too), and the Phase 3 placeholder `jot-index-default`. Store those names as the
@@ -58,12 +61,15 @@ planned, not started.** Branch `fix/note-list-sync` (from `main`).
     using this browser finds nothing") change to "finds none of your notes".
   - **Once task 6 is implemented, review `docs/project-context.md` and update it where needed:**
     the §11 sign-out note (check that it matches what was built), any wording that says sign-out
-    leaves the browser empty, and §12 if the decision needs a row. Until then that §11 note is
-    only half true: sync skips other accounts' data, but the wipe still deletes it.
+    leaves the browser empty, and §12 if the decision needs a row. Done 2026-11-24: §10 phase 4
+    line, §11 sign-out note rewritten to match, §12 row "What sign-out deletes" added; phase-4 B4b
+    and the `local-data.ts` header say "this account's data".
 
 ## Check
 
-- [ ] `pnpm check` (lint + typecheck pass; format: CRLF working copies, see repo-layout)
+- [x] `pnpm check`: lint and typecheck pass; every changed file passes the format check. The full
+      format check still fails on 67 files checked out with CRLF line endings (Windows
+      `core.autocrlf`; git stores them as LF, so CI is unaffected). Not from this branch.
 
 Browser checks (2026-11-23) ran in headless Chrome over CDP against `pnpm preview:worker`, signed
 in with a temporary local session (removed afterwards).
@@ -78,9 +84,12 @@ in with a temporary local session (removed afterwards).
       channel), so this does not prove the reconnect path on its own.
 - [x] Sign-out with another account's note in IndexedDB: no "not synced" dialog.
 - [x] Sign-out offline: the dialog appears; "Stay signed in" keeps the session.
-- [ ] Task 6: with another account's note and list in IndexedDB, sign out: your databases are gone,
-      the other account's remain. Then sign in as the other account: its notes are there.
-- [ ] Task 6: an old pending wipe (`"1"`) still deletes everything.
+- [x] Task 6 (2026-11-24, same setup): account A used the browser, its session ended without signing
+      out, account B signed in, opened a note, signed out. B's list and note databases and the
+      Phase 3 placeholder were deleted; all of A's databases stayed; A signed in again with all 32
+      notes listed.
+- [x] Task 6: an old pending wipe (`"1"`, with the cached user cleared as an old sign-out did)
+      still deletes every `jot-*` database.
 
 ## Known limits
 

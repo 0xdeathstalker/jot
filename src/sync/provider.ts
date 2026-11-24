@@ -6,7 +6,7 @@ import { Doc } from "yjs"
 
 import { listedNoteIds } from "@/sync/index-doc"
 import { carryOverLegacyIndex } from "@/sync/legacy-index"
-import { listLocalDatabases } from "@/sync/local-data"
+import { listLocalDatabases, readLocalList } from "@/sync/local-data"
 
 export type RoomSession = { doc: Doc; provider: YProvider }
 
@@ -153,18 +153,6 @@ const noteRoom = (noteId: string): RoomOptions => ({
 export const readNote = <T>(noteId: string, read: (doc: Doc) => T) =>
   withSyncedRoom(noteRoom(noteId), read)
 
-// The ids in this user's list, as saved on this device.
-async function localListIds(userId: string): Promise<string[]> {
-  const doc = new Doc()
-  const persistence = new IndexeddbPersistence(`jot-index-${userId}`, doc)
-  try {
-    await persistence.whenSynced
-    return listedNoteIds(doc)
-  } finally {
-    void persistence.destroy()
-  }
-}
-
 // Before sign-out: push this user's list and every note in it that is on this device.
 // Other databases (another account's notes, left when its session ended without signing out) are
 // not ours to sync: the server refuses them, and they stay for that account (docs/plans/note-list-sync.md).
@@ -172,7 +160,7 @@ async function localListIds(userId: string): Promise<string[]> {
 // once: fine for tens of notes; add a concurrency limit if someone has hundreds.
 export async function syncAllLocalData(userId: string): Promise<{ failed: number }> {
   const local = new Set(await listLocalDatabases())
-  const targets: RoomOptions[] = (await localListIds(userId))
+  const targets: RoomOptions[] = (await readLocalList(userId, listedNoteIds))
     .map(noteRoom)
     .filter((room) => local.has(room.idbName))
   if (local.has(`jot-index-${userId}`)) {

@@ -89,6 +89,9 @@ export function restoreNote(doc: Doc, id: string, text: NoteText | null) {
 
 export const hasNote = (doc: Doc, id: string) => getNotes(doc).has(id)
 
+// Every note the list has ever held, whatever its state (what sign-out deletes from this device).
+export const allNoteIds = (doc: Doc): string[] => [...getNotes(doc).keys()]
+
 // Every note in the list we may still open (deleted ones too: they are still ours).
 export function listedNoteIds(doc: Doc): string[] {
   const ids: string[] = []
