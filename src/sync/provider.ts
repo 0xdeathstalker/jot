@@ -4,8 +4,9 @@ import { IndexeddbPersistence } from "y-indexeddb"
 import YProvider from "y-partyserver/provider"
 import { Doc } from "yjs"
 
+import { listedNoteIds } from "@/sync/index-doc"
 import { carryOverLegacyIndex } from "@/sync/legacy-index"
-import { listLocalDatabases } from "@/sync/local-data"
+import { listLocalDatabases, readLocalList } from "@/sync/local-data"
 
 export type RoomSession = { doc: Doc; provider: YProvider }
 
@@ -86,26 +87,39 @@ export function useNoteSession(noteId: string): RoomSession {
 // These names are permanent. The Phase 3 placeholder `index-default` is carried over once per
 // device (legacy-index.ts) and the server no longer allows it (step D).
 // `loaded`: the list saved on this device is in (a new device then fills in from the server).
-export function useIndexSession(userId: string): RoomSession & { loaded: boolean } {
+// `synced`: the server's copy has been merged in too (stays true after a later disconnect).
+export function useIndexSession(
+  userId: string,
+): RoomSession & { loaded: boolean; synced: boolean } {
   const { session, loaded } = useRoomSession({
     party: "index-room",
     room: `index-${userId}`,
     idbName: `jot-index-${userId}`,
   })
+  const [synced, setSynced] = React.useState(false)
 
   React.useEffect(() => {
     void carryOverLegacyIndex(session.doc)
   }, [session.doc])
 
-  return { ...session, loaded }
+  React.useEffect(() => {
+    // The socket opens asynchronously after mount, so its first "sync" always comes after this.
+    const { provider } = session
+    const handler = (isSynced: boolean) => isSynced && setSynced(true)
+    provider.on("sync", handler)
+    return () => provider.off("sync", handler)
+  }, [session])
+
+  return { ...session, loaded, synced }
 }
 
 const SYNC_TIMEOUT_MS = 6000
 
-// Opens a throwaway connection to one room and waits until the server has exchanged state with us.
+// Opens a throwaway connection to one room and waits until the server has exchanged state with us,
+// then calls `read` on the doc. Null when it could not sync (offline, refused, or timed out).
 // "synced" is y-websocket's flag: we received the server's state after our reply to its handshake,
 // so edits made while offline have been sent. The short pause lets that reply leave the socket.
-async function syncRoom(options: RoomOptions): Promise<boolean> {
+async function withSyncedRoom<T>(options: RoomOptions, read: (doc: Doc) => T): Promise<T | null> {
   const { doc, provider } = createSession(options)
   const persistence = new IndexeddbPersistence(options.idbName, doc)
   try {
@@ -120,26 +134,38 @@ async function syncRoom(options: RoomOptions): Promise<boolean> {
         resolve(true)
       })
     })
-    if (synced) await new Promise((resolve) => setTimeout(resolve, 300))
-    return synced
+    if (!synced) return null
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    return read(doc)
   } finally {
     provider.disconnect() // not destroy(): partykit #402
     void persistence.destroy()
   }
 }
 
-// Before sign-out: push every local note and this user's index to the server.
+const noteRoom = (noteId: string): RoomOptions => ({
+  party: "note-room",
+  room: noteId,
+  idbName: `jot-note-${noteId}`,
+})
+
+// Reads one note without opening it in the editor (also leaves a copy on this device).
+export const readNote = <T>(noteId: string, read: (doc: Doc) => T) =>
+  withSyncedRoom(noteRoom(noteId), read)
+
+// Before sign-out: push this user's list and every note in it that is on this device.
+// Other databases (another account's notes, left when its session ended without signing out) are
+// not ours to sync: the server refuses them, and they stay for that account (docs/plans/note-list-sync.md).
 // Returns how many could not be synced (offline, refused, or timed out). They are all started at
 // once: fine for tens of notes; add a concurrency limit if someone has hundreds.
 export async function syncAllLocalData(userId: string): Promise<{ failed: number }> {
-  const targets: RoomOptions[] = (await listLocalDatabases()).flatMap((name) => {
-    if (name === `jot-index-${userId}`)
-      return [{ party: "index-room", room: `index-${userId}`, idbName: name }]
-    if (name.startsWith("jot-note-")) {
-      return [{ party: "note-room", room: name.slice("jot-note-".length), idbName: name }]
-    }
-    return [] // another account's index or the Phase 3 placeholder: this session cannot sync them
-  })
-  const results = await Promise.all(targets.map(syncRoom))
+  const local = new Set(await listLocalDatabases())
+  const targets: RoomOptions[] = (await readLocalList(userId, listedNoteIds))
+    .map(noteRoom)
+    .filter((room) => local.has(room.idbName))
+  if (local.has(`jot-index-${userId}`)) {
+    targets.push({ party: "index-room", room: `index-${userId}`, idbName: `jot-index-${userId}` })
+  }
+  const results = await Promise.all(targets.map((room) => withSyncedRoom(room, () => true)))
   return { failed: results.filter((ok) => !ok).length }
 }

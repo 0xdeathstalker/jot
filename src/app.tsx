@@ -24,6 +24,7 @@ import { caretUser } from "@/features/sharing/caret-user"
 import { type InviteLink, readInviteLink } from "@/features/sharing/invite-link"
 import { JoinPage } from "@/features/sharing/join-page"
 import { refreshRoles } from "@/features/sharing/refresh-roles"
+import { restoreOwned } from "@/features/sharing/restore-owned"
 import { ShareDialog } from "@/features/sharing/share-dialog"
 import { ShareLinkPage } from "@/features/sharing/share-link-page"
 import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
@@ -68,7 +69,7 @@ function NotesApp({
   shareToken: string | null
   onShareDone: () => void
 }) {
-  const { doc, loaded } = useIndexSession(user.id)
+  const { doc, loaded, synced } = useIndexSession(user.id)
   const notes = useNotes(doc)
   const { noteId, openNote } = useNoteId()
   const currentNote = notes.find((note) => note.id === noteId)
@@ -125,6 +126,12 @@ function NotesApp({
   React.useEffect(() => {
     void refreshRoles(doc)
   }, [doc, sharedKey])
+
+  // The server lost list changes for a while: once ours has synced with it, add back any note we
+  // own that it misses (restore-owned.ts). Once per session.
+  React.useEffect(() => {
+    if (synced) void restoreOwned(doc)
+  }, [doc, synced])
 
   // No ?note= in the URL: open the newest note once the list is known.
   // (Not while a share link is being opened: that page replaces the URL with the shared note.)
