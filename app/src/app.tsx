@@ -289,7 +289,7 @@ function NotesApp({
       <SidebarInset className="min-w-0 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         {isDesktop() && (
           <React.Suspense fallback={<div className="h-10 shrink-0" />}>
-            <TitleBar />
+            <TitleBar title={noteId ? currentNote?.title || "Untitled" : undefined} />
           </React.Suspense>
         )}
         <NoteSwitcher
@@ -306,8 +306,10 @@ function NotesApp({
         />
         {/* Desktop: a small window, so tighter edges (the title bar sits above). */}
         <div className="mx-auto w-full max-w-3xl p-4 desktop:px-3 desktop:pt-1">
-          {/* Desktop: the title bar has the trigger instead. */}
-          <div className="mb-2 flex items-center md:absolute md:top-2 md:left-2 md:mb-0 desktop:hidden">
+          {/* Desktop: the title bar has the trigger instead. sm to md: on the toolbar's line,
+              sticky with it (h-0 takes no room; 5px centres the 32px button on the 42px bar). The
+              background hides note text scrolling under it. Phones: the toolbar is at the bottom. */}
+          <div className="mb-2 flex items-center sm:sticky sm:top-2 sm:z-20 sm:mb-0 sm:h-0 sm:translate-y-[5px] sm:items-start md:absolute md:top-2 md:left-2 md:h-auto md:translate-y-0 desktop:hidden sm:[&>button]:bg-background md:[&>button]:bg-transparent">
             <SidebarToggle />
           </div>
           {share && (

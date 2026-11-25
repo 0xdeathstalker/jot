@@ -167,6 +167,9 @@ pub fn run() {
             WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url.parse()?))
                 .title("Jot")
                 .inner_size(480.0, 600.0)
+                // Like Raycast: no narrower than the toolbar (one line down to 360px, toolbar.tsx)
+                // plus a little room. Height: title bar, toolbar and a few lines of the note.
+                .min_inner_size(380.0, 320.0)
                 .center()
                 .always_on_top(true)
                 .skip_taskbar(true)
