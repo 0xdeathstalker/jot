@@ -14,5 +14,7 @@ export type ShareInfo = { members: Member[]; links: ShareLink[]; limit: number }
 export type AcceptedShare = { noteId: string; role: Role }
 // GET /api/share/mine
 export type SharedNotes = { notes: { noteId: string; role: LinkRole }[] }
+// Ids of the notes I own (rebuilds a list the server lost).
+export type OwnedNotes = { notes: string[] }
 // GET /api/join
 export type JoinInfo = { url: string; used: number; limit: number }

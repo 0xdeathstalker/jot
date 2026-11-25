@@ -1,4 +1,12 @@
-import type { AcceptedShare, LinkRole, Member, Role, SharedNotes, ShareInfo } from "@shared/api.ts"
+import type {
+  AcceptedShare,
+  LinkRole,
+  Member,
+  OwnedNotes,
+  Role,
+  SharedNotes,
+  ShareInfo,
+} from "@shared/api.ts"
 
 import { getUser } from "./auth/gate.ts"
 import { fail, json, NEVER, newToken, readJson, writeAllowed } from "./http.ts"
@@ -27,7 +35,8 @@ const revokeLinks = (env: Env, noteId: string, now: number) =>
 
 // /api/share/...: share links and members of a note. docs/plans/phase-6-sharing.md, C1 to C7.
 //   GET    /mine                       notes shared with me
-//   POST   /accept                     { token } open a share link
+//   GET    /owned                      ids of the notes I own (rebuilds a lost list)
+//   POST   /accept                    { token } open a share link
 //   GET    /:noteId                    members + both links, made on first view (owner)
 //   DELETE /:noteId                    stop sharing: remove everyone, revoke links (owner)
 //   PATCH  /:noteId/members/:userId    { role } raise or lower someone (owner)
@@ -49,6 +58,17 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
       .bind(user.id)
       .all<SharedNotes["notes"][number]>()
     return json({ notes: rows.results } satisfies SharedNotes)
+  }
+
+  // The server dropped every list change from 2026-11-11 until this fix, so a list can be missing
+  // notes its user owns: the client adds them back (docs/plans/note-list-sync.md).
+  if (a === "owned" && !b && method === "GET") {
+    const rows = await env.DB.prepare(
+      "SELECT note_id AS noteId FROM note_members WHERE user_id = ? AND role = 'owner'",
+    )
+      .bind(user.id)
+      .all<{ noteId: string }>()
+    return json({ notes: rows.results.map((row) => row.noteId) } satisfies OwnedNotes)
   }
 
   if (a === "accept" && !b && method === "POST") {
@@ -97,7 +117,8 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
       : fail(409, "full")
   }
 
-  if (!a || !NOTE_ID.test(a) || a === "mine" || a === "accept") return fail(404, "not_found")
+  if (!a || !NOTE_ID.test(a) || a === "mine" || a === "owned" || a === "accept")
+    return fail(404, "not_found")
   const noteId = a
   const myRole = await roleOn(env, noteId, user.id)
 

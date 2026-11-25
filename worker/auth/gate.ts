@@ -70,18 +70,25 @@ export async function guardRoom(
   if (!user) return new Response("Unauthorized", { status: 401 })
 
   if (lobby.className === "IndexRoom") {
-    // Everyone gets exactly one index room: their own.
-    return lobby.name === `index-${user.id}` ? request : new Response("Forbidden", { status: 403 })
+    // Everyone gets exactly one index room: their own, which they own.
+    if (lobby.name !== `index-${user.id}`) return new Response("Forbidden", { status: 403 })
+    return withIdentity(request, "owner", user.id)
   }
   if (lobby.className === "NoteRoom") {
     const role = await canOpenNote(env.DB, lobby.name, user.id)
     if (!role) return new Response("Forbidden", { status: 403 })
-    // The room trusts these two headers, so they are always set here and overwrite anything the
-    // client sent. A client-supplied role would otherwise be a way to become an editor.
-    const headers = new Headers(request.headers)
-    headers.set("x-jot-role", role)
-    headers.set("x-jot-user", user.id)
-    return new Request(request, { headers })
+    return withIdentity(request, role, user.id)
   }
   return new Response("Forbidden", { status: 403 })
+}
+
+// Every room passed on carries these two headers. The rooms trust them, so they are always set here
+// and overwrite anything the client sent (a client-supplied role would be a way to become an
+// editor). Without them a room is read-only: it drops every update, and nothing is saved
+// (docs/plans/note-list-sync.md).
+function withIdentity(request: Request, role: Role, userId: string): Request {
+  const headers = new Headers(request.headers)
+  headers.set("x-jot-role", role)
+  headers.set("x-jot-user", userId)
+  return new Request(request, { headers })
 }

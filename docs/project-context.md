@@ -279,7 +279,7 @@ Rules:
 
 ### Phase 4: Auth and deploy
 
-- [x] Login with Google (Better Auth + D1), session cookie instead of a JWT. Only emails in `ALLOWED_EMAILS`, or people holding a valid join link (Phase 6), can sign up; sign-out syncs, then clears this device's local data
+- [x] Login with Google (Better Auth + D1), session cookie instead of a JWT. Only emails in `ALLOWED_EMAILS`, or people holding a valid join link (Phase 6), can sign up; sign-out syncs, then clears this account's local data from the device (other accounts' stay, `docs/plans/note-list-sync.md` task 6)
 - [x] The Worker checks the session and note ownership before connecting (`onBeforeConnect`/`onBeforeRequest`, Origin check, `index-<userId>` only). `run_worker_first` covers `/api/*` and `/parties/*`
 - [x] Deployed on `jot.<account>.workers.dev` and the custom domain `jot.deathstalker.dev` (its DNS was already on Cloudflare), via `pnpm run deploy`
 
@@ -320,6 +320,8 @@ Rules:
 - ❌ Don't enable TipTap's normal undo/redo alongside Collaboration. They conflict.
 - ⚠️ Save compacted state (`Y.encodeStateAsUpdate`), not an ever-growing list of updates.
 - ❌ Don't copy a role or user id from a client header: `guardRoom` always overwrites `x-jot-role` / `x-jot-user`.
+- ❌ **A room without `x-jot-role` is read-only and saves nothing**, yet the client still reports "synced". Every room class `guardRoom` passes on (`IndexRoom` too: it extends `NoteRoom`) must get both headers (`withIdentity`). Missing on `IndexRoom` from 2026-11-11 to 2026-11-23 lost note lists (`docs/plans/note-list-sync.md`).
+- ⚠️ Sign-out syncs and then deletes only the signed-out account's own data: its list and the notes in it (`requestWipe(userId)`, deleted on the next page load). Other `jot-*` databases in the browser (another account whose session ended without signing out) are left alone: syncing them is refused, and wiping them could lose that account's offline edits. They stay readable in DevTools until that account signs out (accepted, owner 2026-11-23).
 - ⚠️ A WebSocket keeps the role it was opened with: after any role change, close the person's connections (4401), don't just update the row.
 - ⚠️ Link tokens are passwords: never log them, and drop them from the address bar once used.
 - ❌ **An older app version deletes blocks it does not know.** `y-tiptap` removes shared content its schema cannot show, for everyone. Keep `enableContentCheck` on (it stops sync and shows "Reload to update" instead), ship new node types together, and never rename a node type or attribute that notes already use.
@@ -372,6 +374,7 @@ Rules:
 | Phone sidebar edge swipe         | Decided     | Swipe from the left edge opens the sidebar on phones, iOS-style. Base UI `Drawer` + `SwipeArea` (already installed) replaces the Sheet (`docs/plans/sidebar-edge-swipe.md`). In Safari, outside the installed app, the edge swipe means Back and Safari keeps it (2026-11-21)                                 |
 | Windows desktop app              | Decided     | Tauri v2 shell loading the live site; global user-set hotkey, one always-on-top window, tray only, close hides to tray; friends too, unsigned for now (owner, 2026-11-21). Spike done 2026-11-22: Google login works in WebView2. Note switcher (Ctrl+P / ⌘K) on every platform (`docs/plans/desktop-app.md`) |
 | Repository layout                | Decided     | No monorepo (one deployable). Folders `app/`, `worker/`, `shared/` (types only), `tauri/` (was `src-tauri/`); one `package.json`, root `vite.config.ts` + `wrangler.jsonc` (owner, 2026-11-22, `docs/plans/repo-layout.md`). Workspaces only if a second deployable appears                                   |
+| What sign-out deletes            | Decided     | Only the signed-out account's own data (its list and the notes in it). Another account's data left in the browser stays until it comes back or signs out: no silent loss of its offline edits, at the cost of a browser that is not empty after sign-out (owner, 2026-11-23, `docs/plans/note-list-sync.md`)  |
 | Command palette (⌘K / Ctrl+K)    | Not decided | Raycast-style action list (new note, pin, browse…). ⌘K / Ctrl+K now opens the note switcher (2026-11-22): a palette would grow out of it. The link box uses Ctrl/⌘+L                                                                                                                                          |
 
 ---

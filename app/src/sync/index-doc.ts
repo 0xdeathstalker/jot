@@ -69,6 +69,38 @@ export function addSharedNote(doc: Doc, id: string, role: SharedRole) {
   getNotes(doc).set(id, new YMap<unknown>(Object.entries(meta)))
 }
 
+// A note we own that is missing from the list (the server lost it, docs/plans/note-list-sync.md).
+// `text`: read from the note itself, or null if it could not be read (filled in on the next edit).
+// Never overwrites an existing entry.
+export function restoreNote(doc: Doc, id: string, text: NoteText | null) {
+  if (getNotes(doc).has(id)) return
+  const now = Date.now()
+  const meta: NoteMeta = {
+    title: text?.title ?? "",
+    preview: text?.preview ?? "",
+    ...(text ? { chars: text.chars } : {}),
+    createdAt: now,
+    updatedAt: now,
+    pinned: false,
+    deleted: false,
+  }
+  getNotes(doc).set(id, new YMap<unknown>(Object.entries(meta)))
+}
+
+export const hasNote = (doc: Doc, id: string) => getNotes(doc).has(id)
+
+// Every note the list has ever held, whatever its state (what sign-out deletes from this device).
+export const allNoteIds = (doc: Doc): string[] => [...getNotes(doc).keys()]
+
+// Every note in the list we may still open (deleted ones too: they are still ours).
+export function listedNoteIds(doc: Doc): string[] {
+  const ids: string[] = []
+  getNotes(doc).forEach((note, id) => {
+    if (!note.get("noAccess")) ids.push(id)
+  })
+  return ids
+}
+
 // Brings our list in line with what the server says we may open (`mine`: the notes shared with us,
 // with our current role). Notes we own are never touched. A shared note missing from `mine` is
 // marked noAccess; one that is back, or whose role changed, is corrected.

@@ -57,7 +57,7 @@ export function AccountFooter({ user }: { user: AuthUser }) {
     setBusy(true)
     const { failed } = await syncAllLocalData(user.id)
     if (failed > 0) setUnsynced(failed)
-    else await signOut()
+    else await signOut(user.id)
   }
 
   // Cancel, Escape: keep the notes and stay signed in.
@@ -163,7 +163,7 @@ export function AccountFooter({ user }: { user: AuthUser }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Stay signed in</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={() => void signOut()}>
+            <AlertDialogAction variant="destructive" onClick={() => void signOut(user.id)}>
               Sign out
             </AlertDialogAction>
           </AlertDialogFooter>

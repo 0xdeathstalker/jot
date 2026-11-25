@@ -2,7 +2,14 @@
 // Expected failures come back as data (`ok: false`), so callers never need try/catch. `offline`
 // means the request never reached the server.
 
-import type { AcceptedShare, JoinInfo, LinkRole, SharedNotes, ShareInfo } from "@shared/api"
+import type {
+  AcceptedShare,
+  JoinInfo,
+  LinkRole,
+  OwnedNotes,
+  SharedNotes,
+  ShareInfo,
+} from "@shared/api"
 
 // The shapes live in shared/api.ts (the Worker uses them too); re-exported for the sharing UI.
 export type { JoinInfo, LinkRole, Member, Role, ShareInfo, ShareLink } from "@shared/api"
@@ -43,6 +50,8 @@ export const removeMember = (noteId: string, userId: string) =>
 export const acceptShareLink = (token: string) =>
   call<AcceptedShare>("POST", "/api/share/accept", { token })
 export const sharedWithMe = () => call<SharedNotes>("GET", "/api/share/mine")
+// Ids of the notes I own, to rebuild a list the server lost (docs/plans/note-list-sync.md).
+export const ownedNotes = () => call<OwnedNotes>("GET", "/api/share/owned")
 
 // "Join Jot" link: one permanent link per original user, made on first view (others get 403).
 export const getJoinInfo = () => call<JoinInfo>("GET", "/api/join")
