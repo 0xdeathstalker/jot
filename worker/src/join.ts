@@ -1,3 +1,5 @@
+import type { JoinInfo } from "@shared/api.ts"
+
 import { isEmailAllowed } from "./auth/allowlist.ts"
 import { getSignedInUser } from "./auth/gate.ts"
 import { isActiveUser, JOIN_LIMIT, joinStatus, recordJoin } from "./auth/invites.ts"
@@ -53,5 +55,5 @@ export async function handleJoin(request: Request, env: Env): Promise<Response> 
     url: `${new URL(request.url).origin}/join/${link.token}`,
     used: used?.n ?? 0,
     limit: JOIN_LIMIT,
-  })
+  } satisfies JoinInfo)
 }

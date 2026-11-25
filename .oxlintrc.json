@@ -15,7 +15,7 @@
   },
   "overrides": [
     {
-      "files": ["src/**"],
+      "files": ["app/src/**"],
       "rules": {
         "import/no-relative-parent-imports": "error",
         "no-restricted-imports": [
@@ -24,7 +24,7 @@
             "patterns": [
               {
                 "group": ["@tauri-apps/**"],
-                "message": "Tauri code lives in src/desktop/, loaded with import() only when isDesktop(), so the web and phone bundles stay free of it (docs/plans/desktop-app.md 3.2)."
+                "message": "Tauri code lives in app/src/desktop/, loaded with import() only when isDesktop(), so the web and phone bundles stay free of it (docs/plans/desktop-app.md 3.2)."
               }
             ]
           }
@@ -32,13 +32,33 @@
       }
     },
     {
-      "files": ["src/desktop/**"],
+      "files": ["worker/src/**"],
+      "rules": { "import/no-relative-parent-imports": "error" }
+    },
+    {
+      "files": ["shared/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["*", "!./*"],
+                "message": "shared/ is types only and stands alone: no packages, no app/ or worker/ code (docs/plans/repo-layout.md)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["app/src/desktop/**"],
       "rules": {
         "no-restricted-imports": "off"
       }
     },
     {
-      "files": ["src/editor/**", "src/features/notes/**", "src/hooks/use-note-*.ts"],
+      "files": ["app/src/editor/**", "app/src/features/notes/**", "app/src/hooks/use-note-*.ts"],
       "rules": {
         "no-restricted-globals": [
           "error",

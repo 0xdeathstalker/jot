@@ -20,7 +20,7 @@ export function createAuth(env: Env, origin: string) {
         create: {
           // Returning false aborts the sign-up: only ALLOWED_EMAILS, or a live join link (its token
           // is in a cookie the login screen set). Existing users are re-checked on each socket
-          // connection (worker/auth/gate.ts) so removing an email takes effect.
+          // connection (worker/src/auth/gate.ts) so removing an email takes effect.
           before: async (user, ctx) => {
             if (isEmailAllowed(user.email, env.ALLOWED_EMAILS)) return true
             const token = ctx?.getCookie(JOIN_COOKIE)

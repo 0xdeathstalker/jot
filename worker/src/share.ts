@@ -1,4 +1,14 @@
-import { getUser, type Role } from "./auth/gate.ts"
+import type {
+  AcceptedShare,
+  LinkRole,
+  Member,
+  OwnedNotes,
+  Role,
+  SharedNotes,
+  ShareInfo,
+} from "@shared/api.ts"
+
+import { getUser } from "./auth/gate.ts"
 import { fail, json, NEVER, newToken, readJson, writeAllowed } from "./http.ts"
 import { kickUser } from "./rooms/kick.ts"
 
@@ -6,9 +16,7 @@ import { kickUser } from "./rooms/kick.ts"
 export const NOTE_LIMIT = 2
 
 const NOTE_ID = /^[\w-]{1,100}$/
-type InviteRole = "editor" | "viewer"
-const isInviteRole = (value: unknown): value is InviteRole =>
-  value === "editor" || value === "viewer"
+const isLinkRole = (value: unknown): value is LinkRole => value === "editor" || value === "viewer"
 
 async function roleOn(env: Env, noteId: string, userId: string) {
   const row = await env.DB.prepare(
@@ -48,8 +56,8 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
       "SELECT note_id AS noteId, role FROM note_members WHERE user_id = ? AND role != 'owner'",
     )
       .bind(user.id)
-      .all()
-    return json({ notes: rows.results })
+      .all<SharedNotes["notes"][number]>()
+    return json({ notes: rows.results } satisfies SharedNotes)
   }
 
   // The server dropped every list change from 2026-11-11 until this fix, so a list can be missing
@@ -60,7 +68,7 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
     )
       .bind(user.id)
       .all<{ noteId: string }>()
-    return json({ notes: rows.results.map((row) => row.noteId) })
+    return json({ notes: rows.results.map((row) => row.noteId) } satisfies OwnedNotes)
   }
 
   if (a === "accept" && !b && method === "POST") {
@@ -70,13 +78,13 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
       "SELECT note_id, role, revoked_at, expires_at FROM note_invites WHERE token = ?",
     )
       .bind(token)
-      .first<{ note_id: string; role: InviteRole; revoked_at: number | null; expires_at: number }>()
+      .first<{ note_id: string; role: LinkRole; revoked_at: number | null; expires_at: number }>()
     if (!invite) return fail(404, "invalid")
     if (invite.revoked_at !== null || invite.expires_at <= now) return fail(410, "gone")
 
     const existing = await roleOn(env, invite.note_id, user.id)
     if (existing === "owner" || existing === "editor") {
-      return json({ noteId: invite.note_id, role: existing })
+      return json({ noteId: invite.note_id, role: existing } satisfies AcceptedShare)
     }
     if (existing === "viewer") {
       // A second link can only raise access, never lower it.
@@ -89,7 +97,7 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
         // Their open connections still carry the viewer role: close them, they reconnect as editor.
         await kickUser(env, invite.note_id, user.id, 4401, "role changed")
       }
-      return json({ noteId: invite.note_id, role: invite.role })
+      return json({ noteId: invite.note_id, role: invite.role } satisfies AcceptedShare)
     }
     // New member. The limit check and the insert are one statement: no two people take the last place.
     const added = await env.DB.prepare(
@@ -99,10 +107,14 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
     )
       .bind(invite.note_id, user.id, invite.role, now, invite.note_id, NOTE_LIMIT)
       .run()
-    if (added.meta.changes > 0) return json({ noteId: invite.note_id, role: invite.role })
+    if (added.meta.changes > 0) {
+      return json({ noteId: invite.note_id, role: invite.role } satisfies AcceptedShare)
+    }
     // A parallel accept for the same person (double request) may have inserted first.
     const raced = await roleOn(env, invite.note_id, user.id)
-    return raced ? json({ noteId: invite.note_id, role: raced }) : fail(409, "full")
+    return raced
+      ? json({ noteId: invite.note_id, role: raced } satisfies AcceptedShare)
+      : fail(409, "full")
   }
 
   if (!a || !NOTE_ID.test(a) || a === "mine" || a === "owned" || a === "accept")
@@ -129,7 +141,7 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
     // older 7-day links permanent (same URL); each INSERT is skipped when that role already has a
     // live link (unique index note_invite_live). NOTE_LIMIT is checked on every accept, so a link
     // that spreads further admits nobody once the note is full.
-    const insert = (role: InviteRole) =>
+    const insert = (role: LinkRole) =>
       env.DB.prepare(
         "INSERT OR IGNORE INTO note_invites (token, note_id, role, created_by, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)",
       ).bind(newToken(), noteId, role, user.id, now, NEVER)
@@ -145,17 +157,17 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
        FROM note_members m JOIN user u ON u.id = m.user_id WHERE m.note_id = ? ORDER BY m.created_at`,
     )
       .bind(noteId)
-      .all()
+      .all<Member>()
     const links = await env.DB.prepare(
       "SELECT role, token FROM note_invites WHERE note_id = ? AND revoked_at IS NULL",
     )
       .bind(noteId)
-      .all<{ role: string; token: string }>()
+      .all<{ role: LinkRole; token: string }>()
     return json({
       members: members.results,
       links: links.results.map((l) => ({ role: l.role, url: `${url.origin}/share/${l.token}` })),
       limit: NOTE_LIMIT,
-    })
+    } satisfies ShareInfo)
   }
 
   if (!b && method === "DELETE") {
@@ -174,7 +186,7 @@ export async function handleShare(request: Request, env: Env): Promise<Response>
 
   if (b === "members" && c && !d && method === "PATCH") {
     const { role } = await readJson(request)
-    if (!isInviteRole(role)) return fail(400, "bad_role")
+    if (!isLinkRole(role)) return fail(400, "bad_role")
     const current = await roleOn(env, noteId, c)
     if (current === null) return fail(404, "not_found")
     if (current === "owner") return fail(400, "owner_cannot_change")

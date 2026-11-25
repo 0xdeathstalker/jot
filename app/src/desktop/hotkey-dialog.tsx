@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-// The shell stores hotkeys as "control+alt+KeyJ" (src-tauri/src/lib.rs, get_hotkey / set_hotkey).
+// The shell stores hotkeys as "control+alt+KeyJ" (tauri/src/lib.rs, get_hotkey / set_hotkey).
 const NAMES: Record<string, string> = { control: "Ctrl", alt: "Alt", shift: "Shift", super: "Win" }
 
 // "shift+control+alt+KeyJ" -> "Ctrl+Alt+Shift+J"
