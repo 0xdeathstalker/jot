@@ -1,6 +1,6 @@
 # Plan: Repository layout (app / worker / shared / tauri)
 
-Status (2026-11-22): **phase 1 done.**
+Status (2026-11-25): **phases 1 to 5 done, checks passed; waiting to merge.** Only the CI deploy after merge is left.
 
 Goal: a root that reads as "app, worker, shared types, desktop shell", and one source of truth for the
 types the client and the Worker both use. No change to what ships, how it deploys or how it runs.
@@ -129,12 +129,12 @@ The §10 "Create the layout" checkbox and old plans keep their old paths (histor
 ## Check before merging
 
 - [x] `pnpm check` (lint, typecheck; format on every changed file. Full format check: CRLF working copies on Windows)
-- [ ] `pnpm build && pnpm preview`: service worker installs, offline start works, every precached
+- [x] `pnpm build && pnpm preview`: service worker installs, offline start works, every precached
       file under 2 MiB
-- [ ] `pnpm preview:worker`: Google login, the permission guard (viewer cannot edit), share and join
+- [x] `pnpm preview:worker`: Google login, the permission guard (viewer cannot edit), share and join
       links
-- [ ] Two tabs, one offline: edits sync after reconnecting
-- [ ] `pnpm desktop:dev`: window, tray, hotkey
+- [x] Two tabs, one offline: edits sync after reconnecting
+- [x] `pnpm desktop:dev`: window, tray, hotkey
 - [ ] `pnpm run deploy` from CI after merge: the deploy workflow commands are unchanged
 
 ## Watch out
