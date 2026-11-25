@@ -1,3 +1,5 @@
+import { ViewIcon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import Collaboration, { isChangeOrigin } from "@tiptap/extension-collaboration"
 import CollaborationCaret from "@tiptap/extension-collaboration-caret"
 import { TaskList } from "@tiptap/extension-list"
@@ -236,7 +238,9 @@ export function Editor({
         </div>
       ) : (
         readOnly && (
-          <p className="mb-2 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground">
+          // Same eye icon as "Can view" in the share dialog.
+          <p className="mb-2 flex items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground">
+            <HugeiconsIcon icon={ViewIcon} className="size-4 shrink-0" />
             View only: you can read this note but not change it.
           </p>
         )

@@ -201,6 +201,24 @@ function NotesApp({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [])
 
+  // Desktop: a short window grows to fit the switcher (48px from the top + about 290px) while open,
+  // and shrinks back when it closes.
+  React.useEffect(() => {
+    if (!isDesktop() || !switcherOpen) return
+    let restore: (() => void) | undefined
+    let cancelled = false
+    void import("@/desktop/window")
+      .then(({ growWindowTo }) => growWindowTo(360))
+      .then((undo) => {
+        if (cancelled) undo()
+        else restore = undo
+      })
+    return () => {
+      cancelled = true
+      restore?.()
+    }
+  }, [switcherOpen])
+
   // First real edit: the draft joins the list. The editor's debounced meta write then fills the title.
   const handleDraftEdited = () => {
     if (!draftId) return
@@ -289,7 +307,11 @@ function NotesApp({
       <SidebarInset className="min-w-0 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         {isDesktop() && (
           <React.Suspense fallback={<div className="h-10 shrink-0" />}>
-            <TitleBar title={noteId ? currentNote?.title || "Untitled" : undefined} />
+            <TitleBar
+              title={noteId ? currentNote?.title || "Untitled" : undefined}
+              onNew={handleNew}
+              onSearch={() => setSwitcherOpen(true)}
+            />
           </React.Suspense>
         )}
         <NoteSwitcher

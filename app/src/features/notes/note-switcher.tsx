@@ -80,7 +80,7 @@ export function NoteSwitcher({
       <DialogContent
         showCloseButton={false}
         overlayClassName="bg-transparent supports-backdrop-filter:backdrop-blur-sm"
-        className="top-[15%] translate-y-0 gap-0 p-0"
+        className="top-[15%] translate-y-0 gap-0 p-0 desktop:top-12"
         finalFocus={finalFocus}
       >
         <DialogTitle className="sr-only">Go to note</DialogTitle>
@@ -103,7 +103,7 @@ export function NoteSwitcher({
         {/* ARIA combobox: a native <select> cannot filter as you type. Keys are handled on the
             input above, so the options need no key handlers of their own. */}
         {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
-        <div id={listId} role="listbox" aria-label="Notes" className="max-h-80 overflow-y-auto p-1">
+        <div id={listId} role="listbox" aria-label="Notes" className="max-h-56 overflow-y-auto p-1">
           {results.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">No notes found</p>
           ) : (
