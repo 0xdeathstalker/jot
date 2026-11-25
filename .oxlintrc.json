@@ -32,6 +32,10 @@
       }
     },
     {
+      "files": ["worker/src/**"],
+      "rules": { "import/no-relative-parent-imports": "error" }
+    },
+    {
       "files": ["shared/**"],
       "rules": {
         "no-restricted-imports": [

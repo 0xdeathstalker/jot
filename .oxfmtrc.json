@@ -7,5 +7,9 @@
     "stylesheet": "./app/src/styles/index.css",
     "functions": ["cn", "cva"]
   },
-  "ignorePatterns": ["pnpm-lock.yaml", "worker-configuration.d.ts", "app/src/components/ui/**"]
+  "ignorePatterns": [
+    "pnpm-lock.yaml",
+    "worker/worker-configuration.d.ts",
+    "app/src/components/ui/**"
+  ]
 }

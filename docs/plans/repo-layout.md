@@ -99,12 +99,19 @@ without the site, silently.
 
 ### Phase 4: Worker into `worker/src/`
 
-- [ ] **4.1** `git mv` the Worker files into `worker/src/`, `migrations/` into `worker/migrations/`.
-- [ ] **4.2** `wrangler.jsonc`: `main: "worker/src/index.ts"`, `migrations_dir: "worker/migrations"`.
+- [x] **4.1** `git mv` the Worker files into `worker/src/`, `migrations/` into `worker/migrations/`.
+- [x] **4.2** `wrangler.jsonc`: `main: "worker/src/index.ts"`, `migrations_dir: "worker/migrations"`.
       Moving files does not edit any applied migration (CLAUDE.md "Never").
-- [ ] **4.3** `cf-typegen` / `typecheck`: `wrangler types worker/worker-configuration.d.ts`.
+- [x] **4.3** `cf-typegen` / `typecheck`: `wrangler types worker/worker-configuration.d.ts`.
       Worker tsconfig `types` path and the `.oxfmtrc.json` ignore follow it.
-- [ ] **4.4** oxlint: ban `../` imports in `worker/**` too, now that it has a `src/`.
+- [x] **4.4** oxlint: ban `../` imports in `worker/**` too, now that it has a `src/`.
+
+Phase 4 checked (2026-11-25): `tsc -b` still types the Worker (a planted type error fails it);
+`db:migrate` reports nothing to apply (D1 tracks migrations by file name, not path); `wrangler
+deploy --dry-run` reads the 30 files from `dist/client`; `tsconfig.worker.json` became
+`worker/tsconfig.json`, referenced from the root `tsconfig.json`; the lint rule fires on a planted
+`../` import. Under `wrangler dev`: `/` 200, `/api/*` and `/parties/*` 401 signed out, and the
+sign-out browser checks (note-list-sync task 6) pass.
 
 ### Phase 5: docs
 

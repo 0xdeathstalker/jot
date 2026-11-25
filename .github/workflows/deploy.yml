@@ -31,6 +31,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      # New D1 files in migrations/ before the code that needs them. Already-applied files are skipped.
+      # New D1 files in worker/migrations/ before the code that needs them. Already-applied files are skipped.
       - run: pnpm db:migrate:remote
       - run: pnpm run deploy
