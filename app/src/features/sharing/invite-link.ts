@@ -10,7 +10,7 @@ export function readInviteLink(): InviteLink | null {
 }
 
 // A new person's sign-up is allowed by the join link's token. The login screen leaves it in this
-// cookie for the Google round trip; the Worker reads it (worker/auth/auth.ts, JOIN_COOKIE).
+// cookie for the Google round trip; the Worker reads it (worker/src/auth/auth.ts, JOIN_COOKIE).
 const COOKIE = "jot-invite"
 
 export function setJoinCookie(token: string) {

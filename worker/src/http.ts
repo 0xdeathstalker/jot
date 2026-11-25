@@ -1,4 +1,4 @@
-// Small helpers for the JSON API routes (worker/share.ts, worker/join.ts).
+// Small helpers for the JSON API routes (worker/src/share.ts, worker/src/join.ts).
 
 // Latest time a JS Date can hold: join and share links never expire.
 export const NEVER = 8.64e15

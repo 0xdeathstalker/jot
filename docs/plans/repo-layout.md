@@ -115,15 +115,20 @@ sign-out browser checks (note-list-sync task 6) pass.
 
 ### Phase 5: docs
 
-- [ ] **5.1** `docs/project-context.md` §5 layout, and every `src-tauri/` and `src/` path (§6, §11).
-- [ ] **5.2** `CLAUDE.md` (lint paths, `tauri/capabilities/`, shadcn command), README (layout,
+- [x] **5.1** `docs/project-context.md` §5 layout, and every `src-tauri/` and `src/` path (§6, §11).
+- [x] **5.2** `CLAUDE.md` (lint paths, `tauri/capabilities/`, shadcn command), README (layout,
       icons, release steps).
-- [ ] **5.3** Comments that name paths (`app/src/desktop/events.ts`, `hotkey-dialog.tsx`,
+- [x] **5.3** Comments that name paths (`app/src/desktop/events.ts`, `hotkey-dialog.tsx`,
       `features/sharing/api.ts`, `invite-link.ts`). Old plans stay as they are (history).
+
+Phase 5 done (2026-11-25): `project-context.md` §5 tree redrawn and every live `src/`, `public/`,
+`migrations/` and `worker/*` path updated; README tree, icon steps, shadcn `-c app` and import
+rule; CLAUDE.md paths; path comments in `app/src`, `worker/src`, `shared/` and `tauri/src/lib.rs`.
+The §10 "Create the layout" checkbox and old plans keep their old paths (history).
 
 ## Check before merging
 
-- [ ] `pnpm check`
+- [x] `pnpm check` (lint, typecheck; format on every changed file. Full format check: CRLF working copies on Windows)
 - [ ] `pnpm build && pnpm preview`: service worker installs, offline start works, every precached
       file under 2 MiB
 - [ ] `pnpm preview:worker`: Google login, the permission guard (viewer cannot edit), share and join

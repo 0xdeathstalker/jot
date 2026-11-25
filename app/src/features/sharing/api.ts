@@ -1,4 +1,4 @@
-// The only place the client talks to the share/join REST API (worker/share.ts, worker/join.ts).
+// The only place the client talks to the share/join REST API (worker/src/share.ts, worker/src/join.ts).
 // Expected failures come back as data (`ok: false`), so callers never need try/catch. `offline`
 // means the request never reached the server.
 

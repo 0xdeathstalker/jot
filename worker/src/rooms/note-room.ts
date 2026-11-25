@@ -10,7 +10,7 @@ export class NoteRoom extends YServer {
   static options = { hibernate: true }
   static callbackOptions = { debounceWait: 1000, debounceMaxWait: 10000 }
 
-  // Who is connected and with which role, from the headers the Worker guard set (worker/auth/gate.ts).
+  // Who is connected and with which role, from the headers the Worker guard set (worker/src/auth/gate.ts).
   // Tags are kept by the runtime across hibernation, and connection.state is already used by
   // y-partyserver for awareness ids, so the role and user live in tags.
   getConnectionTags(_connection: Connection, ctx: ConnectionContext) {

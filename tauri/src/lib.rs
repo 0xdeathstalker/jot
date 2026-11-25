@@ -21,7 +21,7 @@ use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 const HIDDEN_ARG: &str = "--hidden";
 static FIRST_LOAD_DONE: AtomicBool = AtomicBool::new(false);
 
-// The global hotkey: user-set from the gear menu (src/desktop/hotkey-dialog.tsx), kept in a file
+// The global hotkey: user-set from the gear menu (app/src/desktop/hotkey-dialog.tsx), kept in a file
 // here, not in the page, so it works even when the page cannot load.
 const DEFAULT_HOTKEY: &str = "control+alt+KeyJ";
 struct Hotkey(Mutex<Shortcut>);
@@ -163,7 +163,7 @@ pub fn run() {
             } else {
                 "https://jot.deathstalker.dev"
             };
-            // Frameless: the React title bar (src/desktop/title-bar.tsx) drags, minimizes, closes.
+            // Frameless: the React title bar (app/src/desktop/title-bar.tsx) drags, minimizes, closes.
             WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url.parse()?))
                 .title("Jot")
                 .inner_size(480.0, 600.0)
@@ -228,7 +228,7 @@ pub fn run() {
                 .on_menu_event(move |app, event| match event.id.as_ref() {
                     "new-note" => {
                         show(app);
-                        // src/desktop/events.ts makes the note.
+                        // app/src/desktop/events.ts makes the note.
                         let _ = app.emit_to("main", "new-note", ());
                     }
                     "show" => show(app),

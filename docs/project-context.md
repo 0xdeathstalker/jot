@@ -49,7 +49,7 @@ Build a lightweight notes app that:
 | Domain          | `jot.deathstalker.dev`                                            | Subdomain of an existing domain, so no extra cost                                                                                                                                                     |
 | Scaffold        | `pnpm create cloudflare` (React framework)                        | Simplest to learn. Better-T-Stack skipped (see §10).                                                                                                                                                  |
 | Package manager | **pnpm**                                                          | Enforced by a `preinstall` guard. Lockfile is `pnpm-lock.yaml`.                                                                                                                                       |
-| UI kit          | **Tailwind CSS v4 + shadcn/ui**                                   | Components are copied into `src/components/ui/`, so we own them. Add one only when a feature needs it.                                                                                                |
+| UI kit          | **Tailwind CSS v4 + shadcn/ui**                                   | Components are copied into `app/src/components/ui/`, so we own them. Add one only when a feature needs it.                                                                                            |
 | Lint / format   | **oxlint + oxfmt**, Husky + lint-staged pre-commit                | Fast, one config each. A lint error blocks the commit.                                                                                                                                                |
 | Desktop app     | **Tauri v2 shell loading the live site** (Windows)                | Global hotkey, tray, always on top. Same origin as the web app, so auth, sockets and offline work unchanged and a web deploy updates it. Only the shell ships as an installer (GitHub Releases)       |
 | Auth            | **Google OAuth via Better Auth + D1**, session cookie (no JWT)    | Free, runs in the Worker. Same origin, so the browser sends the cookie on the WebSocket upgrade and the Worker checks it. Access is limited to an `ALLOWED_EMAILS` allowlist plus Google Testing mode |
@@ -60,7 +60,7 @@ Rejected alternatives: Hocuspocus (needs a paid always-on Node server or a flaky
 
 ## 3. Cloudflare in 2 minutes
 
-- **Worker:** a small serverless function that runs on Cloudflare's network. Ours is `worker/index.ts`. It handles every request to `jot.deathstalker.dev`.
+- **Worker:** a small serverless function that runs on Cloudflare's network. Ours is `worker/src/index.ts`. It handles every request to `jot.deathstalker.dev`.
 - **Static assets:** the built React app (`dist/`) is served by the same Worker. Unknown routes fall back to `index.html` (SPA mode).
 - **Durable Object (DO):** a tiny server with its own memory and its own private **SQLite** database. We create **one DO per note** (a "room"). Every device editing that note connects to the same DO over a WebSocket.
 - **Hibernation:** a DO can sleep while its WebSockets stay open, and it wakes on the next message. Idle time is free. **Always on for Jot.**
@@ -114,41 +114,49 @@ jot/
 ├── docs/
 │   ├── project-context.md    ← this file
 │   └── plans/                ← <topic>.md, one per task
-├── wrangler.jsonc            ← Worker, DO bindings, assets
-├── components.json           ← shadcn/ui config (aliases use @/*)
+├── index.html                ← Vite entry (stays at the Vite root, loads /app/src/main.tsx)
+├── vite.config.ts            ← includes the PWA plugin (manifest, Workbox); publicDir app/public
+├── wrangler.jsonc            ← Worker, DO bindings, assets (next to vite.config.ts: one build, one deploy)
+├── tsconfig.json             ← references app/, worker/, tsconfig.node.json
 ├── .oxlintrc.json            ← lint rules
 ├── .oxfmtrc.json             ← formatter rules
-├── vite.config.ts            ← includes the PWA plugin (manifest, Workbox)
-├── pwa-assets.config.ts      ← icon generation (`pnpm pwa:icons`)
-├── tauri/                    ← Windows desktop shell (Rust): window, tray, hotkey, updater
-│   ├── src/lib.rs            ← all shell code
-│   ├── tauri.conf.json       ← app id, version (release tag must match), updater key
-│   └── capabilities/         ← what the live site may call (keep it harmless)
-├── .github/workflows/        ← CI, desktop-release.yml (a desktop-v* tag builds the installer)
-├── src/                      ← client (React PWA)
-│   ├── main.tsx              ← registers the service worker (phase 5)
-│   ├── app.tsx
-│   ├── styles/index.css      ← Tailwind + shadcn theme variables
-│   ├── components/ui/        ← shadcn/ui components (generated, add on demand)
-│   ├── editor/               ← TipTap editor + our own toolbar/UI
-│   ├── desktop/              ← the ONLY place that imports @tauri-apps/* (lazy, desktop only)
-│   ├── hooks/                ← React hooks, one per file (`use-*.ts`)
-│   │   └── use-theme.ts      ← dark/light; same rule as the inline script in index.html
-│   ├── sync/
-│   │   ├── provider.ts       ← the ONLY module that imports y-partyserver
-│   │   └── index-doc.ts      ← per-user note list (phase 3)
-│   ├── features/
-│   │   ├── notes/            ← sidebar, list, search
-│   │   └── sharing/          ← share dialog, /share and /join pages, API client, cursors (phase 6)
-│   └── lib/                  ← utils (cn), shared helpers
-├── public/                   ← icons, fonts, and the static /privacy and /terms pages
+├── .github/workflows/        ← deploy.yml, desktop-release.yml (a desktop-v* tag builds the installer)
+├── app/                      ← client (React PWA)
+│   ├── components.json       ← shadcn/ui config (aliases use @/*; add with `-c app`)
+│   ├── pwa-assets.config.ts  ← icon generation (`pnpm pwa:icons`)
+│   ├── tsconfig.json
+│   ├── public/               ← icons, fonts, and the static /privacy and /terms pages
+│   └── src/
+│       ├── main.tsx          ← registers the service worker (phase 5)
+│       ├── app.tsx
+│       ├── styles/index.css  ← Tailwind + shadcn theme variables
+│       ├── components/ui/    ← shadcn/ui components (generated, add on demand)
+│       ├── editor/           ← TipTap editor + our own toolbar/UI
+│       ├── desktop/          ← the ONLY place that imports @tauri-apps/* (lazy, desktop only)
+│       ├── hooks/            ← React hooks, one per file (`use-*.ts`)
+│       │   └── use-theme.ts  ← dark/light; same rule as the inline script in index.html
+│       ├── sync/
+│       │   ├── provider.ts   ← the ONLY module that imports y-partyserver
+│       │   └── index-doc.ts  ← per-user note list (phase 3)
+│       ├── features/
+│       │   ├── notes/        ← sidebar, list, search
+│       │   └── sharing/      ← share dialog, /share and /join pages, API client, cursors (phase 6)
+│       └── lib/              ← utils (cn), shared helpers
 ├── shared/api.ts             ← share/join API types for client and Worker (`@shared/*`, types only)
-└── worker/                   ← server
-    ├── index.ts              ← entry: auth, share/join APIs, then routePartykitRequest
-    ├── share.ts, join.ts     ← REST: share links and members, "join Jot" links (phase 6)
-    ├── http.ts               ← JSON helpers, link tokens, Origin check
-    ├── rooms/                ← NoteRoom / IndexRoom (YServer Durable Objects), kick.ts
-    └── auth/                 ← Better Auth, allowlist, invites (join links), gate.ts (room guard)
+├── worker/                   ← server
+│   ├── tsconfig.json
+│   ├── worker-configuration.d.ts ← generated by `pnpm cf-typegen`
+│   ├── migrations/           ← D1 SQL, append-only
+│   └── src/
+│       ├── index.ts          ← entry: auth, share/join APIs, then routePartykitRequest
+│       ├── share.ts, join.ts ← REST: share links and members, "join Jot" links (phase 6)
+│       ├── http.ts           ← JSON helpers, link tokens, Origin check
+│       ├── rooms/            ← NoteRoom / IndexRoom (YServer Durable Objects), kick.ts
+│       └── auth/             ← Better Auth, allowlist, invites (join links), gate.ts (room guard)
+└── tauri/                    ← Windows desktop shell (Rust): window, tray, hotkey, updater
+    ├── src/lib.rs            ← all shell code
+    ├── tauri.conf.json       ← app id, version (release tag must match), updater key
+    └── capabilities/         ← what the live site may call (keep it harmless)
 ```
 
 ---
@@ -167,7 +175,7 @@ jot/
 | `minisearch`                                                                                           | 3             | Local search                                                                                                                                                              |
 | `better-auth`                                                                                          | 4             | Google login + sessions, with D1 as its database. Needs the `nodejs_compat` flag.                                                                                         |
 | `vite-plugin-pwa`                                                                                      | 5             | Manifest + service worker. **Not earlier**, since caching confuses dev.                                                                                                   |
-| `@vite-pwa/assets-generator` (dev)                                                                     | 5             | `pnpm pwa:icons`: makes every icon size from `public/icon-source.svg`.                                                                                                    |
+| `@vite-pwa/assets-generator` (dev)                                                                     | 5             | `pnpm pwa:icons`: makes every icon size from `app/public/icon-source.svg`.                                                                                                |
 | `@tiptap/extension-collaboration-caret`                                                                | 6             | Other people's cursors                                                                                                                                                    |
 | `@tiptap/extension-list`, `@tiptap/extension-image`, `@tiptap/markdown`                                | editor blocks | Checklists, images inside the note, Markdown paste (`docs/plans/editor-blocks.md`). Keep every `@tiptap/*` package on the same version: they peer on exact `@tiptap/core` |
 
@@ -192,14 +200,14 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
                 role?: 'editor' | 'viewer', shared?: boolean, noAccess?: boolean } }
   ```
   The last three are Phase 6 UI hints, never permissions: `role` is set when someone else owns the note, `shared` when you own it and made a share link, `noAccess` when its owner removed you (learned from the server). D1 `note_members` is the truth.
-  The title is the first line of the note, the preview its next ~200 characters (search only; the list shows the title, then "Edited … / Current • N characters" from `chars`, the note's length without line breaks), all written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`src/sync/legacy-index.ts`).
+  The title is the first line of the note, the preview its next ~200 characters (search only; the list shows the title, then "Edited … / Current • N characters" from `chars`, the note's length without line breaks), all written by the editor on local edits only (so there is no separate rename action). Search is MiniSearch over title + preview. The Phase 3 placeholder room `index-default` is gone from the server; the first user to sign in on a device merges that device's old local list into their own index (`app/src/sync/legacy-index.ts`).
 - IDs are generated on the client with `crypto.randomUUID()`, so notes can be created offline.
 - **Drafts:** New note writes nothing to the index. The note is a draft (its id in React state and `sessionStorage` `jot-draft`, this tab only) until the first local edit that leaves it non-blank (anything but one empty paragraph); then `createNote(doc, id)` lists it. Leaving an untouched draft deletes its empty IndexedDB copy. Only a note made by New note on this device is ever a draft, so a listed note can never be re-created over its pin or sharing marks (`createNote` also never overwrites an entry). Plan: `docs/plans/blank-notes.md`.
 
 ### Server-side
 
 - **Note content:** each NoteRoom DO stores the compacted Yjs state (`Y.encodeStateAsUpdate`) in its own SQLite storage.
-- **D1 (`jot-db`, binding `DB`, SQL in `migrations/`, applied with `pnpm db:migrate` / `db:migrate:remote`):**
+- **D1 (`jot-db`, binding `DB`, SQL in `worker/migrations/`, applied with `pnpm db:migrate` / `db:migrate:remote`):**
   ```sql
   -- 0001, Phase 4: generated by Better Auth: user, session, account, verification
   -- 0002, Phase 4:
@@ -217,21 +225,21 @@ TipTap is **headless**: there's no UI out of the box. Toolbars, menus and stylin
 
 There are two kinds of link, both plain URLs with an unguessable token that the owner sends through any chat app (no email service, nothing paid):
 
-- **Join link** (`/join/<token>`): makes a stranger a Jot user. Only "original users" (emails on `ALLOWED_EMAILS`) have one: a single permanent link each, made by the server the first time they open Invites (no create, no expiry, no turn-off; the same URL for everyone they invite). It admits at most **3 people** in total, checked on every join, so a link that spreads further admits nobody once the places are used (`JOIN_LIMIT` in `worker/auth/invites.ts`). Invited users are full users (they can create and share notes) but cannot make join links, so the total stays bounded. The login screen leaves the token in a short-lived cookie (`jot-invite`) for the Google round trip; the sign-up hook in `worker/auth/auth.ts` reads it.
-- **Share link** (`/share/<token>`): gives an existing user access to one note, as **editor** or **viewer**. Each note has one permanent view link and one permanent edit link, made by the server the first time the owner opens Share (no create, no expiry, no turn-off). Removing someone gives the note two new links, so the freed place cannot be retaken with the old URL; people still on the note keep their access. The list marks a note "Shared" once someone besides the owner has joined. It never creates an account: someone with no Jot account is told to ask for a join link first. A note holds the owner plus at most **2 other people** (`NOTE_LIMIT` in `worker/share.ts`). A second link can only raise a role.
+- **Join link** (`/join/<token>`): makes a stranger a Jot user. Only "original users" (emails on `ALLOWED_EMAILS`) have one: a single permanent link each, made by the server the first time they open Invites (no create, no expiry, no turn-off; the same URL for everyone they invite). It admits at most **3 people** in total, checked on every join, so a link that spreads further admits nobody once the places are used (`JOIN_LIMIT` in `worker/src/auth/invites.ts`). Invited users are full users (they can create and share notes) but cannot make join links, so the total stays bounded. The login screen leaves the token in a short-lived cookie (`jot-invite`) for the Google round trip; the sign-up hook in `worker/src/auth/auth.ts` reads it.
+- **Share link** (`/share/<token>`): gives an existing user access to one note, as **editor** or **viewer**. Each note has one permanent view link and one permanent edit link, made by the server the first time the owner opens Share (no create, no expiry, no turn-off). Removing someone gives the note two new links, so the freed place cannot be retaken with the old URL; people still on the note keep their access. The list marks a note "Shared" once someone besides the owner has joined. It never creates an account: someone with no Jot account is told to ask for a join link first. A note holds the owner plus at most **2 other people** (`NOTE_LIMIT` in `worker/src/share.ts`). A second link can only raise a role.
 
 Rules:
 
 - **Active user** = email on `ALLOWED_EMAILS`, or a row in `invited_users`. Sharing access alone never makes anyone active. Every room and API route requires it, and it is re-checked on every connection, so removing an email takes effect.
-- **Every WebSocket connection is checked in the Worker** (`worker/auth/gate.ts`: session cookie, active user, `note_members`, Origin) before routing to the room. The guard overwrites `x-jot-role` and `x-jot-user` on the request; the room turns them into connection tags (`role:<r>`, `user:<id>`).
+- **Every WebSocket connection is checked in the Worker** (`worker/src/auth/gate.ts`: session cookie, active user, `note_members`, Origin) before routing to the room. The guard overwrites `x-jot-role` and `x-jot-user` on the request; the room turns them into connection tags (`role:<r>`, `user:<id>`).
 - **Viewers are read-only on the server.** `NoteRoom.isReadOnly` drops their document updates (a connection without a role tag is read-only too). The editor also turns read-only for viewers, but only so the screen matches.
 - **A connection keeps the role it was opened with.** Changing a role (owner's selector, or a second link raising it) closes that person's open connections with code **4401**, and the provider reconnects with the new role. **4403** means removed: the client shows "no longer have access", stops reconnecting, and offers to delete the local copy.
 - **The owner manages people** in the Share dialog: raise or lower a role (`PATCH`), remove someone, turn a link off. Anyone can **leave** a note. The owner deleting a shared note removes everyone's access first (the data stays: soft delete only).
-- **API** (`/api/share/...`, `/api/join/...`, all JSON, session required, `Origin` must match on writes): see the route list at the top of `worker/share.ts` and `worker/join.ts`.
+- **API** (`/api/share/...`, `/api/join/...`, all JSON, session required, `Origin` must match on writes): see the route list at the top of `worker/src/share.ts` and `worker/src/join.ts`.
 - **"Shared with me":** the accepted note is written into the recipient's own index doc (`role`). On startup and when a socket closes with 4401, the app reads `GET /api/share/mine` and corrects roles or marks removed notes `noAccess`.
 - **Live cursors and names** come from Yjs awareness + `CollaborationCaret` (name from the Google profile, colour from a hash of the user id). They live in memory only and disappear when the socket closes.
 - **Revoking access:** delete the row and close that user's connections. ⚠️ They keep whatever is already in their IndexedDB. That's inherent to local-first, so accept it.
-- **Google consent screen** is In production (a free "publish", no Google review for basic scopes), so the invite is the gate. Its privacy and terms pages are static files in `public/`.
+- **Google consent screen** is In production (a free "publish", no Google review for basic scopes), so the invite is the gate. Its privacy and terms pages are static files in `app/public/`.
 
 ---
 
@@ -330,10 +338,10 @@ Rules:
 ### Desktop app traps
 
 - ⚠️ The live site can call the shell's commands (`tauri/capabilities/`): an XSS on the site reaches whatever they expose. Only harmless commands (window, hotkey); never file system or shell access.
-- ❌ Don't import `@tauri-apps/*` outside `src/desktop/` (lint error): the web and phone bundles must not change.
+- ❌ Don't import `@tauri-apps/*` outside `app/src/desktop/` (lint error): the web and phone bundles must not change.
 - ⚠️ The installed shell can be older than the site. A feature that needs a new shell command: release the shell first, deploy the web part after, and let the site cope if the command is missing.
 - ⚠️ Hiding the window does not make the page "hidden" (WebView2): `visibilitychange` never fires on hide or show. Use window `focus` for "user came back" (the shell focuses the window on every show).
-- ⚠️ The window stays open for days: a deploy can delete a lazy chunk it still needs. Load lazy parts with `lazyOrReload` (`src/lib/lazy.ts`).
+- ⚠️ The window stays open for days: a deploy can delete a lazy chunk it still needs. Load lazy parts with `lazyOrReload` (`app/src/lib/lazy.ts`).
 - ❌ Never lose or commit the updater key (`%USERPROFILE%.taurijot-updater.key`, repo secret `TAURI_SIGNING_PRIVATE_KEY`). Without it installed apps can never update.
 - ⚠️ The updater reads the repo's _latest_ GitHub Release: every release in this repo must be a desktop release.
 - The release tag (`desktop-v0.2.0`) must match `version` in `tauri/tauri.conf.json`.
@@ -385,7 +393,7 @@ Rules:
 2. Before starting a feature or fix, check `docs/plans/` and create a plan if none exists.
 3. Local-first always: the UI reads and writes the local Y.Doc, never a server API, for note data.
 4. Free tools only. Flag any paid service or package.
-5. All sync-provider code goes through `src/sync/provider.ts`.
+5. All sync-provider code goes through `app/src/sync/provider.ts`.
 6. After any sync, storage or editor change, test with two tabs (one offline).
 7. Keep it small, with few dependencies. Add packages only when their phase starts (§6).
 8. Update the §10 checkboxes and §12 decisions when something is done or decided.

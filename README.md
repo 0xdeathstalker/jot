@@ -78,7 +78,7 @@ Jot logs in with Google, so you need your own OAuth client (free). Any Google ac
 
 `ALLOWED_EMAILS` lists the **original users**: they can sign up and make join links. Anyone else gets in only through a join link made by an original user (see "Sharing" below). To add an original user, add their email to `ALLOWED_EMAILS` (and under **Test users** while the consent screen is still in Testing).
 
-**Going live:** for other people to sign in, move the consent screen to production: Google Auth Platform → Audience → **Publish app**. Basic sign-in (name, email, picture) needs no Google review, but the Branding page asks for a home page, privacy policy and terms link. Jot serves them at `/`, `/privacy` and `/terms` (static pages in `public/`), and `deathstalker.dev` (your own domain) must be listed under Authorized domains.
+**Going live:** for other people to sign in, move the consent screen to production: Google Auth Platform → Audience → **Publish app**. Basic sign-in (name, email, picture) needs no Google review, but the Branding page asks for a home page, privacy policy and terms link. Jot serves them at `/`, `/privacy` and `/terms` (static pages in `app/public/`), and `deathstalker.dev` (your own domain) must be listed under Authorized domains.
 
 ### Check that sync works
 
@@ -110,7 +110,7 @@ pnpm run deploy
 
 `pnpm run deploy` (not `pnpm deploy`, which is a different built-in pnpm command) builds the app and deploys one Worker that serves the PWA, the sync server and the login endpoints. It prints `https://jot.<your-account>.workers.dev`. Add `https://jot.<your-account>.workers.dev/api/auth/callback/google` to the OAuth client's redirect URIs **before** signing in. Open the URL without a `www.`.
 
-Later deploys are just `pnpm run deploy`; secrets stay in Cloudflare. If a change adds a file to `migrations/`, run `pnpm db:migrate:remote` first.
+Later deploys are just `pnpm run deploy`; secrets stay in Cloudflare. If a change adds a file to `worker/migrations/`, run `pnpm db:migrate:remote` first.
 
 **Custom domain:** add `"routes": [{ "pattern": "jot.example.com", "custom_domain": true }]` to `wrangler.jsonc`, add the matching `/api/auth/callback/google` redirect URI, and deploy. The domain's DNS must be on Cloudflare, and the hostname must not already have its own DNS record (a wildcard record is fine).
 
@@ -138,58 +138,62 @@ The app shell is cached, so an installed Jot opens with no network and updates i
 
 Press **Ctrl+Alt+J** to show or hide it (change it in the gear menu → **Global hotkey…**). It stays on top of other windows; **Ctrl+N** makes a new note. Closing or minimizing the window keeps Jot in the tray (left-click the tray icon to toggle it, right-click for New note, Launch at login and Quit). It starts with Windows, hidden, and updates itself while it is hidden.
 
-**Changing the icon:** replace `public/icon-source.svg` (and the rounded `public/favicon.svg`), run `pnpm pwa:icons`, commit the generated files in `public/`, deploy. For the desktop app also run `pnpm tauri icon public/icon-source.svg` and delete the generated `android/`, `ios/` and `64x64.png` in `tauri/icons/`. On iPhone, delete and re-add the Home Screen icon.
+**Changing the icon:** replace `app/public/icon-source.svg` (and the rounded `app/public/favicon.svg`), run `pnpm pwa:icons`, commit the generated files in `app/public/`, deploy. For the desktop app also run `pnpm tauri icon app/public/icon-source.svg` and delete the generated `android/`, `ios/` and `64x64.png` in `tauri/icons/`. On iPhone, delete and re-add the Home Screen icon.
 
 ---
 
 ## Project structure
 
 ```
-src/                React PWA
-  components/ui/    shadcn/ui components (generated, not formatted)
-  editor/           TipTap editor and its UI
-  desktop/          desktop-only UI (title bar, hotkey dialog); the only place that imports @tauri-apps/*
-  hooks/            React hooks, one per file (use-*.ts)
-  auth/             login screen, session gate, account footer
-  sync/             Yjs providers, note-list store, local-data wipe
-  features/         notes (list, search, note switcher), sharing (share dialog, link pages, cursors)
-  lib/              shared helpers
+app/                React PWA (Vite root stays the repo root: index.html, vite.config.ts)
+  public/           icons, fonts, static /privacy and /terms pages
+  src/
+    components/ui/  shadcn/ui components (generated, not formatted)
+    editor/         TipTap editor and its UI
+    desktop/        desktop-only UI (title bar, hotkey dialog); the only place that imports @tauri-apps/*
+    hooks/          React hooks, one per file (use-*.ts)
+    auth/           login screen, session gate, account footer
+    sync/           Yjs providers, note-list store, local-data wipe
+    features/       notes (list, search, note switcher), sharing (share dialog, link pages, cursors)
+    lib/            shared helpers
+worker/             Cloudflare Worker
+  src/              entry, NoteRoom / IndexRoom Durable Objects, auth/ (Better Auth + permission checks), share.ts and join.ts (link APIs)
+  migrations/       D1 SQL (auth tables, note_members, invite links), append-only
+shared/             types used by both app and worker (types only)
 tauri/              Windows desktop shell (Rust): window, tray, global hotkey, updater
-worker/             Cloudflare Worker, NoteRoom / IndexRoom Durable Objects, auth/ (Better Auth + permission checks), share.ts and join.ts (link APIs)
-migrations/         D1 SQL (auth tables, note_members, invite links), append-only
 docs/               Project context and per-task plans
 ```
 
-Imports inside `src/` use the `@/` alias (`@/components/ui/button`), never `../`.
+Imports inside `app/src/` use the `@/` alias (`@/components/ui/button`), never `../`; `../` is banned in `worker/src/` too. Both import shared types through `@shared/*`.
 
 ## Adding UI components
 
 shadcn components are added only when a feature needs them:
 
 ```bash
-pnpm dlx shadcn@latest add <component>
+pnpm dlx shadcn@latest add <component> -c app
 ```
 
 ## Scripts
 
-| Command                  | What it does                                                  |
-| ------------------------ | ------------------------------------------------------------- |
-| `pnpm dev`               | Run the app + Worker locally                                  |
-| `pnpm build`             | Type-check and build for production                           |
-| `pnpm preview`           | Build and preview the production bundle locally               |
-| `pnpm run deploy`        | Build and deploy to Cloudflare                                |
-| `pnpm lint`              | Lint with oxlint                                              |
-| `pnpm lint:fix`          | Lint and apply safe fixes                                     |
-| `pnpm format`            | Check formatting (oxfmt), writes nothing                      |
-| `pnpm format:fix`        | Format all files                                              |
-| `pnpm typecheck`         | Regenerate Worker types and run `tsc -b`                      |
-| `pnpm check`             | Lint + format check + typecheck. Run before pushing or in CI  |
-| `pnpm cf-typegen`        | Regenerate `worker-configuration.d.ts` after editing wrangler |
-| `pnpm pwa:icons`         | Regenerate PWA icons from `public/icon-source.svg`            |
-| `pnpm db:migrate`        | Apply `migrations/` to the local D1 database                  |
-| `pnpm db:migrate:remote` | Apply `migrations/` to the real D1 database                   |
-| `pnpm desktop:dev`       | Desktop app against `pnpm dev` (needs Rust)                   |
-| `pnpm desktop:build`     | Build the desktop installer locally (needs the updater key)   |
+| Command                  | What it does                                                         |
+| ------------------------ | -------------------------------------------------------------------- |
+| `pnpm dev`               | Run the app + Worker locally                                         |
+| `pnpm build`             | Type-check and build for production                                  |
+| `pnpm preview`           | Build and preview the production bundle locally                      |
+| `pnpm run deploy`        | Build and deploy to Cloudflare                                       |
+| `pnpm lint`              | Lint with oxlint                                                     |
+| `pnpm lint:fix`          | Lint and apply safe fixes                                            |
+| `pnpm format`            | Check formatting (oxfmt), writes nothing                             |
+| `pnpm format:fix`        | Format all files                                                     |
+| `pnpm typecheck`         | Regenerate Worker types and run `tsc -b`                             |
+| `pnpm check`             | Lint + format check + typecheck. Run before pushing or in CI         |
+| `pnpm cf-typegen`        | Regenerate `worker/worker-configuration.d.ts` after editing wrangler |
+| `pnpm pwa:icons`         | Regenerate PWA icons from `app/public/icon-source.svg`               |
+| `pnpm db:migrate`        | Apply `worker/migrations/` to the local D1 database                  |
+| `pnpm db:migrate:remote` | Apply `worker/migrations/` to the real D1 database                   |
+| `pnpm desktop:dev`       | Desktop app against `pnpm dev` (needs Rust)                          |
+| `pnpm desktop:build`     | Build the desktop installer locally (needs the updater key)          |
 
 A Husky pre-commit hook runs lint-staged: staged files are linted (`oxlint --fix`) and formatted (`oxfmt`). A lint error blocks the commit.
 
