@@ -27,7 +27,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { InviteFriend } from "@/features/sharing/invite-friend"
+import type { JoinInfo } from "@/features/sharing/api"
+import { InviteButton } from "@/features/sharing/invite-friend"
 import { type AuthUser, signOut } from "@/hooks/use-auth-user"
 import { useTheme } from "@/hooks/use-theme"
 import { lazyOrReload } from "@/lib/lazy"
@@ -43,7 +44,15 @@ const THEMES = [
   { value: "light", label: "Light mode", icon: Sun03Icon },
 ]
 
-export function AccountFooter({ user }: { user: AuthUser }) {
+export function AccountFooter({
+  user,
+  invite,
+  onInvite,
+}: {
+  user: AuthUser
+  invite: JoinInfo | null
+  onInvite: () => void
+}) {
   const [busy, setBusy] = React.useState(false)
   // Notes that could not be synced: set while the "discard them?" dialog is open.
   const [unsynced, setUnsynced] = React.useState<number | null>(null)
@@ -69,7 +78,7 @@ export function AccountFooter({ user }: { user: AuthUser }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <InviteFriend />
+      <InviteButton info={invite} onOpen={onInvite} />
       <div className="flex items-center gap-2 border-t pt-2">
         {user.image ? (
           // Google avatars refuse requests that carry a referrer.

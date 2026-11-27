@@ -13,6 +13,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { NoteList } from "@/features/notes/note-list"
+import type { JoinInfo } from "@/features/sharing/api"
 import type { AuthUser } from "@/hooks/use-auth-user"
 import { useNoteSearch } from "@/hooks/use-note-search"
 import type { Note } from "@/sync/index-doc"
@@ -27,11 +28,23 @@ type Props = {
   onTogglePin: (id: string) => void
   onShare: (id: string) => void
   onDelete: (id: string) => void
+  invite: JoinInfo | null
+  onInvite: () => void
 }
 
 // The search text lives here, not in the app: typing in it re-renders the sidebar only, not the
 // editor. On phones the sidebar is a sheet (unmounted while closed); picking something closes it.
-export function NotesSidebar({ user, notes, loading, onNew, onOpen, onShare, ...rest }: Props) {
+export function NotesSidebar({
+  user,
+  notes,
+  loading,
+  onNew,
+  onOpen,
+  onShare,
+  invite,
+  onInvite,
+  ...rest
+}: Props) {
   const [query, setQuery] = React.useState("")
   const visibleNotes = useNoteSearch(notes, query)
   const { setOpenMobile } = useSidebar()
@@ -71,7 +84,7 @@ export function NotesSidebar({ user, notes, loading, onNew, onOpen, onShare, ...
         />
       </SidebarContent>
       <SidebarFooter className="pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <AccountFooter user={user} />
+        <AccountFooter user={user} invite={invite} onInvite={thenClose(onInvite)} />
       </SidebarFooter>
     </Sidebar>
   )

@@ -7,8 +7,10 @@ import {
   KeyboardIcon,
   PinIcon,
   PinOffIcon,
+  RestoreBinIcon,
   Search01Icon,
   Share08Icon,
+  UserAdd01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import * as React from "react"
@@ -30,12 +32,14 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Editor } from "@/editor/editor"
 import { type Notice, NoticeToast } from "@/editor/notice"
 import { ActionPanel } from "@/features/notes/action-panel"
+import { DeletedNotesDialog } from "@/features/notes/deleted-notes-dialog"
 import type { NoteText } from "@/features/notes/note-meta"
 import { NoteSwitcher } from "@/features/notes/note-switcher"
 import { NotesSidebar } from "@/features/notes/notes-sidebar"
 import { SidebarToggle } from "@/features/notes/sidebar-toggle"
 import { removeMember, unshareNote } from "@/features/sharing/api"
 import { caretUser } from "@/features/sharing/caret-user"
+import { InviteDialog } from "@/features/sharing/invite-friend"
 import { type InviteLink, readInviteLink } from "@/features/sharing/invite-link"
 import { JoinPage } from "@/features/sharing/join-page"
 import { refreshRoles } from "@/features/sharing/refresh-roles"
@@ -44,6 +48,7 @@ import { ShareDialog } from "@/features/sharing/share-dialog"
 import { ShareLinkPage } from "@/features/sharing/share-link-page"
 import { type Action, useActionShortcuts } from "@/hooks/use-action-shortcuts"
 import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
+import { useJoinInfo } from "@/hooks/use-join-info"
 import { useNoteId } from "@/hooks/use-note-id"
 import { lazyOrReload } from "@/lib/lazy"
 import { formatShortcut, isDesktop, matchesShortcut } from "@/lib/platform"
@@ -204,6 +209,10 @@ function NotesApp({
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
   const [actionsOpen, setActionsOpen] = React.useState(false)
   const [hotkeyOpen, setHotkeyOpen] = React.useState(false)
+  const [deletedOpen, setDeletedOpen] = React.useState(false)
+  // The invite dialog lives here, not in the sidebar, so the Action Panel can open it too.
+  const [inviteOpen, setInviteOpen] = React.useState(false)
+  const joinInfo = useJoinInfo(inviteOpen)
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!matchesShortcut(event, ["Mod", "K"])) return
@@ -277,6 +286,13 @@ function NotesApp({
   }
 
   // The ⋮ menu's actions: the same in the sidebar and the note switcher.
+  // A note picked in the switcher or restored from Recently Deleted: open it with the caret in it.
+  const openPicked = (id: string) => {
+    openNote(id)
+    setPickedId(id)
+    setFocusKey((key) => key + 1)
+  }
+
   const noteActions = {
     onTogglePin: (id: string) => togglePin(doc, id),
     onShare: (id: string) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true })),
@@ -354,6 +370,24 @@ function NotesApp({
       run: () => setHotkeyOpen(true),
     },
     {
+      id: "invite",
+      label: "Invite a Friend…",
+      icon: UserAdd01Icon,
+      group: 2,
+      // No invites for invited users, and offline (joinInfo is null then).
+      hidden: !joinInfo,
+      dialog: true,
+      run: () => setInviteOpen(true),
+    },
+    {
+      id: "deleted",
+      label: "Show Recently Deleted Notes",
+      icon: RestoreBinIcon,
+      group: 3,
+      dialog: true,
+      run: () => setDeletedOpen(true),
+    },
+    {
       id: "delete",
       label: currentNote?.role ? "Leave Note" : "Delete Note",
       icon: Delete02Icon,
@@ -383,6 +417,8 @@ function NotesApp({
         onNew={handleNew}
         onOpen={openNote}
         {...noteActions}
+        invite={joinInfo}
+        onInvite={() => setInviteOpen(true)}
       />
 
       <SidebarInset className="min-w-0 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
@@ -408,12 +444,12 @@ function NotesApp({
           {...noteActions}
           open={switcherOpen}
           onOpenChange={setSwitcherOpen}
-          onPick={(id) => {
-            openNote(id)
-            setPickedId(id)
-            setFocusKey((key) => key + 1)
-          }}
+          onPick={openPicked}
         />
+        {deletedOpen && (
+          <DeletedNotesDialog doc={doc} onOpenChange={setDeletedOpen} onRestored={openPicked} />
+        )}
+        <InviteDialog info={joinInfo} open={inviteOpen} onOpenChange={setInviteOpen} />
         {/* Desktop: a small window, so tighter edges (the title bar sits above). */}
         <div className="mx-auto w-full max-w-3xl p-4 desktop:px-3 desktop:pt-1">
           {/* Desktop: the title bar has the trigger instead. sm to md: on the toolbar's line,

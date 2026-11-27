@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-27): **phases 1–2 done.**
+Status (2026-11-28): **phases 1–3 done.**
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel.
 Each row shows its keyboard shortcut and groups are split by separators. Today Ctrl/⌘+K and
@@ -124,23 +124,23 @@ Check:
 
 Goal: a soft-deleted note can be found and brought back; friends can be invited from the panel.
 
-- [ ] **3.1** `sync/index-doc.ts`: add `readDeletedNotes(doc)`.
+- [x] **3.1** `sync/index-doc.ts`: add `readDeletedNotes(doc)`.
   - It returns notes with `deleted: true`, own notes only (no `role`, not `noAccess`), newest
     `updatedAt` first.
   - Pull the row-building code out of `readNotes` so both readers share it.
   - Add a hook or store next to the one `readNotes` uses, so the list updates live.
-- [ ] **3.2** `sync/index-doc.ts`: add `undelete(doc, id)`, which sets `deleted` back to false. It
+- [x] **3.2** `sync/index-doc.ts`: add `undelete(doc, id)`, which sets `deleted` back to false. It
       is named this way because `restoreNote` already exists for something else.
-- [ ] **3.3** Check that content survives a soft delete. The note's Y.Doc should stay in
+- [x] **3.3** Check that content survives a soft delete. The note's Y.Doc should stay in
       IndexedDB and on the server: only `handleRemoveLost` calls `deleteLocalNote`, and those
       notes are filtered out in 3.1. Open a restored note on a second device or a fresh profile.
-- [ ] **3.4** Create `features/notes/deleted-notes-dialog.tsx`.
+- [x] **3.4** Create `features/notes/deleted-notes-dialog.tsx`.
   - It lists each note's title, preview and deleted date, with a Restore button.
   - Restore runs `undelete`, closes the dialog, then calls `openNote(id)`.
   - Show an empty state: "No deleted notes".
-- [ ] **3.5** Add a Show Recently Deleted Notes row (group 3) that opens the dialog
+- [x] **3.5** Add a Show Recently Deleted Notes row (group 3) that opens the dialog
       (`dialog: true`). It fits the smallest window like every dialog (2.7).
-- [ ] **3.6** Invite a Friend… row (owner, 2026-11-27), group 2:
+- [x] **3.6** Invite a Friend… row (owner, 2026-11-27), group 2:
   - Today the dialog is opened only by its own `DialogTrigger` in `features/sharing/invite-friend.tsx`
     (sidebar account area), with local `open` state.
   - Make the dialog controllable (`open` / `onOpenChange` props) and lift its state to `app.tsx`, so
@@ -148,6 +148,21 @@ Goal: a soft-deleted note can be found and brought back; friends can be invited 
   - The row is `hidden` when the user cannot invite. That covers invited users (the server answers 403) and offline. Reuse the `getJoinInfo` result the sidebar already fetches, not a second
     fetch.
   - `dialog: true`, so the panel leaves focus to it.
+
+Done as (2026-11-28):
+
+- `softDelete` also writes `deletedAt`, which the list sorts by. Notes deleted earlier fall back to
+  `updatedAt` and show "Edited …" instead of "Deleted …".
+- `undelete` also clears `shared`: deleting a shared note revoked its links first.
+- `useDeletedNotes(doc)` sits next to `useNotes`, and both use one `createStore(doc, read)`.
+- The dialog mounts only while open.
+- `timeAgo` moved to `lib/time-ago.ts`.
+- Invites:
+  - `hooks/use-join-info.ts` fetches as before (on mount, and on each dialog open).
+  - `invite-friend.tsx` is split into `InviteButton` (sidebar) and `InviteDialog` (`app.tsx`).
+  - The info reaches the button through `NotesSidebar` and `AccountFooter`.
+- 3.3 was checked in the code: only drafts and lost shared notes call `deleteLocalNote`, and the
+  Worker never acts on `deleted`. The two-device check is still to do.
 
 Check:
 

@@ -14,6 +14,7 @@ export type NoteMeta = {
   updatedAt: number
   pinned: boolean
   deleted: boolean
+  deletedAt?: number // when it was soft-deleted (Recently Deleted); absent on notes deleted before it existed
   // Sharing (Phase 6). UI hints only: the server decides access from D1.
   role?: SharedRole // set when someone else owns the note; absent means you own it
   shared?: boolean // you own it and have made a share link
@@ -151,41 +152,74 @@ export function togglePin(doc: Doc, id: string) {
 }
 
 export function softDelete(doc: Doc, id: string) {
-  getNotes(doc).get(id)?.set("deleted", true)
+  const note = getNotes(doc).get(id)
+  if (!note) return
+  doc.transact(() => {
+    note.set("deleted", true)
+    note.set("deletedAt", Date.now())
+  })
+}
+
+// Recently Deleted > Restore. The content was never removed (soft delete). Deleting a shared note
+// took everyone's access away first, so it comes back unshared.
+export function undelete(doc: Doc, id: string) {
+  const note = getNotes(doc).get(id)
+  if (!note) return
+  doc.transact(() => {
+    note.set("deleted", false)
+    if (note.get("shared")) note.set("shared", false)
+  })
+}
+
+function readNote(note: YMap<unknown>, id: string): Note {
+  return {
+    id,
+    title: (note.get("title") as string) ?? "",
+    preview: (note.get("preview") as string) ?? "",
+    chars: note.get("chars") as number | undefined,
+    createdAt: (note.get("createdAt") as number) ?? 0,
+    updatedAt: (note.get("updatedAt") as number) ?? 0,
+    pinned: !!note.get("pinned"),
+    deleted: !!note.get("deleted"),
+    deletedAt: note.get("deletedAt") as number | undefined,
+    role: (note.get("role") as SharedRole | undefined) ?? undefined,
+    shared: !!note.get("shared") || undefined,
+    noAccess: !!note.get("noAccess") || undefined,
+  }
 }
 
 // Pinned first, then newest. Soft-deleted notes are left out.
 function readNotes(notes: NotesMap): Note[] {
   const list: Note[] = []
   notes.forEach((note, id) => {
-    if (note.get("deleted")) return
-    list.push({
-      id,
-      title: (note.get("title") as string) ?? "",
-      preview: (note.get("preview") as string) ?? "",
-      chars: note.get("chars") as number | undefined,
-      createdAt: (note.get("createdAt") as number) ?? 0,
-      updatedAt: (note.get("updatedAt") as number) ?? 0,
-      pinned: !!note.get("pinned"),
-      deleted: false,
-      role: (note.get("role") as SharedRole | undefined) ?? undefined,
-      shared: !!note.get("shared") || undefined,
-      noAccess: !!note.get("noAccess") || undefined,
-    })
+    if (!note.get("deleted")) list.push(readNote(note, id))
   })
   return list.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
 }
 
+// Recently Deleted: our own deleted notes, last deleted first (notes deleted before `deletedAt`
+// existed go by their last edit). Shared notes we left are not ours to bring back, and their local
+// copy is gone.
+function readDeletedNotes(notes: NotesMap): Note[] {
+  const list: Note[] = []
+  notes.forEach((note, id) => {
+    if (note.get("deleted") && !note.get("role") && !note.get("noAccess"))
+      list.push(readNote(note, id))
+  })
+  const when = (note: Note) => note.deletedAt ?? note.updatedAt
+  return list.sort((a, b) => when(b) - when(a))
+}
+
 // React.useSyncExternalStore needs a stable snapshot: rebuild the array only when the Y.Map changes,
 // never inside getSnapshot (a new array per call re-renders forever).
-function createStore(doc: Doc) {
+function createStore(doc: Doc, read: (notes: NotesMap) => Note[]) {
   const notes = getNotes(doc)
-  let snapshot = readNotes(notes)
+  let snapshot = read(notes)
   return {
     subscribe(onChange: () => void) {
-      snapshot = readNotes(notes) // catch changes that landed before subscribing
+      snapshot = read(notes) // catch changes that landed before subscribing
       const handler = () => {
-        snapshot = readNotes(notes)
+        snapshot = read(notes)
         onChange()
       }
       notes.observeDeep(handler)
@@ -196,6 +230,11 @@ function createStore(doc: Doc) {
 }
 
 export function useNotes(doc: Doc): Note[] {
-  const store = React.useMemo(() => createStore(doc), [doc])
+  const store = React.useMemo(() => createStore(doc, readNotes), [doc])
+  return React.useSyncExternalStore(store.subscribe, store.getSnapshot)
+}
+
+export function useDeletedNotes(doc: Doc): Note[] {
+  const store = React.useMemo(() => createStore(doc, readDeletedNotes), [doc])
   return React.useSyncExternalStore(store.subscribe, store.getSnapshot)
 }

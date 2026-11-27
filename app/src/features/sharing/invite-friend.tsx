@@ -7,28 +7,37 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { getJoinInfo, type JoinInfo } from "@/features/sharing/api"
+import type { JoinInfo } from "@/features/sharing/api"
 
-// "Invites ... n left" in the account area, n = invites left. Shown only to original users: invited users
-// get a 403 from the server and see nothing. Also hidden offline, because it needs the server.
-export function InviteFriend() {
-  const [info, setInfo] = React.useState<JoinInfo | null>(null)
-  const [open, setOpen] = React.useState(false)
+const invitesLeft = (info: JoinInfo) => Math.max(0, info.limit - info.used)
+
+// "Invites ... n left" in the account area, n = invites left. `info` is null for invited users (the
+// server answers 403) and offline: nothing is shown. The dialog itself lives in app.tsx, so the
+// Action Panel can open it too (on phones the sidebar is unmounted while closed).
+export function InviteButton({ info, onOpen }: { info: JoinInfo | null; onOpen: () => void }) {
+  if (!info) return null
+  return (
+    <div className="border-t pt-2">
+      <Button variant="ghost" size="sm" className="w-full justify-between" onClick={onOpen}>
+        <span>Invites</span>
+        <span className="text-muted-foreground">{invitesLeft(info)} left</span>
+      </Button>
+    </div>
+  )
+}
+
+export function InviteDialog({
+  info,
+  open,
+  onOpenChange,
+}: {
+  info: JoinInfo | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
   const [copied, setCopied] = React.useState(false)
-
-  // On mount (for the count) and again each time the dialog opens, so the count is fresh.
-  React.useEffect(() => {
-    let cancelled = false
-    void getJoinInfo().then((result) => {
-      if (!cancelled && result.ok) setInfo(result.data)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [open])
 
   // "Copied" shows for 2 s, then the button reads "Copy link" again.
   React.useEffect(() => {
@@ -39,7 +48,7 @@ export function InviteFriend() {
 
   if (!info) return null
 
-  const left = Math.max(0, info.limit - info.used)
+  const left = invitesLeft(info)
 
   const copy = async () => {
     try {
@@ -52,48 +61,40 @@ export function InviteFriend() {
 
   const handleOpenChange = (next: boolean) => {
     setCopied(false)
-    setOpen(next)
+    onOpenChange(next)
   }
 
   return (
-    <div className="border-t pt-2">
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogTrigger
-          render={<Button variant="ghost" size="sm" className="w-full justify-between" />}
-        >
-          <span>Invites</span>
-          <span className="text-muted-foreground">{left} left</span>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Invite a friend to Jot</DialogTitle>
-            <DialogDescription>
-              {left === 0
-                ? `All ${info.limit} of your invites are used.`
-                : `You can invite ${left} more ${left === 1 ? "person" : "people"} (${info.used} of ${info.limit} used).`}
-            </DialogDescription>
-          </DialogHeader>
-          {/* Same link for everyone you invite; it stops admitting people once your invites run out. */}
-          {left > 0 && (
-            <div className="flex gap-2">
-              <Input
-                readOnly
-                aria-label="Invite link"
-                value={info.url}
-                onFocus={(event) => event.target.select()}
-                // Ctrl/Cmd+C (or the context menu) on the whole link counts as copied too.
-                onCopy={(event) => {
-                  const { selectionStart, selectionEnd, value } = event.currentTarget
-                  if (selectionStart === 0 && selectionEnd === value.length) setCopied(true)
-                }}
-              />
-              <Button onClick={() => void copy()} className="h-9">
-                {copied ? "Copied" : "Copy link"}
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Invite a friend to Jot</DialogTitle>
+          <DialogDescription>
+            {left === 0
+              ? `All ${info.limit} of your invites are used.`
+              : `You can invite ${left} more ${left === 1 ? "person" : "people"} (${info.used} of ${info.limit} used).`}
+          </DialogDescription>
+        </DialogHeader>
+        {/* Same link for everyone you invite; it stops admitting people once your invites run out. */}
+        {left > 0 && (
+          <div className="flex gap-2">
+            <Input
+              readOnly
+              aria-label="Invite link"
+              value={info.url}
+              onFocus={(event) => event.target.select()}
+              // Ctrl/Cmd+C (or the context menu) on the whole link counts as copied too.
+              onCopy={(event) => {
+                const { selectionStart, selectionEnd, value } = event.currentTarget
+                if (selectionStart === 0 && selectionEnd === value.length) setCopied(true)
+              }}
+            />
+            <Button onClick={() => void copy()} className="h-9">
+              {copied ? "Copied" : "Copy link"}
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }
