@@ -114,7 +114,7 @@ frameless (without the drag bar of 3.3 the window could not be moved) and the tr
 - [x] **3.4b** Open note's title centred in the title bar, like Raycast Notes ("Untitled" when
       empty), with New note and Search notes (opens the note switcher) beside the sidebar toggle.
 - [x] **3.4c** Note switcher in a short window: the window grows to 360 px tall while it is open and
-      shrinks back on close (`src/desktop/window.ts`, `core:window:allow-set-size`). The webview background is set to the page colour first: WebView2 paints new space white otherwise.
+      shrinks back on close (`src/desktop/window.ts`, `core:window:allow-set-size`). The webview background is set to the page colour first: WebView2 paints new space white otherwise. Replaced 2026-11-27 (action-panel.md 2.7): the dialogs now fit the smallest window, and `window.ts` is gone.
 - [x] **3.5** Note switcher (`src/features/notes/note-switcher.tsx`): `Ctrl+P` / `⌘K` opens it
       **everywhere**, web and phone too (owner, 2026-11-22; on the web it replaces print). Same
       search as the sidebar; arrows and Enter. `Ctrl+N` new note, desktop only (browsers keep it

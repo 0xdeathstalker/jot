@@ -2,12 +2,15 @@ import {
   Add01Icon,
   CircleArrowLeft01Icon,
   CircleArrowRight01Icon,
+  CommandLineIcon,
   Delete02Icon,
+  KeyboardIcon,
   PinIcon,
   PinOffIcon,
   Search01Icon,
   Share08Icon,
 } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import * as React from "react"
 
 import { LoginScreen } from "@/auth/login-screen"
@@ -22,9 +25,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Editor } from "@/editor/editor"
 import { type Notice, NoticeToast } from "@/editor/notice"
+import { ActionPanel } from "@/features/notes/action-panel"
 import type { NoteText } from "@/features/notes/note-meta"
 import { NoteSwitcher } from "@/features/notes/note-switcher"
 import { NotesSidebar } from "@/features/notes/notes-sidebar"
@@ -41,7 +46,7 @@ import { type Action, useActionShortcuts } from "@/hooks/use-action-shortcuts"
 import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
 import { useNoteId } from "@/hooks/use-note-id"
 import { lazyOrReload } from "@/lib/lazy"
-import { isDesktop, matchesShortcut } from "@/lib/platform"
+import { formatShortcut, isDesktop, matchesShortcut } from "@/lib/platform"
 import {
   createNote,
   markShared,
@@ -69,6 +74,7 @@ function readDraft(noteId: string | null): string | null {
 
 // Desktop-only code (Tauri) loads only inside the desktop app; web and phone never fetch it.
 const TitleBar = lazyOrReload(() => import("@/desktop/title-bar"))
+const HotkeyDialog = lazyOrReload(() => import("@/desktop/hotkey-dialog"))
 
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
 function NotesApp({
@@ -193,36 +199,21 @@ function NotesApp({
     }
   }, [])
 
-  // The other shortcuts come from the action list (below). Ctrl/⌘+K still opens the note switcher
-  // until the Action Panel takes it (docs/plans/action-panel.md, phase 2).
+  // Ctrl/⌘+K toggles the Action Panel (in place of the switcher, if that is open). The other
+  // shortcuts come from the action list (below).
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
+  const [actionsOpen, setActionsOpen] = React.useState(false)
+  const [hotkeyOpen, setHotkeyOpen] = React.useState(false)
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!matchesShortcut(event, ["Mod", "K"])) return
       event.preventDefault()
-      setSwitcherOpen(true)
+      setSwitcherOpen(false)
+      setActionsOpen((open) => !open)
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [])
-
-  // Desktop: a short window grows to fit the switcher (48px from the top + about 290px) while open,
-  // and shrinks back when it closes.
-  React.useEffect(() => {
-    if (!isDesktop() || !switcherOpen) return
-    let restore: (() => void) | undefined
-    let cancelled = false
-    void import("@/desktop/window")
-      .then(({ growWindowTo }) => growWindowTo(360))
-      .then((undo) => {
-        if (cancelled) undo()
-        else restore = undo
-      })
-    return () => {
-      cancelled = true
-      restore?.()
-    }
-  }, [switcherOpen])
 
   // First real edit: the draft joins the list. The editor's debounced meta write then fills the title.
   const handleDraftEdited = () => {
@@ -323,6 +314,7 @@ function NotesApp({
       group: 1,
       // Only the owner shares (a note with a `role` belongs to someone else).
       hidden: !currentNote || !!currentNote.role,
+      dialog: true,
       run: () => noteId && noteActions.onShare(noteId),
     },
     {
@@ -331,6 +323,7 @@ function NotesApp({
       icon: Search01Icon,
       keys: ["Mod", "P"],
       group: 1,
+      dialog: true,
       run: () => setSwitcherOpen(true),
     },
     {
@@ -352,6 +345,15 @@ function NotesApp({
       run: () => history.forward(),
     },
     {
+      id: "hotkey",
+      label: "Global Hotkey…",
+      icon: KeyboardIcon,
+      group: 2,
+      hidden: !isDesktop(),
+      dialog: true,
+      run: () => setHotkeyOpen(true),
+    },
+    {
       id: "delete",
       label: currentNote?.role ? "Leave Note" : "Delete Note",
       icon: Delete02Icon,
@@ -359,6 +361,8 @@ function NotesApp({
       group: 3,
       destructive: true,
       hidden: !currentNote,
+      // Leaving, or deleting a note you shared, asks first (handleDelete).
+      dialog: !!(currentNote?.role || currentNote?.shared),
       run: () => noteId && noteActions.onDelete(noteId),
     },
   ]
@@ -388,7 +392,14 @@ function NotesApp({
               title={noteId ? currentNote?.title || "Untitled" : undefined}
               onNew={handleNew}
               onSearch={() => setSwitcherOpen(true)}
+              onActions={() => setActionsOpen(true)}
             />
+          </React.Suspense>
+        )}
+        <ActionPanel actions={actions} open={actionsOpen} onOpenChange={setActionsOpen} />
+        {hotkeyOpen && (
+          <React.Suspense>
+            <HotkeyDialog open onOpenChange={setHotkeyOpen} />
           </React.Suspense>
         )}
         <NoteSwitcher
@@ -410,6 +421,16 @@ function NotesApp({
               background hides note text scrolling under it. Phones: the toolbar is at the bottom. */}
           <div className="mb-2 flex items-center sm:sticky sm:top-2 sm:z-20 sm:mb-0 sm:h-0 sm:translate-y-[5px] sm:items-start md:absolute md:top-2 md:left-2 md:h-auto md:translate-y-0 desktop:hidden sm:[&>button]:bg-background md:[&>button]:bg-transparent">
             <SidebarToggle />
+            {/* The Action Panel for touch screens (no Ctrl/⌘+K to press). */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Actions"
+              title={`Actions (${formatShortcut(["Mod", "K"])})`}
+              onClick={() => setActionsOpen(true)}
+            >
+              <HugeiconsIcon icon={CommandLineIcon} />
+            </Button>
           </div>
           {share && (
             <ShareDialog

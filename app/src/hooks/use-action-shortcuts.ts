@@ -16,6 +16,8 @@ export type Action = {
   destructive?: boolean
   disabled?: boolean
   hidden?: boolean
+  // Opens a dialog of its own, which takes focus: the panel then leaves focus alone on close.
+  dialog?: boolean
   run: () => void
 }
 

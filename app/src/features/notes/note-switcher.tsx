@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { NoteActions, type NoteActionHandlers, NoteRowText } from "@/features/notes/note-list"
 import { useNoteSearch } from "@/hooks/use-note-search"
+import { focusInOtherDialog } from "@/lib/focus"
 import type { Note } from "@/sync/index-doc"
 
-// Ctrl+P / ⌘K: jump to a note by typing (app.tsx opens it). Same search, rows and ⋮ menu as the
+// Ctrl/⌘+P: jump to a note by typing (app.tsx opens it). Same search, rows and ⋮ menu as the
 // sidebar; arrows move, Enter opens. A combobox: focus stays in the input, the list follows
 // aria-activedescendant.
 export function NoteSwitcher({
@@ -36,23 +37,28 @@ export function NoteSwitcher({
     if (open) document.getElementById(optionId(active))?.scrollIntoView({ block: "nearest" })
   })
 
-  const handleOpenChange = (next: boolean) => {
-    if (!next) {
-      setQuery("")
-      setActive(0)
-    }
-    onOpenChange(next)
+  // Start empty on each open, however it was closed: app.tsx closes it too, when Ctrl/⌘+K swaps
+  // it for the Action Panel.
+  const [wasOpen, setWasOpen] = React.useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    setQuery("")
+    setActive(0)
   }
+  const handleOpenChange = onOpenChange
 
   // Focus on close. After a pick the new note's editor focuses itself once mounted (app.tsx), and
   // after Share / Delete their dialog takes focus: the switcher must not move it (the editor it
-  // would find is about to be replaced, and focus then fell to the title bar). Closed with Esc or
-  // a click outside: back to the open note's editor, never to the sidebar toggle.
+  // would find is about to be replaced, and focus then fell to the title bar). Same when another
+  // dialog opened in its place and already has focus (Ctrl/⌘+K). Closed with Esc or a click
+  // outside: back to the open note's editor, never to the sidebar toggle.
   const skipFocus = React.useRef(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
   const finalFocus = () => {
     const skip = skipFocus.current
     skipFocus.current = false
-    return skip ? false : (document.querySelector<HTMLElement>(".ProseMirror") ?? false)
+    if (skip || focusInOtherDialog(inputRef.current)) return false
+    return document.querySelector<HTMLElement>(".ProseMirror") ?? false
   }
 
   // Close first, then act (no dialog stacked on the switcher).
@@ -76,16 +82,19 @@ export function NoteSwitcher({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {/* Blur, no darkening (owner, 2026-11-22). */}
+      {/* Blur, no darkening (owner, 2026-11-22; every dialog, components/ui). Desktop: every
+          dialog is 340px wide so it fits the smallest window (380×320, tauri/src/lib.rs; set in
+          components/ui/dialog.tsx). This one is 48px down with a 40px input + 212px list. The
+          Action Panel uses the same sizes. */}
       <DialogContent
         showCloseButton={false}
-        overlayClassName="bg-transparent supports-backdrop-filter:backdrop-blur-sm"
-        className="top-[15%] translate-y-0 gap-0 p-0 desktop:top-12"
+        className="top-[15%] translate-y-0 gap-0 p-0 desktop:top-12 desktop:gap-0 desktop:p-0"
         finalFocus={finalFocus}
       >
         <DialogTitle className="sr-only">Go to note</DialogTitle>
         {/* The dialog focuses this on open (first focusable element). */}
         <input
+          ref={inputRef}
           role="combobox"
           aria-label="Search notes"
           aria-expanded
@@ -98,12 +107,17 @@ export function NoteSwitcher({
             setActive(0)
           }}
           onKeyDown={handleKeyDown}
-          className="h-12 w-full border-b bg-transparent px-4 text-sm outline-none"
+          className="h-12 w-full border-b bg-transparent px-4 text-sm outline-none desktop:h-10"
         />
         {/* ARIA combobox: a native <select> cannot filter as you type. Keys are handled on the
             input above, so the options need no key handlers of their own. */}
-        {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
-        <div id={listId} role="listbox" aria-label="Notes" className="max-h-56 overflow-y-auto p-1">
+        <div
+          id={listId}
+          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+          role="listbox"
+          aria-label="Notes"
+          className="max-h-56 overflow-y-auto p-1 desktop:max-h-[212px]"
+        >
           {results.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">No notes found</p>
           ) : (

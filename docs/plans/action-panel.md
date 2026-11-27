@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-27): **phase 1 done.**
+Status (2026-11-27): **phases 1–2 done.**
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel.
 Each row shows its keyboard shortcut and groups are split by separators. Today Ctrl/⌘+K and
@@ -13,7 +13,7 @@ undecided and says it should grow out of the switcher. `editor-blocks.md` keeps 
 | ------------ | ------------------------------------------------------------------------------------------------- |
 | Keys         | **Ctrl/⌘+K opens the Action Panel**. Ctrl/⌘+P stays as the note switcher ("Browse Notes")         |
 | Platforms    | **Everywhere**: desktop window, web and PWA. Desktop-only rows are hidden elsewhere               |
-| New features | **Recently Deleted + restore** and **Delete All Notes**                                           |
+| New features | **Recently Deleted + restore**, **Delete All Notes**, **Invite row**                              |
 | Out of scope | Duplicate Note, Zoom In/Out, Send to AI Chat, a settings page, purging deleted notes after N days |
 
 ## Actions (v1)
@@ -74,7 +74,7 @@ Ctrl+L still work inside the editor.
 
 Goal: Mod+K opens the Action Panel on every platform.
 
-- [ ] **2.1** Create `features/notes/action-panel.tsx`. It copies the `note-switcher.tsx`
+- [x] **2.1** Create `features/notes/action-panel.tsx`. It copies the `note-switcher.tsx`
       combobox:
   - `Dialog` with the blur overlay and `desktop:top-12`
   - input with `role=combobox` and `aria-activedescendant`
@@ -82,29 +82,33 @@ Goal: Mod+K opens the Action Panel on every platform.
   - placeholder "Search for actions…"
   - a `ponytail:` comment noting this is a second copy of the combobox: extract a shared one if
     a third appears
-- [ ] **2.2** Rows:
+- [x] **2.2** Rows:
   - an icon, a label and `Kbd size="sm"` keycaps (the `editor/toolbar.tsx` menu pattern)
   - destructive rows use `text-destructive`
   - disabled rows are dimmed, and the arrow keys skip them
   - hidden rows are not listed
-- [ ] **2.3** Search filters rows with a case-insensitive `label.includes(query)`. A `Separator`
+- [x] **2.3** Search filters rows with a case-insensitive `label.includes(query)`. A `Separator`
       sits between groups, shown only while the query is empty. Show "No actions found" when
       nothing matches.
-- [ ] **2.4** In `app.tsx`, add an `actionsOpen` state and mount the panel. Mod+K opens it (a
+- [x] **2.4** In `app.tsx`, add an `actionsOpen` state and mount the panel. Mod+K opens it (a
       row in the action list), and Browse Notes takes Mod+P alone.
-- [ ] **2.5** Desktop trigger, in `desktop/title-bar.tsx`:
+- [x] **2.5** Desktop trigger, in `desktop/title-bar.tsx`:
   - A new `onActions` prop, plus an icon button titled `Actions (Mod+K)`. It goes on the left,
     before New, as in Raycast.
   - The Search button's hint changes to `Mod+P`.
   - The title goes from `inset-x-32` to `inset-x-40`, so it stays centred and clear of four
     buttons.
-- [ ] **2.6** Web trigger: a ghost icon button next to `SidebarToggle` in the `desktop:hidden`
+- [x] **2.6** Web trigger: a ghost icon button next to `SidebarToggle` in the `desktop:hidden`
       container (`app.tsx`), so phones (no keyboard) can reach the panel.
-- [ ] **2.7** The `growWindowTo(360)` effect runs on `switcherOpen || actionsOpen`, so a short
-      desktop window does not clip the panel.
-- [ ] **2.8** Global Hotkey… row (group 2, desktop only): it opens the existing
-      `desktop/hotkey-dialog.tsx`. Lift that dialog's open state if it lives only inside the gear
-      menu (`auth/account-footer.tsx`).
+- [x] **2.7** Owner (2026-11-27): no window growing. On desktop the switcher and the panel are
+      sized to fit the smallest window (380×320): 340px wide, 40px input, 212px list.
+      `desktop/window.ts` (`growWindowTo`) is deleted. Then every dialog on desktop: 340px wide,
+      16px padding and gap, at most the window height less 32px (scrolls), set once in
+      `components/ui/dialog.tsx` and `alert-dialog.tsx`.
+- [x] **2.8** Global Hotkey… row (group 2, desktop only): it opens the existing
+      `desktop/hotkey-dialog.tsx`, mounted a second time in `app.tsx` (lazy, own open state) rather
+      than lifting the gear menu's state out of `auth/account-footer.tsx`. Rows that open a dialog
+      set `dialog: true`, so the panel leaves focus to it on close.
 
 Check:
 
@@ -116,9 +120,9 @@ Check:
 - On a short desktop window the panel is not clipped.
 - At phone width on the web, the trigger button opens the panel.
 
-### Phase 3: Recently Deleted
+### Phase 3: Recently Deleted and Invite
 
-Goal: a soft-deleted note can be found and brought back.
+Goal: a soft-deleted note can be found and brought back; friends can be invited from the panel.
 
 - [ ] **3.1** `sync/index-doc.ts`: add `readDeletedNotes(doc)`.
   - It returns notes with `deleted: true`, own notes only (no `role`, not `noAccess`), newest
@@ -134,11 +138,24 @@ Goal: a soft-deleted note can be found and brought back.
   - It lists each note's title, preview and deleted date, with a Restore button.
   - Restore runs `undelete`, closes the dialog, then calls `openNote(id)`.
   - Show an empty state: "No deleted notes".
-- [ ] **3.5** Add a Show Recently Deleted Notes row (group 3) that opens the dialog. Let the
-      desktop window grow for this dialog too (2.7).
+- [ ] **3.5** Add a Show Recently Deleted Notes row (group 3) that opens the dialog
+      (`dialog: true`). It fits the smallest window like every dialog (2.7).
+- [ ] **3.6** Invite a Friend… row (owner, 2026-11-27), group 2:
+  - Today the dialog is opened only by its own `DialogTrigger` in `features/sharing/invite-friend.tsx`
+    (sidebar account area), with local `open` state.
+  - Make the dialog controllable (`open` / `onOpenChange` props) and lift its state to `app.tsx`, so
+    the sidebar button and the panel row open the same dialog.
+  - The row is `hidden` when the user cannot invite. That covers invited users (the server answers 403) and offline. Reuse the `getJoinInfo` result the sidebar already fetches, not a second
+    fetch.
+  - `dialog: true`, so the panel leaves focus to it.
 
-Check: delete a note, restore it, and its content comes back. With two tabs, one of them offline,
-the restore syncs once that tab reconnects. Never hard-delete.
+Check:
+
+- Delete a note, restore it, and its content comes back.
+- With two tabs, one of them offline, the restore syncs once that tab reconnects.
+- Never hard-delete.
+- Invite a Friend… from the panel and from the sidebar both open the same dialog. The row is
+  missing for an invited user.
 
 ### Phase 4: Delete All Notes
 

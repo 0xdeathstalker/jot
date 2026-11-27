@@ -1,4 +1,10 @@
-import { Add01Icon, Cancel01Icon, MinusSignIcon, Search01Icon } from "@hugeicons/core-free-icons"
+import {
+  Add01Icon,
+  Cancel01Icon,
+  CommandLineIcon,
+  MinusSignIcon,
+  Search01Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { getCurrentWindow } from "@tauri-apps/api/window"
 
@@ -15,10 +21,12 @@ export default function TitleBar({
   title,
   onNew,
   onSearch,
+  onActions,
 }: {
   title?: string
   onNew: () => void
   onSearch: () => void
+  onActions: () => void
 }) {
   const appWindow = getCurrentWindow()
   return (
@@ -27,6 +35,15 @@ export default function TitleBar({
       className="sticky top-0 z-20 flex h-10 shrink-0 items-center gap-1 bg-background px-2 select-none"
     >
       <SidebarToggle />
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Actions"
+        title={`Actions (${shortcut(["Mod", "K"])})`}
+        onClick={onActions}
+      >
+        <HugeiconsIcon icon={CommandLineIcon} />
+      </Button>
       <Button
         variant="ghost"
         size="icon-sm"
@@ -40,13 +57,13 @@ export default function TitleBar({
         variant="ghost"
         size="icon-sm"
         aria-label="Search notes"
-        title={`Search notes (${shortcut(["Mod", "K"])})`}
+        title={`Search notes (${shortcut(["Mod", "P"])})`}
         onClick={onSearch}
       >
         <HugeiconsIcon icon={Search01Icon} />
       </Button>
-      {/* inset-x-32: same on both sides, so it stays centred, clear of the three left buttons. */}
-      <span className="pointer-events-none absolute inset-x-32 truncate text-center text-sm text-muted-foreground">
+      {/* inset-x-40: same on both sides, so it stays centred, clear of the four left buttons. */}
+      <span className="pointer-events-none absolute inset-x-40 truncate text-center text-sm text-muted-foreground">
         {title}
       </span>
       <div data-tauri-drag-region className="h-full flex-1" />
