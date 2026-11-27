@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-27): **planned.**
+Status (2026-11-27): **phase 1 done.**
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel.
 Each row shows its keyboard shortcut and groups are split by separators. Today Ctrl/⌘+K and
@@ -42,28 +42,28 @@ the action list from 1, and 3 and 4 add rows to it.
 Goal: every action has a working shortcut, and all shortcuts come from one list. There is no
 panel yet. Mod+K still opens the switcher.
 
-- [ ] **1.1** Add an `Action` type in `app.tsx`:
+- [x] **1.1** Add an `Action` type (`hooks/use-action-shortcuts.ts`, with the shortcut hook; matcher `matchesShortcut` in `lib/platform.ts`):
       `{ id, label, icon, keys?, group, destructive?, disabled?, hidden?, run }`. `keys` uses the
       `["Mod", "Shift", "P"]` format of `shortcutKeys` / `formatShortcut` (`lib/platform.ts`).
-- [ ] **1.2** Build the list in `app.tsx` from the handlers that already exist:
+- [x] **1.2** Build the list in `app.tsx` from the handlers that already exist:
   - New Note
   - Pin / Unpin Note
   - Share Note…
   - Browse Notes
   - Go Back / Go Forward
   - Delete Note
-- [ ] **1.3** Pin, Share and Delete Note are `hidden` when no note is open or the note is an
+- [x] **1.3** Pin, Share and Delete Note are `hidden` when no note is open or the note is an
       untouched draft. Pin's label follows the note's `pinned` state.
-- [ ] **1.4** Back and Forward call `history.back()` / `history.forward()`.
+- [x] **1.4** Back and Forward call `history.back()` / `history.forward()`.
   - `disabled` comes from `navigation?.canGoBack` / `canGoForward`.
   - If the Navigation API is missing, they are always enabled.
   - Check that the existing `popstate` subscription in `use-note-id.ts` opens the right note.
-- [ ] **1.5** Replace the hard-coded p/k/n checks in the keydown handler (`app.tsx`) with a loop
+- [x] **1.5** Replace the hard-coded p/k/n checks in the keydown handler (`app.tsx`) with a loop
       over the list.
   - The match compares `event.key` (lowercase) and the modifier flags exactly.
   - Skip events that are `defaultPrevented` or come from rows that are `hidden` or `disabled`.
   - Ctrl+N keeps its `isDesktop()` guard, because browsers reserve it.
-- [ ] **1.6** Check that the new keys do not clash with editor keys (`editor/toolbar.tsx`, the
+- [x] **1.6** Check that the new keys do not clash with editor keys (`editor/toolbar.tsx`, the
       link box's Mod+L, the sidebar's Mod+B): Mod+Shift+P, Mod+[, Mod+], Mod+D. Also check that
       the browser lets the page take each key (Mod+D is "bookmark" in Chrome).
 

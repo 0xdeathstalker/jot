@@ -1,3 +1,13 @@
+import {
+  Add01Icon,
+  CircleArrowLeft01Icon,
+  CircleArrowRight01Icon,
+  Delete02Icon,
+  PinIcon,
+  PinOffIcon,
+  Search01Icon,
+  Share08Icon,
+} from "@hugeicons/core-free-icons"
 import * as React from "react"
 
 import { LoginScreen } from "@/auth/login-screen"
@@ -27,10 +37,11 @@ import { refreshRoles } from "@/features/sharing/refresh-roles"
 import { restoreOwned } from "@/features/sharing/restore-owned"
 import { ShareDialog } from "@/features/sharing/share-dialog"
 import { ShareLinkPage } from "@/features/sharing/share-link-page"
+import { type Action, useActionShortcuts } from "@/hooks/use-action-shortcuts"
 import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
 import { useNoteId } from "@/hooks/use-note-id"
 import { lazyOrReload } from "@/lib/lazy"
-import { isDesktop } from "@/lib/platform"
+import { isDesktop, matchesShortcut } from "@/lib/platform"
 import {
   createNote,
   markShared,
@@ -182,20 +193,14 @@ function NotesApp({
     }
   }, [])
 
-  // Ctrl/⌘+P or +K: note switcher (everywhere; it replaces print on the web). Ctrl+N: new note,
-  // desktop only (browsers keep Ctrl+N for a new window and do not let pages take it).
+  // The other shortcuts come from the action list (below). Ctrl/⌘+K still opens the note switcher
+  // until the Action Panel takes it (docs/plans/action-panel.md, phase 2).
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return
-      const key = event.key.toLowerCase()
-      if (key === "p" || key === "k") {
-        event.preventDefault()
-        setSwitcherOpen(true)
-      } else if (key === "n" && isDesktop()) {
-        event.preventDefault()
-        handleNewRef.current()
-      }
+      if (!matchesShortcut(event, ["Mod", "K"])) return
+      event.preventDefault()
+      setSwitcherOpen(true)
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
@@ -286,6 +291,78 @@ function NotesApp({
     onShare: (id: string) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true })),
     onDelete: handleDelete,
   }
+
+  // Everything you can do from anywhere: the Action Panel's rows and the app's shortcuts
+  // (docs/plans/action-panel.md). Note rows act on the open note, and hide for a draft (not in the
+  // list yet) or when no note is open.
+  const canGo = (way: "back" | "forward") =>
+    !("navigation" in window) || (way === "back" ? navigation.canGoBack : navigation.canGoForward)
+  const actions: Action[] = [
+    {
+      id: "new",
+      label: "New Note",
+      icon: Add01Icon,
+      // Desktop only: browsers keep Ctrl+N for a new window and do not let pages take it.
+      keys: isDesktop() ? ["Mod", "N"] : undefined,
+      group: 1,
+      run: handleNew,
+    },
+    {
+      id: "pin",
+      label: currentNote?.pinned ? "Unpin Note" : "Pin Note",
+      icon: currentNote?.pinned ? PinOffIcon : PinIcon,
+      keys: ["Mod", "Shift", "P"],
+      group: 1,
+      hidden: !currentNote,
+      run: () => noteId && noteActions.onTogglePin(noteId),
+    },
+    {
+      id: "share",
+      label: "Share Note…",
+      icon: Share08Icon,
+      group: 1,
+      // Only the owner shares (a note with a `role` belongs to someone else).
+      hidden: !currentNote || !!currentNote.role,
+      run: () => noteId && noteActions.onShare(noteId),
+    },
+    {
+      id: "browse",
+      label: "Browse Notes",
+      icon: Search01Icon,
+      keys: ["Mod", "P"],
+      group: 1,
+      run: () => setSwitcherOpen(true),
+    },
+    {
+      id: "back",
+      label: "Go Back",
+      icon: CircleArrowLeft01Icon,
+      keys: ["Mod", "["],
+      group: 1,
+      disabled: !canGo("back"),
+      run: () => history.back(),
+    },
+    {
+      id: "forward",
+      label: "Go Forward",
+      icon: CircleArrowRight01Icon,
+      keys: ["Mod", "]"],
+      group: 1,
+      disabled: !canGo("forward"),
+      run: () => history.forward(),
+    },
+    {
+      id: "delete",
+      label: currentNote?.role ? "Leave Note" : "Delete Note",
+      icon: Delete02Icon,
+      keys: ["Mod", "D"],
+      group: 3,
+      destructive: true,
+      hidden: !currentNote,
+      run: () => noteId && noteActions.onDelete(noteId),
+    },
+  ]
+  useActionShortcuts(actions)
 
   return (
     // Phone (< 768 px): the sidebar is a sheet over the editor. Desktop: a column that hides fully
