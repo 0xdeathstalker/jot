@@ -56,6 +56,7 @@ import {
   createNote,
   markShared,
   softDelete,
+  softDeleteAll,
   togglePin,
   updateMeta,
   useNotes,
@@ -210,6 +211,11 @@ function NotesApp({
   const [actionsOpen, setActionsOpen] = React.useState(false)
   const [hotkeyOpen, setHotkeyOpen] = React.useState(false)
   const [deletedOpen, setDeletedOpen] = React.useState(false)
+  // Kept after closing (open: false) so the count does not change during the close animation.
+  const [deleteAll, setDeleteAll] = React.useState<{ count: number; open: boolean } | null>(null)
+  const deletableIds = notes
+    .filter((note) => !note.role && !note.shared && !note.noAccess)
+    .map((note) => note.id)
   // The invite dialog lives here, not in the sidebar, so the Action Panel can open it too.
   const [inviteOpen, setInviteOpen] = React.useState(false)
   const joinInfo = useJoinInfo(inviteOpen)
@@ -399,8 +405,28 @@ function NotesApp({
       dialog: !!(currentNote?.role || currentNote?.shared),
       run: () => noteId && noteActions.onDelete(noteId),
     },
+    {
+      id: "delete-all",
+      label: "Delete All Notes",
+      icon: Delete02Icon,
+      keys: ["Mod", "Alt", "D"],
+      group: 3,
+      destructive: true,
+      disabled: deletableIds.length === 0,
+      dialog: true,
+      run: () => setDeleteAll({ count: deletableIds.length, open: true }),
+    },
   ]
   useActionShortcuts(actions)
+
+  // Delete All: only notes you own and have not shared. Shared ones need the server and their own
+  // confirm (handleDelete), so they stay. Everything deleted can come back from Recently Deleted.
+  const handleDeleteAll = () => {
+    softDeleteAll(doc, deletableIds)
+    // The open note went too (or is an untouched draft): open the next one, as after a delete.
+    if (noteId && !notes.some((note) => note.id === noteId && !deletableIds.includes(note.id)))
+      openNote(null, { replace: true })
+  }
 
   return (
     // Phone (< 768 px): the sidebar is a sheet over the editor. Desktop: a column that hides fully
@@ -530,6 +556,34 @@ function NotesApp({
               }}
             >
               {confirmDelete?.kind === "leave" ? "Leave" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!deleteAll?.open}
+        onOpenChange={(open) => setDeleteAll((d) => d && { ...d, open })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteAll?.count === 1 ? "Delete 1 note?" : `Delete all ${deleteAll?.count} notes?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Recently Deleted can bring them back. Shared notes are kept.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                setDeleteAll((d) => d && { ...d, open: false })
+                handleDeleteAll()
+              }}
+            >
+              Delete all
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

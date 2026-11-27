@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–3 done.** Phase 5 decided (no sidebar), not started.
+Status (2026-11-28): **phases 1–4 done.** Phase 5 decided (no sidebar), not started.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -182,15 +182,17 @@ Check:
 
 Goal: clear the list in one step, with everything still restorable from Phase 3.
 
-- [ ] **4.1** Add an `AlertDialog` in `app.tsx`: "Delete all N notes? Recently Deleted can bring
+- [x] **4.1** Add an `AlertDialog` in `app.tsx`: "Delete all N notes? Recently Deleted can bring
       them back. Shared notes are kept." N counts only the notes it will delete.
-- [ ] **4.2** On confirm, call `softDelete` on every own, unshared note inside one
+- [x] **4.2** On confirm, call `softDelete` on every own, unshared note inside one
       `doc.transact`, then `openNote(null, { replace: true })`.
   - Skip shared notes and notes shared with you. Each one needs a server call and its own
     confirm.
   - Clear any open draft.
-- [ ] **4.3** Add a Delete All Notes row (group 3, destructive, Mod+Alt+D). It is disabled when
+- [x] **4.3** Add a Delete All Notes row (group 3, destructive, Mod+Alt+D). It is disabled when
       there is nothing to delete.
+
+Done as (2026-11-28): `softDeleteAll(doc, ids)` in `sync/index-doc.ts` (one transaction). The confirm keeps its count while it closes. If the open note was deleted, or is an untouched draft, `openNote(null)` opens the next one (the draft's empty local copy is dropped as usual). A kept shared note stays open.
 
 Check: Delete All removes your own notes and keeps the shared ones. Every deleted note shows up
 in Recently Deleted and can be restored.

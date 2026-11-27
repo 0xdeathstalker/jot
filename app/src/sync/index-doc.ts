@@ -160,6 +160,13 @@ export function softDelete(doc: Doc, id: string) {
   })
 }
 
+// Action Panel > Delete All Notes: one transaction, so other devices get one update.
+export function softDeleteAll(doc: Doc, ids: string[]) {
+  doc.transact(() => {
+    for (const id of ids) softDelete(doc, id)
+  })
+}
+
 // Recently Deleted > Restore. The content was never removed (soft delete). Deleting a shared note
 // took everyone's access away first, so it comes back unshared.
 export function undelete(doc: Doc, id: string) {
