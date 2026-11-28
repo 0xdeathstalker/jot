@@ -54,7 +54,7 @@ function Kbd({
       aria-label={enter ? "Enter" : undefined}
       className={cn(
         "inline-flex items-center justify-center",
-        "rounded border border-muted-foreground/60 font-mono text-muted-foreground",
+        "rounded border border-muted-foreground/60 font-sans text-muted-foreground",
         SIZES[size],
         className,
       )}

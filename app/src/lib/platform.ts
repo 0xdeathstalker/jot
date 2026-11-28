@@ -55,3 +55,8 @@ export function matchesShortcut(event: KeyboardEvent, keys: string[]): boolean {
 export function isDesktop(): boolean {
   return "__TAURI_INTERNALS__" in window
 }
+
+// New note's key, the one every hint shows: Ctrl/⌘+N in the desktop app, Ctrl/⌘+Shift+O on the web,
+// where browsers keep Ctrl+N for a new window and never pass it to the page. The desktop app also
+// takes Ctrl/⌘+Shift+O (the action's `altKeys` in app.tsx), so the web key works everywhere.
+export const NEW_NOTE_KEYS = isDesktop() ? ["Mod", "N"] : ["Mod", "Shift", "O"]

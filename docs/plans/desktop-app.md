@@ -118,7 +118,7 @@ frameless (without the drag bar of 3.3 the window could not be moved) and the tr
 - [x] **3.5** Note switcher (`src/features/notes/note-switcher.tsx`): `Ctrl+P` / `⌘K` opens it
       **everywhere**, web and phone too (owner, 2026-11-22; on the web it replaces print). Same
       search as the sidebar; arrows and Enter. `Ctrl+N` new note, desktop only (browsers keep it
-      for a new window). The page stays loaded while hidden, so it reopens on the same note.
+      for a new window; the web uses `Ctrl+Shift+O`, 2026-11-29). The page stays loaded while hidden, so it reopens on the same note.
       Changed 2026-11-27 (`action-panel.md`): the switcher is `Ctrl/⌘+P` only; `Ctrl/⌘+K` opens the
       Action Panel. The sidebar is gone (2026-11-28), so search lives in the switcher.
 - [x] **3.6** Hotkey setting: gear menu **Global hotkey…** (desktop only,

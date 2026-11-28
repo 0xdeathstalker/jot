@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { useLayout } from "@/hooks/use-layout"
-import { isDesktop } from "@/lib/platform"
+import { NEW_NOTE_KEYS } from "@/lib/platform"
 
 // Phone buttons look like the formatting toolbar: a bordered frame (bar's p-0.5, rounded-[10px],
 // bg-popover) around a 36px button with a 20px icon and the toolbar's hover / open shades. The
@@ -111,8 +111,8 @@ export function TopBar({
             />
             <BarButton
               label="New note"
-              // Ctrl+N only in the desktop app: browsers keep it for a new window.
-              keys={isDesktop() ? ["Mod", "N"] : undefined}
+              // Ctrl+N in the desktop app, Ctrl+Shift+O on the web (browsers keep Ctrl+N).
+              keys={NEW_NOTE_KEYS}
               icon={Add01Icon}
               onClick={onNew}
             />
