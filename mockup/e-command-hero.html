@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>E · Command hero (Raycast-like)</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="shared.css" />
+    <script src="shared.js"></script>
+    <style>
+      .w {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        gap: 22px;
+      }
+      .mark {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        text-align: center;
+      }
+      .mark .logo {
+        width: 22px;
+        height: 22px;
+      }
+      .bar {
+        width: 100%;
+        max-width: 460px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--popover);
+        box-shadow: 0 8px 30px rgb(0 0 0 / 0.08);
+        color: var(--muted-foreground);
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .bar svg {
+        width: 18px;
+        height: 18px;
+      }
+      .bar .keys {
+        margin-left: auto;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 16px;
+        font-size: 13px;
+      }
+      .chips span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .small .bar {
+        font-size: 13px;
+        padding: 10px 12px;
+      }
+      .small .chips {
+        gap: 10px;
+        font-size: 12px;
+      }
+      .small .mark .muted {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <template id="welcome">
+      <div class="w">
+        <div class="mark">
+          {{logo}} Jot
+          <span class="muted" style="font-weight: 400">· notes that sync and work offline</span>
+        </div>
+        <div class="bar">{{icon:actions}} Search for actions… {{keys:Mod+K}}</div>
+        <div class="chips muted">
+          <span>New note {{keys:Mod+N}}</span>
+          <span>Search notes {{keys:Mod+P}}</span>
+          <span>Pin {{keys:Mod+Shift+P}}</span>
+        </div>
+      </div>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>M1 · Phone: F as a stack</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="shared.css" />
+    <script src="shared.js"></script>
+    <style>
+      /* F's three blocks, sized for touch: no keycaps (no keyboard), 48px rows and bar. */
+      .w {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        padding: 24px 20px 60px;
+        text-align: center;
+      }
+      .head {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .brand .logo {
+        width: 34px;
+        height: 34px;
+      }
+      .desc {
+        margin: 0;
+        font-size: 15px;
+        max-width: 260px;
+        line-height: 1.5;
+      }
+      .bar {
+        width: 100%;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--popover);
+        color: var(--muted-foreground);
+        font: inherit;
+        font-size: 15px;
+        text-align: left;
+      }
+      .bar svg {
+        width: 20px;
+        height: 20px;
+      }
+      .rows {
+        width: 100%;
+        display: grid;
+        gap: 2px;
+      }
+      .row {
+        height: 48px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 12px;
+        border-radius: 10px;
+        font-size: 16px;
+        color: var(--muted-foreground);
+      }
+      .row:active {
+        background: color-mix(in oklab, var(--foreground) 8%, transparent);
+      }
+      .row svg {
+        width: 20px;
+        height: 20px;
+      }
+    </style>
+  </head>
+  <body data-device="phone">
+    <div id="root"></div>
+    <template id="welcome">
+      <div class="w">
+        <div class="head">
+          <div class="brand">{{logo}} Jot</div>
+          <p class="desc muted">Fast notes that sync across your devices and work offline.</p>
+        </div>
+        <button type="button" class="bar">{{icon:actions}} What would you like to do?</button>
+        <div class="rows">
+          <div class="row">{{icon:plus}} New note</div>
+          <div class="row">{{icon:search}} Search notes</div>
+        </div>
+      </div>
+    </template>
+  </body>
+</html>

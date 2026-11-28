@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>M2 · Phone: actions in thumb reach</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="shared.css" />
+    <script src="shared.js"></script>
+    <style>
+      /* Title block in the middle; the buttons sit at the bottom, where a thumb reaches. */
+      .w {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 0 20px 40px;
+      }
+      .head {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        text-align: center;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .brand .logo {
+        width: 34px;
+        height: 34px;
+      }
+      .desc {
+        margin: 0;
+        font-size: 15px;
+        max-width: 260px;
+        line-height: 1.5;
+      }
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .btn {
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--popover);
+        color: var(--foreground);
+        font: inherit;
+        font-size: 15px;
+        font-weight: 500;
+      }
+      .btn svg {
+        width: 18px;
+        height: 18px;
+      }
+      .btn.primary {
+        grid-column: 1 / -1;
+        height: 52px;
+        border-color: transparent;
+        background: var(--primary);
+        color: var(--background);
+      }
+    </style>
+  </head>
+  <body data-device="phone">
+    <div id="root"></div>
+    <template id="welcome">
+      <div class="w">
+        <div class="head">
+          <div class="brand">{{logo}} Jot</div>
+          <p class="desc muted">Fast notes that sync across your devices and work offline.</p>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn primary">{{icon:plus}} New note</button>
+          <button type="button" class="btn">{{icon:search}} Search</button>
+          <button type="button" class="btn">{{icon:actions}} Actions</button>
+        </div>
+      </div>
+    </template>
+  </body>
+</html>
