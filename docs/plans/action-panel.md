@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–5 done.** Phase 6 (docs) left.
+Status (2026-11-28): **phases 1–5 done.** Phases 6–13 (editor chrome) planned; phase 14 (docs) last.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -10,13 +10,14 @@ undecided and says it should grow out of the switcher. `editor-blocks.md` keeps 
 
 ## Decisions (owner, 2026-11-27)
 
-| Topic                | Choice                                                                                                                                            |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Keys                 | **Ctrl/⌘+K opens the Action Panel**. Ctrl/⌘+P stays as the note switcher ("Browse Notes")                                                         |
-| Platforms            | **Everywhere**: desktop window, web and PWA. Desktop-only rows are hidden elsewhere                                                               |
-| New features         | **Recently Deleted + restore**, **Delete All Notes**, **Invite row**                                                                              |
-| Sidebar (2026-11-28) | **Removed.** One top bar everywhere. Sign Out and Dark/Light move into the panel (group 4). The signed-in details and the ⋮ note menu are dropped |
-| Out of scope         | Duplicate Note, Zoom In/Out, Send to AI Chat, a settings page, purging deleted notes after N days                                                 |
+| Topic                      | Choice                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Keys                       | **Ctrl/⌘+K opens the Action Panel**. Ctrl/⌘+P stays as the note switcher ("Browse Notes")                                                                                                                                                                                                                                                     |
+| Platforms                  | **Everywhere**: desktop window, web and PWA. Desktop-only rows are hidden elsewhere                                                                                                                                                                                                                                                           |
+| New features               | **Recently Deleted + restore**, **Delete All Notes**, **Invite row**                                                                                                                                                                                                                                                                          |
+| Sidebar (2026-11-28)       | **Removed.** One top bar everywhere. Sign Out and Dark/Light move into the panel (group 4). The signed-in details and the ⋮ note menu are dropped                                                                                                                                                                                             |
+| Editor chrome (2026-11-28) | Layout modes by width: **phone** (<640px) and **desktop** show the title in the top bar; **web** (≥640px, not the desktop app) puts the toolbar there. Toasts top centre in desktop, phone and PWA, bottom centre in a web tab. Delete toast: message only. Hidden toolbar remembered per device. New phone notes start with an H2 first line |
+| Out of scope               | Duplicate Note, Zoom In/Out, Send to AI Chat, a settings page, purging deleted notes after N days                                                                                                                                                                                                                                             |
 
 ## Actions (v1)
 
@@ -310,17 +311,233 @@ Done as (2026-11-28):
 - `pnpm build && pnpm preview`: offline start still works (the service worker precache shrank,
   never grew past 2 MiB).
 
-### Phase 6: Docs
+## Editor chrome (owner feedback, 2026-11-28)
 
-- [ ] **6.1** `project-context.md`:
+Phases 6–13 each handle one point of the owner's list. Each phase can be committed on its own.
+The order follows the dependencies. 6 sets the toolbar's size, and 7–9 move it around. 10 changes
+the scroll box that 7 and 9 sit in.
+
+**Layout modes**, decided by the owner. Every phase below uses these words:
+
+| Mode        | When                                                            | Top bar centre | Editor toolbar             | Toasts        |
+| ----------- | --------------------------------------------------------------- | -------------- | -------------------------- | ------------- |
+| **desktop** | the Tauri app (`isDesktop()`), any width                        | note title     | bottom of the window       | top centre    |
+| **phone**   | width under 640px (Tailwind `sm`), browser tab or installed PWA | note title     | bottom, above the keyboard | top centre    |
+| **web**     | browser tab or installed PWA, 640px or wider                    | the toolbar    | in the top bar (no title)  | bottom centre |
+
+An installed PWA at 640px or wider counts as **web** for the toolbar. Its toasts still go at the
+top centre, because point 6 says "desktop window or PWA". A plain browser tab at 640px or wider
+puts toasts at the bottom.
+
+One hook supplies this: `hooks/use-layout.ts`.
+
+- It returns `"desktop" | "phone" | "web"`, plus `isApp` (desktop app or standalone PWA, using
+  the same check as `isIosBrowser` in `lib/platform.ts`).
+- It reads `matchMedia("(min-width: 640px)")` through `useSyncExternalStore`, so it follows window
+  resizes.
+
+### Phase 6: Smaller toolbar (point 5)
+
+Goal: the toolbar matches Raycast Notes in size. Picture: one slim row of 16px icons in small
+square buttons, with chevrons on the dropdowns, thin dividers between groups, and a round ✕ at
+the right end (the ✕ comes in phase 8).
+
+- [ ] **6.1** `editor/toolbar.tsx`, desktop and web:
+  - buttons are 28px (`h-7 min-w-7`) with 16px icons
+  - group gaps are `gap-0.5`, with a 1px divider and `px-1`
+  - the bar's padding is `p-0.5` and its radius `rounded-[10px]`
+  - the dropdown chevron is 12px
+- [ ] **6.2** Phone: buttons go from 40px down to 36px (`h-9 min-w-9`), with 18px icons. That is
+      still a fair touch size; Apple asks for 44pt, and 36px is the smallest this plan accepts.
+      The bar stays on one line down to a 360px-wide phone.
+- [ ] **6.3** Check the dropdowns (Headings, text style, lists) still open from the smaller
+      buttons. Their menu items keep the current size.
+
+Check: compare it with the Raycast screenshot at the same window width, in both themes.
+
+### Phase 7: Toolbar in the top bar on web (point 1)
+
+Goal: **web** shows the formatting toolbar in the centre of the top bar, where the title was.
+**desktop** and **phone** keep the title there.
+
+- [ ] **7.1** `features/notes/top-bar.tsx` renders a centre slot `<div id="top-bar-centre">`. In
+      **web** it holds nothing else. In the other modes the title is shown, as today.
+- [ ] **7.2** The editor owns the toolbar, because it needs the editor instance. In **web**,
+      `editor/editor.tsx` renders `<Toolbar>` through `createPortal` into the centre slot.
+      Elsewhere it stays where it is. Fall back to the inline toolbar if the slot is missing, for
+      example on the share-link page.
+- [ ] **7.3** In the bar, the toolbar is centred and fits between the left buttons and the edge.
+  - Drop its border and background there; it already sits on the bar.
+  - Below about 720px it may scroll sideways (`overflow-x-auto`, no scrollbar) rather than wrap.
+- [ ] **7.4** **desktop**: the toolbar always sits at the bottom of the window, as in Raycast,
+      not sticky under the bar. This drops the `sm:` sticky-top rule from 5.7 for desktop.
+- [ ] **7.5** Viewers (read-only notes) and no-access notes: show nothing in the slot, the same as
+      today's disabled state, or keep the title there.
+
+Check: in a browser tab, resize across 640px. The toolbar moves between the bottom and the top
+bar, and the title comes and goes, without losing the editor's selection.
+
+### Phase 8: Hide the toolbar (point 4)
+
+Goal: on **phone** and **desktop**, a ✕ hides the toolbar. In its place a slim bar shows the
+note's character count and a **T** button that brings the toolbar back, as in the Raycast
+screenshots.
+
+- [ ] **8.1** `hooks/use-toolbar-hidden.ts`:
+  - It stores `jot-toolbar-hidden` in `localStorage`, because it is remembered on this device
+    (owner, 2026-11-28).
+  - It uses `useSyncExternalStore`, so every editor and tab on the device agree. The `storage`
+    event keeps other tabs in step.
+  - Wrap reads and writes in try/catch, as `use-theme.ts` does.
+- [ ] **8.2** The toolbar's last item is a round ✕ button (`Cancel01Icon` in a filled circle),
+      labelled "Hide toolbar". It appears in **phone** and **desktop** only, not in **web**,
+      where the toolbar lives in the top bar.
+- [ ] **8.3** Hidden state: `editor/toolbar-collapsed.tsx` (new) is the same height and place
+      as the toolbar.
+  - In the centre, muted: "N characters", with the same count rule as the note list (line breaks
+    left out, `getTitleAndPreview` in `features/notes/note-meta.ts`). It is read live from the
+    editor's text and updates as you type.
+  - On the right, a **T** button (`TextFontIcon` or similar) labelled "Show toolbar".
+- [ ] **8.4** Action Panel row: **Show Toolbar / Hide Toolbar** in group 2, in **phone** and
+      **desktop** only. It has no key yet; Raycast uses none either.
+
+Check: hide the toolbar, reload, and open another note. It stays hidden, and the count matches
+the switcher's "N characters" for that note.
+
+### Phase 9: Toolbar above the phone keyboard (point 7)
+
+Goal: on **phone**, while typing, the toolbar (or the collapsed bar from 8) sits just above the
+on-screen keyboard. A button closes the keyboard.
+
+- [ ] **9.1** Android: `index.html` already has `interactive-widget=resizes-content`, so the page
+      shrinks above the keyboard and `bottom-*` already works there. Confirm it on a real phone.
+- [ ] **9.2** iOS ignores that setting.
+  - `hooks/use-keyboard-inset.ts` reads `window.visualViewport`:
+    `inset = innerHeight - visualViewport.height - visualViewport.offsetTop`. It listens to
+    `resize` and `scroll`.
+  - It writes the inset to `--keyboard-inset` on `<html>`.
+  - The phone toolbar's bottom becomes
+    `calc(max(0.5rem, env(safe-area-inset-bottom)) + var(--keyboard-inset, 0px))`.
+  - The safe-area padding counts only when the keyboard is closed. With the keyboard up, the
+    home-bar inset is under the keyboard.
+- [ ] **9.3** A **Close keyboard** button (`KeyboardIcon` with a down arrow, or `ArrowDown01Icon`)
+      at the toolbar's right end, before the ✕. It appears only in **phone**, while the editor
+      has focus. It calls `editor.commands.blur()`, which closes the keyboard on iOS and Android.
+      The collapsed bar from 8 shows it too.
+- [ ] **9.4** The editor's bottom padding grows with the inset, so the caret line never sits
+      under the toolbar. Scroll the caret into view on `visualViewport` resize.
+- [ ] **9.5** The toast position (phase 11) uses the same inset when it is at the bottom.
+
+Check on a real iPhone (PWA and Safari tab) and an Android phone:
+
+- the toolbar rides on the keyboard while typing
+- closing the keyboard drops it back to the bottom
+- nothing jumps when the keyboard opens
+
+### Phase 10: Scrollbar only on the content, only while scrolling (point 3)
+
+Goal: the top bar (and the bottom toolbar) stay outside the scroll area. The scrollbar spans only
+the note, and it shows only while scrolling, like Raycast Notes.
+
+- [ ] **10.1** In `app.tsx`, the page becomes a flex column of `h-dvh`. The top bar is a plain
+      child, no longer sticky. A `flex-1 min-h-0 overflow-y-auto` box holds the editor, and only
+      that box scrolls. Fixed toolbars (desktop, phone) are outside it, and the box gets bottom
+      padding for them.
+- [ ] **10.2** `hooks/use-scroll-fade.ts` puts `data-scrolling` on the box during scroll and
+      removes it 800ms after the last scroll event.
+- [ ] **10.3** CSS in `styles/index.css`, class `.scroll-fade`:
+  - Thin scrollbar (`scrollbar-width: thin`).
+  - The thumb is `transparent` normally, and `color-mix(var(--muted-foreground) 40%, transparent)`
+    while `[data-scrolling]` or `:hover` on the bar.
+  - Use `scrollbar-color` (Chromium 121+, Firefox). WebView2 and current Chrome support it, so no
+    `::-webkit-scrollbar` rules are needed.
+  - iOS already has overlay scrollbars.
+- [ ] **10.4** Use the same `.scroll-fade` on the switcher, panel and Recently Deleted lists.
+- [ ] **10.5** Remove the 5.7 sticky toolbar offset; nothing sticks inside the scroll box any more.
+
+Check (desktop): no scrollbar beside the top bar. Scrolling shows a thin thumb on the note area
+only, and it fades out after a moment.
+
+### Phase 11: Toast placement and "Note deleted" (point 6)
+
+Goal: deleting a note shows a toast. In **desktop**, **phone** and an installed PWA it sits at
+the top centre; in a **web** browser tab, at the bottom centre. Owner: message only, no Undo.
+
+- [ ] **11.1** `editor/notice.tsx`:
+  - `NoticeToast` takes its position from `useLayout()`. Top: just under the top bar
+    (`top-[calc(env(safe-area-inset-top)+3rem)]`). Bottom: as today.
+  - Every toast follows this rule, including the editor's own ("Select text to add a link", the
+    image refusals), so there is one rule.
+- [ ] **11.2** Messages:
+  - Delete Note (own): "Note deleted".
+  - Leave note: "Left note".
+  - Delete All: "N notes deleted".
+  - Removing a note you lost access to shows no toast; it is not your action.
+  - Set them in `deleteNote` / `handleRemoveLost` / `handleDeleteAll` in `app.tsx`, only after the
+    delete succeeded. Server failures keep their own messages.
+- [ ] **11.3** The top toast sits above dialogs' blur (z-index) and never covers the top bar's
+      buttons. It stays centred in a 380px desktop window.
+
+Check: delete from the panel and with Ctrl+D in each mode. The toast shows in the right place,
+once, and goes after 4s.
+
+### Phase 12: New phone notes start with a Heading 2 (point 2)
+
+Goal: a note created in **phone** mode starts with its first line as Heading 2. The user can
+change it with the toolbar; otherwise it stays H2. Notes created on web or desktop are unchanged,
+and existing notes are never rewritten (owner, 2026-11-28).
+
+- [ ] **12.1** `app.tsx` marks a draft as "phone" when `handleNew` runs in **phone** mode, and
+      passes `startWithHeading` to `<Editor>` for that draft only.
+- [ ] **12.2** `editor/editor.tsx`: once the editor is ready and the draft's doc is still blank,
+      run `setNode("heading", { level: 2 })` on the first line. Enter at the end of it gives a
+      normal paragraph next, which is Tiptap's default.
+- [ ] **12.3** Blank checks: one empty H2 must count as blank, like one empty paragraph. That
+      applies to `isBlankDoc` in `editor/editor.tsx` and to `isBlankDocument` in
+      `features/notes/note-meta.ts`. Otherwise an untouched phone draft would join the list (the
+      "first real edit" rule, `docs/plans/blank-notes.md`) and never be cleaned up.
+- [ ] **12.4** The title is still the first line's text, so the list, switcher and top bar are
+      unaffected.
+
+Check on a phone:
+
+- New note: the caret is in an H2 line.
+- Leave it empty and go back: no empty note is left behind.
+- Type a title and press Enter: the next line is normal text.
+- Change the first line to a paragraph: it stays one.
+
+### Phase 13: shadcn-style checkboxes (point 8)
+
+Goal: checklist boxes look like the shadcn Checkbox, not the browser's native box.
+
+- [ ] **13.1** CSS only, in `styles/index.css` (the TaskItem input stays a real
+      `<input type="checkbox">`, so clicks, keyboard and screen readers keep working):
+  - `appearance: none`
+  - a 16px box with `border: 1px solid var(--input)` and a 4px radius, on `var(--background)`
+  - when checked, `background: var(--primary)`, the border the same colour, and a check mark in
+    `var(--primary-foreground)` from a CSS mask (inline SVG data URI), like shadcn's
+    `CheckIcon`
+  - `:focus-visible` gets the shadcn ring (`var(--ring)` at 50%)
+- [ ] **13.2** Dark mode uses the same tokens, so nothing extra is needed. Check both themes.
+- [ ] **13.3** Viewers: the existing rule keeps `pointer-events: none`. Add `opacity: 0.7`.
+- [ ] **13.4** No shadcn `Checkbox` component: it is a React component, and the box lives inside a
+      Tiptap node view. A React node view per item would cost far more than this CSS for the same
+      look.
+
+Check: tick and untick with the mouse, a tap, and Space on a focused box. Ticked items stay muted
+and struck through.
+
+### Phase 14: Docs
+
+- [ ] **14.1** `project-context.md`:
   - In §12, mark "Command palette" as Decided, with the keys and the date.
   - In the §12 desktop app row, change the switcher key to Ctrl+P.
   - In §12, record that the sidebar was removed (2026-11-28) and the top bar is shared.
-- [ ] **6.2** `project-context.md` §10: add ticked items for the Action Panel, Recently Deleted,
-      Delete All and the shared top bar.
-- [ ] **6.3** `desktop-app.md` 3.5: switcher keys are now Ctrl/⌘+P, and Ctrl/⌘+K opens the Action
+- [ ] **14.2** `project-context.md` §10: add ticked items for the Action Panel, Recently Deleted,
+      Delete All, the shared top bar and the editor chrome (phases 6–13).
+- [ ] **14.3** `desktop-app.md` 3.5: switcher keys are now Ctrl/⌘+P, and Ctrl/⌘+K opens the Action
       Panel.
-- [ ] **6.4** Set this plan's status to done.
+- [ ] **14.4** Set this plan's status to done.
 
 ## Files
 
