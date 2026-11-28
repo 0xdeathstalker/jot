@@ -245,6 +245,28 @@ export function useNotes(doc: Doc): Note[] {
   return React.useSyncExternalStore(store.subscribe, store.getSnapshot)
 }
 
+// Is the open note deleted (docs/plans/deleted-note-elsewhere.md)? Read from its own entry, since
+// useNotes leaves deleted notes out. A missing entry is "no": a draft, a note opened by link, or a
+// list not synced yet is not deleted. "empty": removed for being left empty (E4), not by a person.
+// The snapshot is a string, so reading it fresh each time is stable (no cached store needed).
+export type NoteDeleted = "no" | "deleted" | "empty"
+export function noteDeleted(doc: Doc, id: string | null): NoteDeleted {
+  const note = id ? getNotes(doc).get(id) : undefined
+  if (!note?.get("deleted")) return "no"
+  return note.get("empty") ? "empty" : "deleted"
+}
+export function useNoteDeleted(doc: Doc, id: string | null): NoteDeleted {
+  const subscribe = React.useCallback(
+    (onChange: () => void) => {
+      const notes = getNotes(doc)
+      notes.observeDeep(onChange)
+      return () => notes.unobserveDeep(onChange)
+    },
+    [doc],
+  )
+  return React.useSyncExternalStore(subscribe, () => noteDeleted(doc, id))
+}
+
 export function useDeletedNotes(doc: Doc): Note[] {
   const store = React.useMemo(() => createStore(doc, readDeletedNotes), [doc])
   return React.useSyncExternalStore(store.subscribe, store.getSnapshot)
