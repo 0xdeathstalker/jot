@@ -119,7 +119,7 @@ export function NoteSwitcher({
           Action Panel uses the same sizes. */}
       <DialogContent
         showCloseButton={false}
-        className="top-[15%] bottom-auto gap-0 p-0 desktop:top-12 desktop:gap-0 desktop:p-0"
+        className="top-[15%] bottom-auto gap-0 p-0 desktop:top-14 desktop:gap-0 desktop:p-0"
         finalFocus={finalFocus}
       >
         <DialogTitle className="sr-only">Go to note</DialogTitle>
@@ -147,7 +147,7 @@ export function NoteSwitcher({
           // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
           role="listbox"
           aria-label="Notes"
-          className="max-h-56 overflow-y-auto p-1 desktop:max-h-[212px]"
+          className="max-h-56 scroll-fade overflow-y-auto p-1 desktop:max-h-[212px]"
         >
           {results.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">No notes found</p>

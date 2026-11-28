@@ -190,8 +190,20 @@ Imports inside `app/src/` use the `@/` alias (`@/components/ui/button`), never `
 
 shadcn components are added only when a feature needs them:
 
-```bash
+````bash
 pnpm dlx shadcn@latest add <component> -c app
+
+The current shadcn CLI refuses `-c app` (it wants a `package.json` in `app/` and offers to start a
+new project). Until that changes, take the file from the registry for our style (`base-maia`,
+from `app/components.json`), point its `cn` import at `@/lib/utils`, drop `"use client"`, and
+save it to `app/src/components/ui/<component>.tsx`:
+
+```bash
+curl -s https://ui.shadcn.com/r/styles/base-maia/<component>.json   # files[0].content
+````
+
+Install any `dependencies` it lists with `pnpm add`.
+
 ```
 
 ## Scripts
@@ -235,3 +247,4 @@ Needs the `TAURI_SIGNING_PRIVATE_KEY` repo secret (the updater key, kept outside
 | [`docs/project-context.md`](docs/project-context.md) | Architecture, decisions, data model, traps to avoid |
 | [`docs/plans/`](docs/plans/)                         | One plan per feature, setup step or critical fix    |
 | [`CLAUDE.md`](CLAUDE.md)                             | Working rules for AI coding agents                  |
+```

@@ -11,12 +11,13 @@ import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import { type Editor, getMarkRange, useEditorState } from "@tiptap/react"
 import * as React from "react"
 
+import { ShortcutTooltip } from "@/components/shortcut-tooltip"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Toggle } from "@/components/ui/toggle"
 import type { Notify } from "@/editor/notice"
 import { selectWordAtCursor } from "@/editor/select-word"
-import { formatShortcut, isApple } from "@/lib/platform"
+import { isApple } from "@/lib/platform"
 
 // "example.com" -> "https://example.com"; anything with a scheme (https:, mailto:) is kept as typed.
 // The Link extension still refuses unsafe schemes such as javascript: (setLink returns false).
@@ -222,17 +223,18 @@ export function LinkBox({
         </Popover.Portal>
       </Popover.Root>
       <Popover.Root open={open} onOpenChange={(next) => (next ? show() : close())}>
-        <Toggle
-          size="sm"
-          aria-label="Link"
-          aria-keyshortcuts={isApple() ? "Meta+L" : "Control+L"}
-          title={`Link (${formatShortcut(LINK_KEYS)})`}
-          pressed={inLink}
-          disabled={disabled}
-          onPressedChange={show}
-        >
-          <HugeiconsIcon icon={Link01Icon} />
-        </Toggle>
+        <ShortcutTooltip label="Link" keys={LINK_KEYS}>
+          <Toggle
+            size="sm"
+            aria-label="Link"
+            aria-keyshortcuts={isApple() ? "Meta+L" : "Control+L"}
+            pressed={inLink}
+            disabled={disabled}
+            onPressedChange={show}
+          >
+            <HugeiconsIcon icon={Link01Icon} />
+          </Toggle>
+        </ShortcutTooltip>
         <Popover.Portal>
           <Popover.Positioner
             anchor={selectionAnchor(editor)}

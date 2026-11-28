@@ -33,7 +33,7 @@ export function DeletedNotesDialog({
         {notes.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">No deleted notes</p>
         ) : (
-          <ul className="-mx-2 flex max-h-56 flex-col gap-0.5 overflow-y-auto">
+          <ul className="-mx-2 flex max-h-56 scroll-fade flex-col gap-0.5 overflow-y-auto">
             {notes.map((note) => (
               <li key={note.id} className="flex items-center gap-2 rounded-3xl px-2 py-1.5">
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">

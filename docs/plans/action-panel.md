@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–9 done** (9.1 and 9.5 open). Phases 10–13 (editor chrome) planned; phase 14 (docs) last.
+Status (2026-11-28): **done** (phases 1–14). Open: 9.1 (Android check).
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -193,7 +193,7 @@ Goal: clear the list in one step, with everything still restorable from Phase 3.
 - [x] **4.3** Add a Delete All Notes row (group 3, destructive, Mod+Alt+D). It is disabled when
       there is nothing to delete.
 
-Done as (2026-11-28): `softDeleteAll(doc, ids)` in `sync/index-doc.ts` (one transaction). The confirm keeps its count while it closes. If the open note was deleted, or is an untouched draft, `openNote(null)` opens the next one (the draft's empty local copy is dropped as usual). A kept shared note stays open.
+Done as (2026-11-28): `softDeleteAll(doc, ids)` in `sync/index-doc.ts` (one transaction). Fix (owner, 2026-11-28): Ctrl+Alt+D typed "ḍ" on a Windows layout with AltGr (Ctrl+Alt is AltGr there, reported as `AltGraph`); `matchesShortcut` now counts AltGraph as Mod+Alt. The confirm keeps its count while it closes. If the open note was deleted, or is an untouched draft, `openNote(null)` opens the next one (the draft's empty local copy is dropped as usual). A kept shared note stays open.
 
 Check: Delete All removes your own notes and keeps the shared ones. Every deleted note shows up
 in Recently Deleted and can be restored.
@@ -443,13 +443,13 @@ on-screen keyboard. A button closes the keyboard.
     `calc(max(0.5rem, env(safe-area-inset-bottom)) + var(--keyboard-inset, 0px))`.
   - The safe-area padding counts only when the keyboard is closed. With the keyboard up, the
     home-bar inset is under the keyboard.
-- [x] **9.3** A **Close keyboard** button (`KeyboardIcon` with a down arrow, or `ArrowDown01Icon`)
+- [x] **9.3** (Removed 2026-11-28 by the owner: it pushed the phone toolbar past the screen width.) A **Close keyboard** button (`KeyboardIcon` with a down arrow, or `ArrowDown01Icon`)
       at the toolbar's right end, before the ✕. It appears only in **phone**, while the editor
       has focus. It calls `editor.commands.blur()`, which closes the keyboard on iOS and Android.
       The collapsed bar from 8 shows it too.
 - [x] **9.4** The editor's bottom padding grows with the inset, so the caret line never sits
       under the toolbar. Scroll the caret into view on `visualViewport` resize.
-- [ ] **9.5** The toast position (phase 11) uses the same inset when it is at the bottom.
+- [x] **9.5** ~~The toast position (phase 11) uses the same inset when it is at the bottom.~~ Moot: phase 11 puts phone toasts at the top.
 
 Done as (2026-11-28):
 
@@ -488,21 +488,42 @@ Check on a real iPhone (PWA and Safari tab) and an Android phone:
 Goal: the top bar (and the bottom toolbar) stay outside the scroll area. The scrollbar spans only
 the note, and it shows only while scrolling, like Raycast Notes.
 
-- [ ] **10.1** In `app.tsx`, the page becomes a flex column of `h-dvh`. The top bar is a plain
+- [x] **10.1** In `app.tsx`, the page becomes a flex column of `h-dvh`. The top bar is a plain
       child, no longer sticky. A `flex-1 min-h-0 overflow-y-auto` box holds the editor, and only
       that box scrolls. Fixed toolbars (desktop, phone) are outside it, and the box gets bottom
       padding for them.
-- [ ] **10.2** `hooks/use-scroll-fade.ts` puts `data-scrolling` on the box during scroll and
+- [x] **10.2** `hooks/use-scroll-fade.ts` puts `data-scrolling` on the box during scroll and
       removes it 800ms after the last scroll event.
-- [ ] **10.3** CSS in `styles/index.css`, class `.scroll-fade`:
+- [x] **10.3** CSS in `styles/index.css`, class `.scroll-fade`:
   - Thin scrollbar (`scrollbar-width: thin`).
   - The thumb is `transparent` normally, and `color-mix(var(--muted-foreground) 40%, transparent)`
     while `[data-scrolling]` or `:hover` on the bar.
   - Use `scrollbar-color` (Chromium 121+, Firefox). WebView2 and current Chrome support it, so no
     `::-webkit-scrollbar` rules are needed.
   - iOS already has overlay scrollbars.
-- [ ] **10.4** Use the same `.scroll-fade` on the switcher, panel and Recently Deleted lists.
-- [ ] **10.5** Remove the 5.7 sticky toolbar offset; nothing sticks inside the scroll box any more.
+- [x] **10.4** Use the same `.scroll-fade` on the switcher, panel and Recently Deleted lists.
+- [x] **10.5** Remove the 5.7 sticky toolbar offset; nothing sticks inside the scroll box any more.
+
+Done as (2026-11-28):
+
+- `app.tsx`: the root is `flex h-dvh flex-col` and does not scroll. The top bar is a plain child
+  (`relative`, no longer `sticky`; its title is absolutely placed). The editor column sits in
+  `scroll-fade relative min-h-0 flex-1 overflow-y-auto`. No extra bottom padding: the
+  `.ProseMirror` padding from phases 7 and 9 already clears the fixed toolbars.
+- 10.2: `hooks/use-scroll-fade.ts` is one capture `scroll` listener on the document, called once
+  in `app.tsx`. It marks whichever `.scroll-fade` element scrolled, so the dialog lists (10.4)
+  need only the class.
+- 10.3: `.scroll-fade` in `styles/index.css` (thin, transparent thumb; 40% muted while
+  scrolling). No `:hover` rule: hovering anywhere over the note would show it.
+- 10.5: the inline toolbar (share-link page, or before the web slot is found) is `sticky top-0`
+  inside the scroll box, no safe-area/bar offset.
+- `pnpm build`: precache 30 entries, 1308 KiB. Not yet checked in a browser, the desktop app or
+  on a phone (iOS now scrolls an inner box instead of the page; check the caret stays visible
+  while typing).
+- The note box's `scroll-fade` class also picks up shadcn's `scroll-fade` utility
+  (`shadcn/dist/tailwind.css`): a scroll-driven `mask-image` fading the box's top and bottom
+  edges. Kept (owner, 2026-11-28). The mask faded the bottom toolbar too, which was rendered inside
+  the box, so on phone and desktop `Editor` now portals the toolbar into `<body>`.
 
 Check (desktop): no scrollbar beside the top bar. Scrolling shows a thin thumb on the note area
 only, and it fades out after a moment.
@@ -512,20 +533,36 @@ only, and it fades out after a moment.
 Goal: deleting a note shows a toast. In **desktop**, **phone** and an installed PWA it sits at
 the top centre; in a **web** browser tab, at the bottom centre. Owner: message only, no Undo.
 
-- [ ] **11.1** `editor/notice.tsx`:
+- [x] **11.1** `editor/notice.tsx`:
   - `NoticeToast` takes its position from `useLayout()`. Top: just under the top bar
     (`top-[calc(env(safe-area-inset-top)+3rem)]`). Bottom: as today.
   - Every toast follows this rule, including the editor's own ("Select text to add a link", the
     image refusals), so there is one rule.
-- [ ] **11.2** Messages:
+- [x] **11.2** Messages:
   - Delete Note (own): "Note deleted".
   - Leave note: "Left note".
   - Delete All: "N notes deleted".
   - Removing a note you lost access to shows no toast; it is not your action.
   - Set them in `deleteNote` / `handleRemoveLost` / `handleDeleteAll` in `app.tsx`, only after the
     delete succeeded. Server failures keep their own messages.
-- [ ] **11.3** The top toast sits above dialogs' blur (z-index) and never covers the top bar's
+- [x] **11.3** The top toast sits above dialogs' blur (z-index) and never covers the top bar's
       buttons. It stays centred in a 380px desktop window.
+
+Done as (2026-11-28):
+
+- 11.1: `NoticeToast` (`editor/notice.tsx`) is at the top when `useLayout() !== "web"` or
+  `isInstalled()` (new in `lib/platform.ts`, also used by `isIosBrowser`), else `bottom-4`. The
+  old phone rule (above the bottom toolbar) is gone. Background is `bg-raised`, like the menus
+  and the install hint.
+- 11.2: in `deleteNote`, "Left note" and "Note deleted" after the server call succeeded (or was
+  not needed); "1 note deleted" / "N notes deleted" in `handleDeleteAll`. `handleRemoveLost`
+  itself shows nothing.
+- 11.3: `z-60`, above dialogs and their blur (`z-50`). It starts 3rem below the safe area, under
+  the 40px bar (now 50px, see phase 12), so it never covers the bar's buttons. Centred with
+  `left-1/2 -translate-x-1/2`
+  (no scrolling inside, so the iOS transform issue does not apply); `max-w-[calc(100vw-2rem)]`
+  keeps it inside a 380px window.
+- Not yet checked on screen.
 
 Check: delete from the panel and with Ctrl+D in each mode. The toast shows in the right place,
 once, and goes after 4s.
@@ -536,15 +573,67 @@ Goal: a note created in **phone** mode starts with its first line as Heading 2. 
 change it with the toolbar; otherwise it stays H2. Notes created on web or desktop are unchanged,
 and existing notes are never rewritten (owner, 2026-11-28).
 
-- [ ] **12.1** `app.tsx` marks a draft as "phone" when `handleNew` runs in **phone** mode, and
+- [x] **12.1** `app.tsx` marks a draft as "phone" when `handleNew` runs in **phone** mode, and
       passes `startWithHeading` to `<Editor>` for that draft only.
-- [ ] **12.2** `editor/editor.tsx`: once the editor is ready and the draft's doc is still blank,
+- [x] **12.2** `editor/editor.tsx`: once the editor is ready and the draft's doc is still blank,
       run `setNode("heading", { level: 2 })` on the first line. Enter at the end of it gives a
       normal paragraph next, which is Tiptap's default.
-- [ ] **12.3** Blank checks: covered by `blank-notes.md` E1 (owner, 2026-11-28: blank = no text and
+- [x] **12.3** Blank checks: covered by `blank-notes.md` E1 (owner, 2026-11-28: blank = no text and
       no image, whatever the blocks), so an empty H2 already counts as blank. Do E1 first.
-- [ ] **12.4** The title is still the first line's text, so the list, switcher and top bar are
+- [x] **12.4** The title is still the first line's text, so the list, switcher and top bar are
       unaffected.
+
+Done as (2026-11-28):
+
+- 12.1: `headingDraftId` state in `app.tsx`, set by `handleNew` when `layout === "phone"`;
+  `<Editor startWithHeading={isDraft && noteId === headingDraftId}>`. Not kept across a reload
+  (the heading itself is already saved in the note by then).
+- 12.2: an effect in `editor.tsx` runs `setNode("heading", { level: 2 })` once the note's local
+  copy is loaded (`useNoteSession` now also returns `loaded`), so a reloaded draft cannot get a
+  second heading merged in. Only while the doc is still blank.
+- 12.3: no extra code: `blank-notes.md` E1 already treats an empty H2 as blank. The H2 edit marks
+  the note as edited here (E3), but an unlisted draft is skipped by `handleLeftEmpty` and cleaned
+  up as a draft.
+- Phone top bar (owner, 2026-11-28, after the first phase 12 test): New note alone on the left
+  and a ⋮ menu on the right with Actions and Search notes (icon and label; `bg-raised`,
+  `finalFocus={false}` so the opened dialog keeps focus). Both buttons are 36px with 20px icons
+  (32/16 before); the title uses `inset-x-14`, centred between them. Web and desktop unchanged.
+  Then (owner): each sits in a toolbar-style frame (`rounded-[10px] border bg-popover p-0.5`)
+  with the toolbar's `bg-foreground/10` hover and `/15` while the menu is open; the phone bar
+  is `h-11` (44px) to fit the 42px frame, plus 8px above the buttons (owner screenshot: they
+  touched the top edge). Phone toasts and the install hint start at `3.75rem` to clear it.
+  Inner radius 7px (frame 10px less padding and border); hover, open (`aria-expanded`) and menu
+  rows use the toolbar's `bg-foreground/10` / `/15`, overriding the ghost button's `dark:` and
+  `aria-expanded:` shades.
+- Web and desktop top bar (owner, 2026-11-28): Actions, New note and Search share one toolbar-style
+  frame (`gap-0.5`), 28px buttons with the same 7px radius and shades. The frame is 34px, inside
+  the 40px bar.
+  Then (owner): 8px above the frame to match the 8px left edge (`h-[2.125rem]` plus `pt-2 pb-2`,
+  50px bar). Toasts and the install hint start at `3.75rem` everywhere; Action Panel and switcher
+  at `desktop:top-14`.
+  Then (owner): a shadcn Tooltip (`components/ui/tooltip.tsx`, base-maia registry; the CLI refuses
+  `-c app`) on each of the three: label plus keycaps (`shortcutKeys`), below the button, one
+  `TooltipProvider` so moving along the row opens the next at once. Replaces their `title`.
+  Phone has none (no hover).
+  Then (owner): the same tooltip on the formatting toolbar's plain buttons that have a shortcut
+  (`Button` in `toolbar.tsx`, Link in `link-box.tsx`), via `components/shortcut-tooltip.tsx`
+  (shared with the top bar; `side="top"`, flips when there is no room). Dropdowns and buttons
+  without keys (Image) keep their `title`. One `TooltipProvider` around the toolbar (`editor.tsx`).
+  Then (owner): dropdowns (Headings, Text style, Lists) and buttons without keys (Image, Show /
+  Hide toolbar) get it too, name only. Close keyboard (phone only) keeps its `title`. The shadcn
+  arrow is removed from `components/ui/tooltip.tsx`, and its provider delay is 500ms (shadcn: 0).
+- Phone toolbar (owner, 2026-11-28, screenshot: it wrapped to two rows once Close keyboard
+  showed): one row on phones, `flex-nowrap overflow-x-auto` with hidden scrollbar and
+  `[&>*]:shrink-0`, as in the web top bar. The desktop app still wraps.
+  Then (owner): it ran off the right edge, so it is capped at `calc(100vw-1rem)` (an unwrapped
+  `w-fit` row is its full width). The Close keyboard button (phase 9) is removed: it was the one
+  button too many.
+  Then (owner): the phone gaps between groups are back (the tight `phone:gap-0` rules are gone);
+  the formatting groups scroll inside their own box (`overflow-x-auto`, hidden scrollbar), and
+  Hide toolbar sits outside it, always in view. Elsewhere that box is `display: contents`.
+  Then (owner): shadcn `scroll-fade-x` on that box: the right edge fades while more buttons lie
+  that way, the left once scrolled.
+- Not yet checked on a phone.
 
 Check on a phone:
 
@@ -557,7 +646,7 @@ Check on a phone:
 
 Goal: checklist boxes look like the shadcn Checkbox, not the browser's native box.
 
-- [ ] **13.1** CSS only, in `styles/index.css` (the TaskItem input stays a real
+- [x] **13.1** CSS only, in `styles/index.css` (the TaskItem input stays a real
       `<input type="checkbox">`, so clicks, keyboard and screen readers keep working):
   - `appearance: none`
   - a 16px box with `border: 1px solid var(--input)` and a 4px radius, on `var(--background)`
@@ -565,26 +654,41 @@ Goal: checklist boxes look like the shadcn Checkbox, not the browser's native bo
     `var(--primary-foreground)` from a CSS mask (inline SVG data URI), like shadcn's
     `CheckIcon`
   - `:focus-visible` gets the shadcn ring (`var(--ring)` at 50%)
-- [ ] **13.2** Dark mode uses the same tokens, so nothing extra is needed. Check both themes.
-- [ ] **13.3** Viewers: the existing rule keeps `pointer-events: none`. Add `opacity: 0.7`.
-- [ ] **13.4** No shadcn `Checkbox` component: it is a React component, and the box lives inside a
+- [x] **13.2** Dark mode uses the same tokens, so nothing extra is needed. Check both themes.
+- [x] **13.3** Viewers: the existing rule keeps `pointer-events: none`. Add `opacity: 0.7`.
+- [x] **13.4** No shadcn `Checkbox` component: it is a React component, and the box lives inside a
       Tiptap node view. A React node view per item would cost far more than this CSS for the same
       look.
+
+Done as (2026-11-28): all in `styles/index.css`. The tick is the label's `::after` (shown via
+`label:has(input:checked)`), not the input's: Firefox and Safari draw no pseudo-element on an
+`<input>`. Dark mode fills the empty box with `--input` at 30%, as shadcn does. Viewers dim the
+whole label (box and tick) to 0.7. Not yet checked on screen.
+Then (owner, reference image): checked shows an 8px rounded square in `--primary-foreground`
+inside the filled box instead of the tick, and the text is at 50% opacity, struck through (was the
+muted colour).
+Then (owner): thin 1px `--primary` border, 2px gap in the page background, 10px `--primary`
+square inside (a `content-box` background layer with 2px padding; the `::after` is gone). Box
+radius 5px so the square's corners come out at 2px. Then a 9px square (owner): 2.5px padding drew it off centre, so the box is 17px with 3px padding
+and a 6px radius (whole pixels). The owner then set 16px, 3px gap, 5px radius; the 8px square is
+the label's `::after` again with its own 3px radius, since a clipped background's corners came
+out at 1px. Then (owner, reference image: smaller gap, more polished): back to the clipped
+background with a 2px gap: a 10px square, always centred, corners concentric at 2px.
 
 Check: tick and untick with the mouse, a tap, and Space on a focused box. Ticked items stay muted
 and struck through.
 
 ### Phase 14: Docs
 
-- [ ] **14.1** `project-context.md`:
+- [x] **14.1** `project-context.md`:
   - In §12, mark "Command palette" as Decided, with the keys and the date.
   - In the §12 desktop app row, change the switcher key to Ctrl+P.
   - In §12, record that the sidebar was removed (2026-11-28) and the top bar is shared.
-- [ ] **14.2** `project-context.md` §10: add ticked items for the Action Panel, Recently Deleted,
+- [x] **14.2** `project-context.md` §10: add ticked items for the Action Panel, Recently Deleted,
       Delete All, the shared top bar and the editor chrome (phases 6–13).
-- [ ] **14.3** `desktop-app.md` 3.5: switcher keys are now Ctrl/⌘+P, and Ctrl/⌘+K opens the Action
+- [x] **14.3** `desktop-app.md` 3.5: switcher keys are now Ctrl/⌘+P, and Ctrl/⌘+K opens the Action
       Panel.
-- [ ] **14.4** Set this plan's status to done.
+- [x] **14.4** Set this plan's status to done.
 
 ## Files
 
@@ -594,7 +698,11 @@ and struck through.
 - `app/src/features/notes/deleted-notes-dialog.tsx` (new)
 - `app/src/sync/index-doc.ts`: `readDeletedNotes`, `undelete`
 - `app/src/desktop/title-bar.tsx`: the Actions button and the Search hint; wraps the shared bar (phase 5)
-- `app/src/features/notes/top-bar.tsx` (new, phase 5)
+- `app/src/features/notes/top-bar.tsx` (new, phase 5): framed buttons, phone ⋮ menu, tooltips (phase 12)
+- `app/src/editor/toolbar.tsx`, `editor.tsx`, `notice.tsx`: editor chrome (phases 6–12)
+- `app/src/hooks/use-layout.ts`, `use-toolbar-hidden.ts`, `use-scroll-fade.ts` (new)
+- `app/src/components/shortcut-tooltip.tsx`, `components/ui/tooltip.tsx` (new, phase 12)
+- `app/src/styles/index.css`: `phone:` variant, `--raised`, checkboxes (phase 13)
 
 ## Verification
 

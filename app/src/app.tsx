@@ -50,6 +50,7 @@ import { type AuthUser, signOut, useAuthUser } from "@/hooks/use-auth-user"
 import { useJoinInfo } from "@/hooks/use-join-info"
 import { useLayout } from "@/hooks/use-layout"
 import { useNoteId } from "@/hooks/use-note-id"
+import { useScrollFade } from "@/hooks/use-scroll-fade"
 import { useTheme } from "@/hooks/use-theme"
 import { useToolbarHidden } from "@/hooks/use-toolbar-hidden"
 import { lazyOrReload } from "@/lib/lazy"
@@ -111,6 +112,8 @@ function NotesApp({
     open: boolean
   } | null>(null)
   const [draftId, setDraftId] = React.useState(() => readDraft(noteId))
+  // Phase 12: the draft made by New note on a phone starts with an H2 first line (this tab only).
+  const [headingDraftId, setHeadingDraftId] = React.useState<string | null>(null)
   const isDraft = !!noteId && noteId === draftId && !currentNote
   const [focusKey, setFocusKey] = React.useState(0)
   // A note picked in the switcher gets the caret, like a new draft (not on every open: on a phone
@@ -181,6 +184,7 @@ function NotesApp({
     else {
       const id = crypto.randomUUID()
       setDraftId(id)
+      setHeadingDraftId(layout === "phone" ? id : null)
       openNote(id)
     }
   }
@@ -221,6 +225,7 @@ function NotesApp({
   const [inviteOpen, setInviteOpen] = React.useState(false)
   const joinInfo = useJoinInfo(inviteOpen)
   const [isDark, setDark] = useTheme()
+  useScrollFade()
   const layout = useLayout()
   const [toolbarHidden, setToolbarHidden] = useToolbarHidden()
 
@@ -314,13 +319,18 @@ function NotesApp({
       return false
     }
 
+    // Toasts only after it worked (phase 11); a failure keeps its own message above.
     if (note?.role) {
-      if (await needsServer(() => removeMember(id, user.id))) handleRemoveLost(id)
+      if (await needsServer(() => removeMember(id, user.id))) {
+        handleRemoveLost(id)
+        setNotice({ title: "Left note" })
+      }
       return
     }
     if (note?.shared && !(await needsServer(() => unshareNote(id)))) return
     softDelete(doc, id)
     if (id === noteId) openNote(null, { replace: true })
+    setNotice({ title: "Note deleted" })
   }
 
   // A note picked in the switcher or restored from Recently Deleted: open it with the caret in it.
@@ -490,14 +500,17 @@ function NotesApp({
     // The open note went too (or is an untouched draft): open the next one, as after a delete.
     if (noteId && !notes.some((note) => note.id === noteId && !deletableIds.includes(note.id)))
       openNote(null, { replace: true })
+    const n = deletableIds.length
+    setNotice({ title: n === 1 ? "1 note deleted" : `${n} notes deleted` })
   }
 
   return (
     // No sidebar (owner, 2026-11-28): one top bar on every platform, the note list in the switcher
-    // (Ctrl/⌘+P), everything else in the Action Panel (Ctrl/⌘+K). This box scrolls; the bar sticks.
-    <div className="relative h-dvh overflow-y-auto pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]">
+    // (Ctrl/⌘+P), everything else in the Action Panel (Ctrl/⌘+K). Phase 10: the page does not
+    // scroll; the top bar sits above the note's own scroll box, so the scrollbar spans the note only.
+    <div className="flex h-dvh flex-col pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]">
       {isDesktop() ? (
-        <React.Suspense fallback={<div className="h-10 shrink-0" />}>
+        <React.Suspense fallback={<div className="h-[3.125rem] shrink-0" />}>
           <TitleBar {...topBar} />
         </React.Suspense>
       ) : (
@@ -530,35 +543,40 @@ function NotesApp({
         />
       )}
 
-      {/* Desktop: a small window, so tighter edges (the title bar sits above). */}
-      <div className="mx-auto w-full max-w-3xl p-4 desktop:px-3 desktop:pt-1">
-        {shareToken ? (
-          <ShareLinkPage token={shareToken} doc={doc} onOpen={openSharedNote} />
-        ) : noteId ? (
-          <Editor
-            key={noteId}
-            noteId={noteId}
-            onMetaChange={handleMeta}
-            role={currentNote?.role}
-            followRemote={!!(currentNote?.role || currentNote?.shared)}
-            onRemoveLost={() => handleRemoveLost(noteId)}
-            onRoleChanged={() => void refreshRoles(doc)}
-            noAccess={currentNote?.noAccess}
-            caret={caretUser(user)}
-            onEdited={isDraft ? handleDraftEdited : undefined}
-            onLeftEmpty={() => handleLeftEmpty(noteId)}
-            focusKey={isDraft || noteId === pickedId ? focusKey : undefined}
-          />
-        ) : (
-          // Centred in the window (the scroll box is `relative`); pointer-events-none so it never
-          // blocks the top bar under it. Not while this device's list is still loading (the
-          // sidebar's placeholder rows used to cover that moment).
-          loaded && (
-            <p className="pointer-events-none absolute inset-0 flex items-center justify-center p-4 text-center text-muted-foreground">
-              No notes yet. Create one with + at the top.
-            </p>
-          )
-        )}
+      {/* The only scroll box (`relative` for the empty state). Fixed toolbars (desktop, phone) sit
+          outside it; the note's own bottom padding keeps its last lines clear of them. */}
+      <div className="relative min-h-0 flex-1 scroll-fade overflow-y-auto">
+        {/* Desktop: a small window, so tighter edges (the title bar sits above). */}
+        <div className="mx-auto w-full max-w-3xl p-4 desktop:px-3 desktop:pt-1">
+          {shareToken ? (
+            <ShareLinkPage token={shareToken} doc={doc} onOpen={openSharedNote} />
+          ) : noteId ? (
+            <Editor
+              key={noteId}
+              noteId={noteId}
+              onMetaChange={handleMeta}
+              role={currentNote?.role}
+              followRemote={!!(currentNote?.role || currentNote?.shared)}
+              onRemoveLost={() => handleRemoveLost(noteId)}
+              onRoleChanged={() => void refreshRoles(doc)}
+              noAccess={currentNote?.noAccess}
+              caret={caretUser(user)}
+              onEdited={isDraft ? handleDraftEdited : undefined}
+              onLeftEmpty={() => handleLeftEmpty(noteId)}
+              focusKey={isDraft || noteId === pickedId ? focusKey : undefined}
+              startWithHeading={isDraft && noteId === headingDraftId}
+            />
+          ) : (
+            // Centred in the window (the scroll box is `relative`); pointer-events-none so it never
+            // blocks the top bar under it. Not while this device's list is still loading (the
+            // sidebar's placeholder rows used to cover that moment).
+            loaded && (
+              <p className="pointer-events-none absolute inset-0 flex items-center justify-center p-4 text-center text-muted-foreground">
+                No notes yet. Create one with + at the top.
+              </p>
+            )
+          )}
+        </div>
       </div>
 
       <AlertDialog
