@@ -443,7 +443,7 @@ on-screen keyboard. A button closes the keyboard.
     `calc(max(0.5rem, env(safe-area-inset-bottom)) + var(--keyboard-inset, 0px))`.
   - The safe-area padding counts only when the keyboard is closed. With the keyboard up, the
     home-bar inset is under the keyboard.
-- [x] **9.3** A **Close keyboard** button (`KeyboardIcon` with a down arrow, or `ArrowDown01Icon`)
+- [x] **9.3** (Removed 2026-11-28 by the owner: it pushed the phone toolbar past the screen width.) A **Close keyboard** button (`KeyboardIcon` with a down arrow, or `ArrowDown01Icon`)
       at the toolbar's right end, before the ✕. It appears only in **phone**, while the editor
       has focus. It calls `editor.commands.blur()`, which closes the keyboard on iOS and Android.
       The collapsed bar from 8 shows it too.
@@ -622,6 +622,17 @@ Done as (2026-11-28):
   Then (owner): dropdowns (Headings, Text style, Lists) and buttons without keys (Image, Show /
   Hide toolbar) get it too, name only. Close keyboard (phone only) keeps its `title`. The shadcn
   arrow is removed from `components/ui/tooltip.tsx`, and its provider delay is 500ms (shadcn: 0).
+- Phone toolbar (owner, 2026-11-28, screenshot: it wrapped to two rows once Close keyboard
+  showed): one row on phones, `flex-nowrap overflow-x-auto` with hidden scrollbar and
+  `[&>*]:shrink-0`, as in the web top bar. The desktop app still wraps.
+  Then (owner): it ran off the right edge, so it is capped at `calc(100vw-1rem)` (an unwrapped
+  `w-fit` row is its full width). The Close keyboard button (phase 9) is removed: it was the one
+  button too many.
+  Then (owner): the phone gaps between groups are back (the tight `phone:gap-0` rules are gone);
+  the formatting groups scroll inside their own box (`overflow-x-auto`, hidden scrollbar), and
+  Hide toolbar sits outside it, always in view. Elsewhere that box is `display: contents`.
+  Then (owner): shadcn `scroll-fade-x` on that box: the right edge fades while more buttons lie
+  that way, the left once scrolled.
 - Not yet checked on a phone.
 
 Check on a phone:

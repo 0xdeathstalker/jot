@@ -8,7 +8,6 @@ import {
   Heading03Icon,
   HeadingIcon,
   Image01Icon,
-  KeyboardOffIcon,
   LeftToRightListBulletIcon,
   LeftToRightListNumberIcon,
   QuoteDownIcon,
@@ -180,23 +179,9 @@ export function Toolbar({
   const collapsed = hidden && !inBar
 
   // Phone (phase 9): iOS and Android already keep this bottom-fixed bar above the keyboard (no
-  // extra lift; adding the keyboard height doubled it). A button closes the keyboard, shown only
-  // while the note has focus, i.e. while the keyboard is up.
+  // extra lift; adding the keyboard height doubled it). The close-keyboard button was removed
+  // (owner, 2026-11-28): it pushed the bar past the screen width.
   const phone = useLayout() === "phone"
-  const focused = useEditorState({ editor, selector: ({ editor }) => editor.isFocused })
-  const closeKeyboard = phone && focused && (
-    <button
-      type="button"
-      aria-label="Close keyboard"
-      title="Close keyboard"
-      className={toggleVariants({ size: "sm" })}
-      // Keep the note focused until the tap ends, or the button would vanish under the finger.
-      onPointerDown={(event) => event.preventDefault()}
-      onClick={() => editor.commands.blur()}
-    >
-      <HugeiconsIcon icon={KeyboardOffIcon} />
-    </button>
-  )
   // Counted only while collapsed: getText on every keystroke is wasted work otherwise.
   const chars = useEditorState({
     editor,
@@ -212,16 +197,21 @@ export function Toolbar({
       // the link button alike). Below sm: pinned to the bottom of the window (inset-x +
       // mx-auto centres it; left-1/2 would halve the width it may use). Phones (`phone:`, never the
       // desktop app, whose window is often that narrow too) get 36px buttons and 18px
-      // icons, still fine to tap. Tight gaps keep it on one line down to a 360px-wide phone; it
-      // still wraps (centred) if that does not fit.
+      // icons, still fine to tap. On a phone the formatting buttons scroll sideways when they do
+      // not fit, and the Hide toolbar button stays fixed at the end; the desktop app still wraps
+      // it (centred), as a mouse wheel cannot scroll sideways.
       // Desktop app: always at the bottom of the window, like Raycast Notes. Web: inside the top
       // bar (`inBar`), same frame; a narrow bar scrolls it sideways rather than wrapping it.
       // Hover and pressed: the text colour at 10% / 15% over the bar. The theme's muted is almost the
       // bar's own colour in dark mode, so the usual hover:bg-muted barely showed.
       className={cn(
-        "sticky top-0 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-0.5 rounded-[10px] border bg-popover p-0.5 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] desktop:fixed desktop:inset-x-2 desktop:top-auto desktop:bottom-2 [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 phone:[&_button]:h-9 phone:[&_button]:min-w-9 phone:[&_button]:px-1 [&_button:hover]:bg-foreground/10 [&_button[aria-pressed=true]]:bg-foreground/15 [&_svg:not([class*='size-'])]:size-4 phone:[&_svg:not([class*='size-'])]:size-[18px]",
+        "sticky top-0 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1.5 rounded-[10px] border bg-popover p-0.5 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] desktop:fixed desktop:inset-x-2 desktop:top-auto desktop:bottom-2 [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 phone:[&_button]:h-9 phone:[&_button]:min-w-9 phone:[&_button]:px-1 [&_button:hover]:bg-foreground/10 [&_button[aria-pressed=true]]:bg-foreground/15 [&_svg:not([class*='size-'])]:size-4 phone:[&_svg:not([class*='size-'])]:size-[18px]",
         inBar &&
           "static w-auto max-w-full [scrollbar-width:none] flex-nowrap justify-start overflow-x-auto",
+        // Phone (owner): one row, never wrapped. `w-fit` of an unwrapped row is its full width, and
+        // max-w-full is the whole screen, not less the inset-x-2 margins: cap it at the screen
+        // less those 1rem, or it runs off the right edge. The scrolling happens inside (below).
+        phone && "max-w-[calc(100vw-1rem)] flex-nowrap",
       )}
     >
       {collapsed ? (
@@ -241,62 +231,71 @@ export function Toolbar({
               <HugeiconsIcon icon={TextFontIcon} />
             </button>
           </ShortcutTooltip>
-          {closeKeyboard}
         </>
       ) : (
         <>
-          <Group>
-            <Menu
-              label="Headings"
-              icon={HeadingIcon}
-              items={headings}
-              checked={active.headings}
-              single
-              editor={editor}
-              disabled={disabled}
-            />
-            <Menu
-              label="Text style"
-              icon={TextItalicIcon}
-              items={textStyles}
-              checked={active.textStyles}
-              editor={editor}
-              disabled={disabled}
-            />
-            <LinkBox editor={editor} inLink={active.inLink} disabled={disabled} notify={notify} />
-            <ImageButton pressed={active.onImage} disabled={disabled} onPick={onPickImages} />
-            <Button
-              item={inlineCode}
-              pressed={active.inlineCode}
-              editor={editor}
-              disabled={disabled}
-            />
-          </Group>
-          <Group>
-            {blocks.map((item, i) => (
-              <Button
-                key={item.label}
-                item={item}
-                pressed={active.blocks[i]}
+          {/* Phone: the formatting groups scroll sideways in here (hidden scrollbar), so Hide
+              toolbar, outside it, is always in view. shadcn's `scroll-fade-x` fades the right edge
+              while more buttons lie that way (the left once scrolled). Elsewhere `contents`. */}
+          <div
+            className={
+              phone
+                ? "flex min-w-0 scroll-fade-x [scrollbar-width:none] items-center overflow-x-auto overscroll-x-contain [&>*]:shrink-0"
+                : "contents"
+            }
+          >
+            <Group>
+              <Menu
+                label="Headings"
+                icon={HeadingIcon}
+                items={headings}
+                checked={active.headings}
+                single
                 editor={editor}
                 disabled={disabled}
               />
-            ))}
-          </Group>
-          <Group>
-            <Menu
-              label="Lists"
-              icon={activeList?.icon ?? LeftToRightListBulletIcon}
-              items={lists}
-              checked={active.lists}
-              single
-              editor={editor}
-              disabled={disabled}
-            />
-          </Group>
+              <Menu
+                label="Text style"
+                icon={TextItalicIcon}
+                items={textStyles}
+                checked={active.textStyles}
+                editor={editor}
+                disabled={disabled}
+              />
+              <LinkBox editor={editor} inLink={active.inLink} disabled={disabled} notify={notify} />
+              <ImageButton pressed={active.onImage} disabled={disabled} onPick={onPickImages} />
+              <Button
+                item={inlineCode}
+                pressed={active.inlineCode}
+                editor={editor}
+                disabled={disabled}
+              />
+            </Group>
+            <Group>
+              {blocks.map((item, i) => (
+                <Button
+                  key={item.label}
+                  item={item}
+                  pressed={active.blocks[i]}
+                  editor={editor}
+                  disabled={disabled}
+                />
+              ))}
+            </Group>
+            <Group>
+              <Menu
+                label="Lists"
+                icon={activeList?.icon ?? LeftToRightListBulletIcon}
+                items={lists}
+                checked={active.lists}
+                single
+                editor={editor}
+                disabled={disabled}
+              />
+            </Group>
+          </div>
           {!inBar && (
             <Group>
-              {closeKeyboard}
               <ShortcutTooltip label="Hide toolbar">
                 <button
                   type="button"
@@ -359,7 +358,7 @@ function ImageButton({
 
 function Group({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-0.5 not-first:ml-0.5 not-first:border-l not-first:pl-1 phone:gap-0 phone:not-first:ml-0 phone:not-first:pl-0.5">
+    <div className="flex items-center gap-0.5 not-first:ml-0.5 not-first:border-l not-first:pl-1">
       {children}
     </div>
   )
