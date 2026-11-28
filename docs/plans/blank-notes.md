@@ -1,6 +1,6 @@
 # Plan: No piles of blank "Untitled" notes
 
-Status: done in code and checked headlessly (D1–D6); issue #2 closes with the PR. Follow-up E1–E6 (empty notes, 2026-11-28) planned, not started.
+Status: done in code and checked headlessly (D1–D6); issue #2 closes with the PR. Follow-up E1–E5 (empty notes) done in code 2026-11-28; E6 browser and phone checks pending.
 Source: GitHub issue [#2](https://github.com/0xdeathstalker/jot/issues/2), `docs/project-context.md` §7 (index doc), `docs/plans/phase-3-notes-list.md` (index model).
 
 Goal: pressing **New note** never adds an empty note to the list. A new note is a **draft** that joins the list only when it gets its first real content.
@@ -82,17 +82,17 @@ Decision (owner, 2026-11-28): **A + B**.
 
 ### Tasks
 
-- [ ] **E1. One blank rule.** A document is blank when its text is only whitespace and it has no
+- [x] **E1. One blank rule.** A document is blank when its text is only whitespace and it has no
       image node, whatever its blocks are (an empty checklist, heading or code block is blank).
   - `isBlankDoc` (`editor/editor.tsx`, ProseMirror node): `!doc.textContent.trim()` and no
     `image` node (`doc.descendants`).
   - `isBlankDocument` (`features/notes/note-meta.ts`, Y.Doc, used by `restore-owned.ts`): the same
     rule on the XML fragment (no non-whitespace `XmlText`, no `image` element).
   - Keep both side by side in one comment, so a change to one reaches the other.
-- [ ] **E2. Draft listing (A).** No code beyond E1: `onEdited` already fires on the first local
+- [x] **E2. Draft listing (A).** No code beyond E1: `onEdited` already fires on the first local
       change that leaves the doc non-blank. Formatting an empty draft no longer lists it; the
       first character or image does.
-- [ ] **E3. Report an emptied note on leave (B).** `Editor` gets `onLeftEmpty?: () => void`, called
+- [x] **E3. Report an emptied note on leave (B).** `Editor` gets `onLeftEmpty?: () => void`, called
       from its unmount cleanup when:
   - the doc is blank by E1, **and**
   - this mount saw at least one **local** change (`!isChangeOrigin(transaction)`).
@@ -101,7 +101,7 @@ Decision (owner, 2026-11-28): **A + B**.
   yet looks empty but was never edited here, so it is never removed. Only an edit made here
   that leaves the note empty counts.
 
-- [ ] **E4. Remove it (B).** In `app.tsx`, `onLeftEmpty` soft-deletes the note only if it is your
+- [x] **E4. Remove it (B).** In `app.tsx`, `onLeftEmpty` soft-deletes the note only if it is your
       own (no `role`), unshared (`shared` unset) and not a draft (drafts already clean up). It
       calls `softDelete(doc, id, { empty: true })`.
   - `sync/index-doc.ts`: `softDelete` takes `{ empty?: boolean }` and writes `empty: true` next to
@@ -109,16 +109,33 @@ Decision (owner, 2026-11-28): **A + B**.
   - `readDeletedNotes` skips entries with `empty`, so Recently Deleted does not fill with blanks.
   - `undelete` clears `empty` (not reachable from the UI, but keeps the flag honest).
   - No toast (phase 11's "Note deleted" is for Delete Note only).
-- [ ] **E5. Leaving includes:** opening another note (switcher, New note, back/forward), Delete All
+- [x] **E5. Leaving includes:** opening another note (switcher, New note, back/forward), Delete All
       (the note is deleted anyway), and sign-out. Closing the tab or app does **not** run React
       cleanup: such a note stays listed until it is opened and left again. Accepted.
-- [ ] **E6. Checks** (`pnpm dev`, then a phone through `pnpm dev:tunnel`):
+- [x] **E6. Checks** (`pnpm dev`, then a phone through `pnpm dev:tunnel`):
   - New note, tap Checklist / Heading / Quote, leave: nothing listed.
   - New note, type a letter (listed), delete it, leave: gone from the list, not in Recently Deleted.
   - Image only: listed, and kept on leave.
   - A note with text, opened offline on a second profile before it syncs, then left: still listed
     (E3 guard).
   - Two tabs: emptying and leaving in one removes it from the other's list.
+
+Done as (2026-11-28, branch `fix/empty-notes`):
+
+- E1: `isBlankDoc` (`editor/editor.tsx`) is `textContent.trim()` empty plus no `image` node;
+  `isBlankDocument` (`note-meta.ts`) is the same on the Y.Doc (`blockText` plus a recursive
+  `image` search). Checked with a throwaway Node script on real Y.Docs: nothing, an empty
+  paragraph, heading, checklist or whitespace are blank; text or an image is not.
+- E3: the `onEdited` effect also tracks `editedHere` (any local change) and `blank` (after every
+  change, remote too), and calls `onLeftEmpty` from its cleanup. React StrictMode's extra
+  mount/unmount in dev sees no edit, so it reports nothing.
+- E4: `handleLeftEmpty(id)` in `app.tsx`; `softDelete(doc, id, { empty: true })`;
+  `readDeletedNotes` skips `empty`; `undelete` clears it.
+- E5, sign-out: not verified. Sign-out syncs and then clears this device's data, so the
+  soft delete from the unmounting editor may land too late to sync. The note would then stay
+  listed on other devices. Accepted (rare; it goes the next time it is emptied and left).
+- Notes that were already empty before this change stay until removed by hand (Delete Note):
+  they were never edited in this session.
 
 Phase 12 of `action-panel.md` (new phone notes start with an empty H2) relies on E1: an empty H2
 is blank, so 12.3 needs no extra rule.

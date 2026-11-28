@@ -55,14 +55,23 @@ type Props = {
   caret: CaretUser
   // Called once, on the first local edit that leaves the note no longer blank (a draft joins the list).
   onEdited?: () => void
+  // Called when this note is left blank after an edit made here (blank-notes.md E3).
+  onLeftEmpty?: () => void
   // Focus the editor when set, and again each time it changes (New note pressed while in the draft).
   focusKey?: number
 }
 
-// The default content: one empty paragraph. An empty checklist or heading is not blank.
+// Blank = no text (whitespace only) and no image, whatever the blocks: an empty checklist, heading
+// or code block is blank too (docs/plans/blank-notes.md E1). Same rule as isBlankDocument
+// (features/notes/note-meta.ts); change both together.
 function isBlankDoc(node: PMNode) {
-  const first = node.firstChild
-  return node.childCount === 1 && first?.type.name === "paragraph" && first.content.size === 0
+  if (node.textContent.trim()) return false
+  let image = false
+  node.descendants((child) => {
+    if (child.type.name === "image") image = true
+    return !image
+  })
+  return !image
 }
 
 // Content comes from the Y.Doc, never from Tiptap's `content` option.
@@ -78,6 +87,7 @@ export function Editor({
   noAccess,
   caret,
   onEdited,
+  onLeftEmpty,
   focusKey,
 }: Props) {
   const session = useNoteSession(noteId)
@@ -198,14 +208,22 @@ export function Editor({
     }
   }, [editor, onMetaChange, followRemote])
 
-  // The Editor is keyed by note, so "once" means once per opened note. Ref: callers need not memoize.
+  // The Editor is keyed by note, so "once" means once per opened note. Refs: callers need not
+  // memoize.
+  // onLeftEmpty (blank-notes.md E3): on leaving, the note is blank and was edited here. A note
+  // that only looks empty because this device has not synced it yet was never edited here, so it
+  // is never reported.
   const onEditedRef = React.useRef(onEdited)
+  const onLeftEmptyRef = React.useRef(onLeftEmpty)
   React.useLayoutEffect(() => {
     onEditedRef.current = onEdited
+    onLeftEmptyRef.current = onLeftEmpty
   })
   React.useEffect(() => {
     if (!editor) return
     let fired = false
+    let editedHere = false
+    let blank = isBlankDoc(editor.state.doc)
     const handleUpdate = ({
       editor: e,
       transaction,
@@ -213,13 +231,17 @@ export function Editor({
       editor: typeof editor
       transaction: Parameters<typeof isChangeOrigin>[0]
     }) => {
-      if (fired || isChangeOrigin(transaction) || isBlankDoc(e.state.doc)) return
+      blank = isBlankDoc(e.state.doc) // remote edits too: content arriving makes it non-blank
+      if (isChangeOrigin(transaction)) return
+      editedHere = true
+      if (fired || blank) return
       fired = true
       onEditedRef.current?.()
     }
     editor.on("update", handleUpdate)
     return () => {
       editor.off("update", handleUpdate)
+      if (editedHere && blank) onLeftEmptyRef.current?.()
     }
   }, [editor])
 

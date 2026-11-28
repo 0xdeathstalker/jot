@@ -261,6 +261,14 @@ function NotesApp({
     setDraftId(null)
   }
 
+  // Left empty after an edit (blank-notes.md E4): an own, unshared, listed note goes, like Apple
+  // Notes. Soft delete, hidden from Recently Deleted. Drafts (not listed) clean up on their own;
+  // a note already deleted (Delete All) is not in `notes` either.
+  const handleLeftEmpty = (id: string) => {
+    const note = notes.find((n) => n.id === id)
+    if (note && !note.role && !note.shared) softDelete(doc, id, { empty: true })
+  }
+
   // Stable per (doc, noteId): the editor re-subscribes when this changes.
   const handleMeta = React.useCallback(
     (meta: NoteText) => {
@@ -538,6 +546,7 @@ function NotesApp({
             noAccess={currentNote?.noAccess}
             caret={caretUser(user)}
             onEdited={isDraft ? handleDraftEdited : undefined}
+            onLeftEmpty={() => handleLeftEmpty(noteId)}
             focusKey={isDraft || noteId === pickedId ? focusKey : undefined}
           />
         ) : (

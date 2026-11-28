@@ -15,6 +15,7 @@ export type NoteMeta = {
   pinned: boolean
   deleted: boolean
   deletedAt?: number // when it was soft-deleted (Recently Deleted); absent on notes deleted before it existed
+  empty?: boolean // soft-deleted because it was left empty (blank-notes.md E4): hidden from Recently Deleted
   // Sharing (Phase 6). UI hints only: the server decides access from D1.
   role?: SharedRole // set when someone else owns the note; absent means you own it
   shared?: boolean // you own it and have made a share link
@@ -151,12 +152,14 @@ export function togglePin(doc: Doc, id: string) {
   if (note) note.set("pinned", !note.get("pinned"))
 }
 
-export function softDelete(doc: Doc, id: string) {
+// `empty`: the note was left empty (blank-notes.md E4), so Recently Deleted leaves it out.
+export function softDelete(doc: Doc, id: string, { empty = false } = {}) {
   const note = getNotes(doc).get(id)
   if (!note) return
   doc.transact(() => {
     note.set("deleted", true)
     note.set("deletedAt", Date.now())
+    if (empty) note.set("empty", true)
   })
 }
 
@@ -175,6 +178,7 @@ export function undelete(doc: Doc, id: string) {
   doc.transact(() => {
     note.set("deleted", false)
     if (note.get("shared")) note.set("shared", false)
+    if (note.get("empty")) note.delete("empty")
   })
 }
 
@@ -206,11 +210,11 @@ function readNotes(notes: NotesMap): Note[] {
 
 // Recently Deleted: our own deleted notes, last deleted first (notes deleted before `deletedAt`
 // existed go by their last edit). Shared notes we left are not ours to bring back, and their local
-// copy is gone.
+// copy is gone. Notes removed for being left empty are not listed either.
 function readDeletedNotes(notes: NotesMap): Note[] {
   const list: Note[] = []
   notes.forEach((note, id) => {
-    if (note.get("deleted") && !note.get("role") && !note.get("noAccess"))
+    if (note.get("deleted") && !note.get("role") && !note.get("noAccess") && !note.get("empty"))
       list.push(readNote(note, id))
   })
   const when = (note: Note) => note.deletedAt ?? note.updatedAt
