@@ -18,7 +18,7 @@ Built as a PWA on React + TipTap + Yjs, synced through Cloudflare Durable Object
 - **Rich notes**: headings, lists, checklists, code blocks, links, images inside the note, and Markdown paste
 - **Installable** on Windows (Edge/Chrome) and iPhone (Safari → Add to Home Screen)
 - **Windows desktop app**: a global hotkey brings Jot up over everything, Raycast-style; lives in the tray
-- **Note switcher**: Ctrl+P or Ctrl+K (⌘P / ⌘K on a Mac) jumps to any note by typing; Ctrl+B shows or hides the notes list
+- **Shortcuts**: Ctrl+P (⌘P on a Mac) jumps to any note by typing; Ctrl+K (⌘K) opens the Action Panel with every action and its keys; Ctrl+Shift+O (⌘⇧O) makes a new note (Ctrl+N in the desktop app)
 - **Light and dark**: follows the system until you pick one in the gear menu
 - **Private**: sign in with Google; the server checks every connection, and only listed emails, or people holding an invite link, can sign up
 - **Sharing**: send a link to share a note with up to 2 other people, as viewer or editor, with live cursors; send a join link to bring up to 3 friends into Jot (no email service needed)

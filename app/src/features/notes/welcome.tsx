@@ -2,7 +2,7 @@ import { Add01Icon, CommandLineIcon, KeyboardIcon, Search01Icon } from "@hugeico
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 
 import { Kbd } from "@/components/ui/kbd"
-import { isDesktop, shortcutKeys } from "@/lib/platform"
+import { NEW_NOTE_KEYS, shortcutKeys } from "@/lib/platform"
 
 // What the app shows when no note is open (docs/plans/welcome-view.md, design F): the name and one
 // line about Jot, a bar that opens the Action Panel, and the few actions that get you started.
@@ -49,8 +49,8 @@ export function Welcome({
         <Row
           icon={Add01Icon}
           label="New note"
-          // Ctrl+N only in the desktop app: browsers keep it for a new window.
-          keys={isDesktop() ? ["Mod", "N"] : undefined}
+          // Ctrl+N in the desktop app, Ctrl+Shift+O on the web (browsers keep Ctrl+N).
+          keys={NEW_NOTE_KEYS}
           onClick={onNew}
         />
         <Row icon={Search01Icon} label="Search notes" keys={["Mod", "P"]} onClick={onSearch} />

@@ -24,7 +24,8 @@ blocks clearly larger than the space inside each:
 2. A bar reading **"What would you like to do?"** with the Ctrl/⌘+K keycaps on the right: a
    button styled like an input that opens the Action Panel. Not a text field.
 3. Clickable rows, keys on the right:
-   - **New note**: Ctrl/⌘+N in the desktop app, no keys on the web (browsers keep Ctrl+N).
+   - **New note**: Ctrl/⌘+N in the desktop app, Ctrl/⌘+Shift+O on the web (browsers keep
+     Ctrl+N; owner, 2026-11-29). `NEW_NOTE_KEYS` in `lib/platform.ts`.
    - **Search notes**: Ctrl/⌘+P.
    - **Global hotkey…**: desktop app only, opens the hotkey dialog.
 
@@ -102,7 +103,7 @@ it, so nothing needs clicks passed through.
 - `pnpm dev`, wide window: with no notes, and after deleting the open note, the view shows; the
   bar opens the Action Panel, New note opens a draft (no keys shown), Search notes opens the
   switcher; Ctrl+K / Ctrl+P still work. Both themes.
-- `pnpm desktop:dev`: same, plus Ctrl+N on New note and the Global hotkey row opening the dialog;
+- `pnpm desktop:dev`: same, plus Ctrl+N (and Ctrl+Shift+O) on New note and the Global hotkey row opening the dialog;
   shrink to 380×320 and check nothing is clipped.
 - Phone via `pnpm dev:tunnel`: M4 layout, no keycaps, rows centred, every tap works; iPhone and
   Android, both themes.

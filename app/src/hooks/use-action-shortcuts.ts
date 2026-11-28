@@ -11,6 +11,8 @@ export type Action = {
   icon: IconSvgElement
   // ["Mod", "Shift", "P"]: the format of shortcutKeys / formatShortcut.
   keys?: string[]
+  // More keys that also run it, never shown as hints (New note: Ctrl+Shift+O in the desktop app).
+  altKeys?: string[][]
   // Rows are split into groups by separators.
   group: number
   destructive?: boolean
@@ -33,7 +35,10 @@ export function useActionShortcuts(actions: Action[]) {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return
       const action = latest.current.find(
-        (a) => a.keys && !a.hidden && !a.disabled && matchesShortcut(event, a.keys),
+        (a) =>
+          !a.hidden &&
+          !a.disabled &&
+          [a.keys, ...(a.altKeys ?? [])].some((keys) => keys && matchesShortcut(event, keys)),
       )
       if (!action) return
       event.preventDefault()

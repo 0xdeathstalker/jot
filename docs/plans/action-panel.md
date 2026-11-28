@@ -70,7 +70,8 @@ panel yet. Mod+K still opens the switcher.
       over the list.
   - The match compares `event.key` (lowercase) and the modifier flags exactly.
   - Skip events that are `defaultPrevented` or come from rows that are `hidden` or `disabled`.
-  - Ctrl+N keeps its `isDesktop()` guard, because browsers reserve it.
+  - New note: Ctrl/⌘+N in the desktop app (browsers reserve it), Ctrl/⌘+Shift+O on the web and,
+    unshown, in the desktop app too (owner, 2026-11-29: `NEW_NOTE_KEYS`, the action's `altKeys`).
 - [x] **1.6** Check that the new keys do not clash with editor keys (`editor/toolbar.tsx`, the
       link box's Mod+L, the sidebar's Mod+B): Mod+Shift+P, Mod+[, Mod+], Mod+D. Also check that
       the browser lets the page take each key (Mod+D is "bookmark" in Chrome).

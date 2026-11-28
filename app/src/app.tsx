@@ -55,7 +55,7 @@ import { useScrollFade } from "@/hooks/use-scroll-fade"
 import { useTheme } from "@/hooks/use-theme"
 import { useToolbarHidden } from "@/hooks/use-toolbar-hidden"
 import { lazyOrReload } from "@/lib/lazy"
-import { isDesktop, matchesShortcut } from "@/lib/platform"
+import { isDesktop, matchesShortcut, NEW_NOTE_KEYS } from "@/lib/platform"
 import {
   createNote,
   markShared,
@@ -357,8 +357,10 @@ function NotesApp({
       id: "new",
       label: "New Note",
       icon: Add01Icon,
-      // Desktop only: browsers keep Ctrl+N for a new window and do not let pages take it.
-      keys: isDesktop() ? ["Mod", "N"] : undefined,
+      // Ctrl+N in the desktop app, Ctrl+Shift+O on the web (NEW_NOTE_KEYS, lib/platform.ts); the
+      // desktop app takes Ctrl+Shift+O too, unshown.
+      keys: NEW_NOTE_KEYS,
+      altKeys: isDesktop() ? [["Mod", "Shift", "O"]] : undefined,
       group: 1,
       run: handleNew,
     },
