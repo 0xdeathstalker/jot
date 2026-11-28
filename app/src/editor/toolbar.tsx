@@ -174,7 +174,7 @@ export function Toolbar({
       // the screen (inset-x + mx-auto centres it; left-1/2 would halve the width it may use), with
       // touch-sized buttons like Apple Notes: 40px buttons, 20px icons, a 46px bar. Tight gaps keep
       // it on one line down to a 360px-wide phone; it still wraps (centred) if that does not fit.
-      className="sticky top-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-[12px] border bg-popover p-1 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:gap-0.5 max-sm:p-0.5 max-sm:[&_button]:h-10 max-sm:[&_button]:min-w-10 max-sm:[&_button]:px-1 max-sm:[&_svg:not([class*='size-'])]:size-5"
+      className="sticky top-[calc(env(safe-area-inset-top)+3rem)] z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-[12px] border bg-popover p-1 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:gap-0.5 max-sm:p-0.5 max-sm:[&_button]:h-10 max-sm:[&_button]:min-w-10 max-sm:[&_button]:px-1 max-sm:[&_svg:not([class*='size-'])]:size-5"
     >
       <Group>
         <Menu

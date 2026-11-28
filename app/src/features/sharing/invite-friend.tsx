@@ -11,23 +11,8 @@ import {
 import { Input } from "@/components/ui/input"
 import type { JoinInfo } from "@/features/sharing/api"
 
-const invitesLeft = (info: JoinInfo) => Math.max(0, info.limit - info.used)
-
-// "Invites ... n left" in the account area, n = invites left. `info` is null for invited users (the
-// server answers 403) and offline: nothing is shown. The dialog itself lives in app.tsx, so the
-// Action Panel can open it too (on phones the sidebar is unmounted while closed).
-export function InviteButton({ info, onOpen }: { info: JoinInfo | null; onOpen: () => void }) {
-  if (!info) return null
-  return (
-    <div className="border-t pt-2">
-      <Button variant="ghost" size="sm" className="w-full justify-between" onClick={onOpen}>
-        <span>Invites</span>
-        <span className="text-muted-foreground">{invitesLeft(info)} left</span>
-      </Button>
-    </div>
-  )
-}
-
+// Action Panel > Invite a Friend…: your invite link and how many invites are left. `info` is null
+// for invited users (the server answers 403) and offline; the row is hidden then (app.tsx).
 export function InviteDialog({
   info,
   open,
@@ -48,7 +33,7 @@ export function InviteDialog({
 
   if (!info) return null
 
-  const left = invitesLeft(info)
+  const left = Math.max(0, info.limit - info.used)
 
   const copy = async () => {
     try {

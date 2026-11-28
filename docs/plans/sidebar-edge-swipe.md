@@ -1,5 +1,7 @@
 # Plan: Swipe from the left edge to open the sidebar on phones
 
+> Superseded (2026-11-28): the sidebar was removed. See `action-panel.md`, phase 5.
+
 Status: implemented, needs a check on a real iPhone (2026-11-21)
 
 Goal: on phones (< 768 px), dragging from the left edge pulls the notes sidebar open under the

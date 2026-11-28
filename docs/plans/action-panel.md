@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–4 done.** Phase 5 decided (no sidebar), not started.
+Status (2026-11-28): **phases 1–5 done.** Phase 6 (docs) left.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -230,28 +230,28 @@ Weaker, but still reachable (accepted):
 
 #### Sub-tasks
 
-- [ ] **5.1** Panel rows for G1 and G2, before the sidebar goes, so nothing is lost on the way:
+- [x] **5.1** Panel rows for G1 and G2, before the sidebar goes, so nothing is lost on the way:
   - Group 4 (last; a separator above it).
   - **Dark Mode / Light Mode**, with the icon following the label: `useTheme` (`hooks/use-theme.ts`).
   - **Sign Out** (destructive, `dialog: true` when the confirm shows). Move `handleSignOut`, the
     unsynced `AlertDialog` and the "Syncing…" state out of `auth/account-footer.tsx` into
     `app.tsx`. They use `syncAllLocalData` (`sync/provider.ts`) and `signOut`
     (`hooks/use-auth-user.ts`). "Syncing…" goes through the existing `NoticeToast`.
-- [ ] **5.2** Remove the ⋮ menu (G4):
+- [x] **5.2** Remove the ⋮ menu (G4):
   - Drop the `NoteActions` button from the switcher's rows (`note-switcher.tsx`), along with its
     `onTogglePin` / `onShare` / `onDelete` props.
   - Delete `NoteActions` and `NoteActionHandlers` from `note-list.tsx`.
   - The switcher row becomes a plain option.
-- [ ] **5.3** Make the top bar shared: `features/notes/top-bar.tsx`.
+- [x] **5.3** Make the top bar shared: `features/notes/top-bar.tsx`.
   - It holds Actions, New note, Search notes and the centred title. Hints are Mod+K / Mod+N
     (desktop) / Mod+P.
   - `desktop/title-bar.tsx` keeps only what needs Tauri: the drag region and the Minimize / Close
     buttons, wrapped around the shared bar.
-- [ ] **5.4** Web and PWA:
+- [x] **5.4** Web and PWA:
   - Mount the top bar in `app.tsx` instead of the floating `SidebarToggle` + Actions container.
   - Respect `env(safe-area-inset-top)` on iPhone, and stay sticky above the editor.
   - Check that the editor toolbar sits at the bottom on phones and does not clash with it.
-- [ ] **5.5** Remove the sidebar:
+- [x] **5.5** Remove the sidebar:
   - In `app.tsx`: `SidebarProvider` / `SidebarInset` and the `sidebar_state` cookie.
   - Delete:
     - `features/notes/notes-sidebar.tsx`
@@ -261,12 +261,12 @@ Weaker, but still reachable (accepted):
       it needed
   - `features/notes/note-list.tsx` keeps only `NoteRowText`, the switcher's row. Move it next to
     the switcher if nothing else is left in the file.
-- [ ] **5.6** Delete code nothing else uses any more. Check each with grep first:
+- [x] **5.6** Delete code nothing else uses any more. Check each with grep first:
   - `components/ui/sidebar.tsx`, `sheet.tsx`, `skeleton.tsx`, `tooltip.tsx`
   - `hooks/use-mobile.ts`
   - the `sidebar-*` CSS variables in `styles/index.css`
   - Mark `docs/plans/sidebar-*.md` as superseded.
-- [ ] **5.7** Editor layout without the sidebar: center the writing column with `max-w-3xl` at
+- [x] **5.7** Editor layout without the sidebar: center the writing column with `max-w-3xl` at
       every width, keep the tighter desktop padding, and reword the empty state (W6).
 
 Check:
@@ -275,6 +275,38 @@ Check:
 - New note, Search and Actions work from the bar and from the keys.
 - Dark/Light mode and Sign Out work from the panel, including the unsynced confirm.
 - The switcher has no ⋮ button, and Ctrl/⌘+K from the switcher opens the panel.
+
+Done as (2026-11-28):
+
+- **Panel rows.**
+  - Dark Mode / Light Mode and Sign Out are group 4.
+  - Sign Out shows "Syncing…" as a notice. While it runs, the row is disabled.
+  - The unsynced confirm moved to `app.tsx`.
+- **Switcher.** It has no ⋮ menu. `NoteRowText` moved into `note-switcher.tsx`, and
+  `note-list.tsx` is deleted.
+- **Top bar.**
+  - `features/notes/top-bar.tsx` holds Actions, New note, Search and the title (`inset-x-32`
+    again: three buttons).
+  - Its top padding is `env(safe-area-inset-top)`.
+  - It always carries `data-tauri-drag-region`, which does nothing outside the desktop app.
+  - `desktop/title-bar.tsx` is now the shared bar plus Minimize / Close.
+- **Layout.**
+  - `app.tsx` scrolls one `h-dvh` box, with the bar sticky at the top. Safe-area padding is on the
+    left, right and bottom.
+  - The editor toolbar sticks below the bar (`top-[calc(env(safe-area-inset-top)+3rem)]`); before,
+    it slid under the desktop title bar.
+  - The empty state waits for the list to load, and now reads "Create one with + at the top".
+- **Deleted.**
+  - `notes-sidebar.tsx`, `sidebar-toggle.tsx`, `auth/account-footer.tsx`, `note-list.tsx` and
+    `InviteButton`.
+  - The shadcn `sidebar`, `sheet`, `skeleton` and `tooltip`, plus `hooks/use-mobile.ts` and the
+    `--sidebar*` CSS variables.
+  - `sidebar-*.md` are marked superseded.
+- **Not deleted.** `components/ui/scroll-area.tsx` was already unused before this phase. It is
+  left alone.
+- **Checks.**
+  - `pnpm check` and `pnpm build` pass. The precache is 30 entries, 1297 KiB.
+  - Not yet checked on a real phone or in the desktop app.
 - `pnpm build && pnpm preview`: offline start still works (the service worker precache shrank,
   never grew past 2 MiB).
 

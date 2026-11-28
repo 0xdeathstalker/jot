@@ -1,5 +1,7 @@
 # Plan: Notes sidebar on the shadcn `Sidebar` primitive
 
+> Superseded (2026-11-28): the sidebar was removed. See `action-panel.md`, phase 5.
+
 Status: done (2026-11-16)
 
 Goal: replace the hand-built `<aside>` in `src/app.tsx` with `src/components/ui/sidebar.tsx`, and stop

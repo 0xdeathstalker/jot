@@ -1,5 +1,7 @@
 # Sidebar toggle on the toolbar's line
 
+> Superseded (2026-11-28): the sidebar was removed. See `action-panel.md`, phase 5.
+
 Web app, `sm` to `md`: the sidebar toggle sat on its own line above the toolbar. Put it on the
 toolbar's line instead, sticky with it when the note scrolls.
 
