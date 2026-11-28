@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–9 done** (9.1 and 9.5 open). Phases 10–13 (editor chrome) planned; phase 14 (docs) last.
+Status (2026-11-28): **phases 1–10 done** (9.1 and 9.5 open). Phases 11–13 (editor chrome) planned; phase 14 (docs) last.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -488,21 +488,42 @@ Check on a real iPhone (PWA and Safari tab) and an Android phone:
 Goal: the top bar (and the bottom toolbar) stay outside the scroll area. The scrollbar spans only
 the note, and it shows only while scrolling, like Raycast Notes.
 
-- [ ] **10.1** In `app.tsx`, the page becomes a flex column of `h-dvh`. The top bar is a plain
+- [x] **10.1** In `app.tsx`, the page becomes a flex column of `h-dvh`. The top bar is a plain
       child, no longer sticky. A `flex-1 min-h-0 overflow-y-auto` box holds the editor, and only
       that box scrolls. Fixed toolbars (desktop, phone) are outside it, and the box gets bottom
       padding for them.
-- [ ] **10.2** `hooks/use-scroll-fade.ts` puts `data-scrolling` on the box during scroll and
+- [x] **10.2** `hooks/use-scroll-fade.ts` puts `data-scrolling` on the box during scroll and
       removes it 800ms after the last scroll event.
-- [ ] **10.3** CSS in `styles/index.css`, class `.scroll-fade`:
+- [x] **10.3** CSS in `styles/index.css`, class `.scroll-fade`:
   - Thin scrollbar (`scrollbar-width: thin`).
   - The thumb is `transparent` normally, and `color-mix(var(--muted-foreground) 40%, transparent)`
     while `[data-scrolling]` or `:hover` on the bar.
   - Use `scrollbar-color` (Chromium 121+, Firefox). WebView2 and current Chrome support it, so no
     `::-webkit-scrollbar` rules are needed.
   - iOS already has overlay scrollbars.
-- [ ] **10.4** Use the same `.scroll-fade` on the switcher, panel and Recently Deleted lists.
-- [ ] **10.5** Remove the 5.7 sticky toolbar offset; nothing sticks inside the scroll box any more.
+- [x] **10.4** Use the same `.scroll-fade` on the switcher, panel and Recently Deleted lists.
+- [x] **10.5** Remove the 5.7 sticky toolbar offset; nothing sticks inside the scroll box any more.
+
+Done as (2026-11-28):
+
+- `app.tsx`: the root is `flex h-dvh flex-col` and does not scroll. The top bar is a plain child
+  (`relative`, no longer `sticky`; its title is absolutely placed). The editor column sits in
+  `scroll-fade relative min-h-0 flex-1 overflow-y-auto`. No extra bottom padding: the
+  `.ProseMirror` padding from phases 7 and 9 already clears the fixed toolbars.
+- 10.2: `hooks/use-scroll-fade.ts` is one capture `scroll` listener on the document, called once
+  in `app.tsx`. It marks whichever `.scroll-fade` element scrolled, so the dialog lists (10.4)
+  need only the class.
+- 10.3: `.scroll-fade` in `styles/index.css` (thin, transparent thumb; 40% muted while
+  scrolling). No `:hover` rule: hovering anywhere over the note would show it.
+- 10.5: the inline toolbar (share-link page, or before the web slot is found) is `sticky top-0`
+  inside the scroll box, no safe-area/bar offset.
+- `pnpm build`: precache 30 entries, 1308 KiB. Not yet checked in a browser, the desktop app or
+  on a phone (iOS now scrolls an inner box instead of the page; check the caret stays visible
+  while typing).
+- The note box's `scroll-fade` class also picks up shadcn's `scroll-fade` utility
+  (`shadcn/dist/tailwind.css`): a scroll-driven `mask-image` fading the box's top and bottom
+  edges. Kept (owner, 2026-11-28). The mask faded the bottom toolbar too, which was rendered inside
+  the box, so on phone and desktop `Editor` now portals the toolbar into `<body>`.
 
 Check (desktop): no scrollbar beside the top bar. Scrolling shows a thin thumb on the note area
 only, and it fades out after a moment.

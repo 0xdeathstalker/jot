@@ -117,7 +117,7 @@ export function ActionPanel({
           // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
           role="listbox"
           aria-label="Actions"
-          className="max-h-64 overflow-y-auto p-1 desktop:max-h-[212px]"
+          className="max-h-64 scroll-fade overflow-y-auto p-1 desktop:max-h-[212px]"
         >
           {rows.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">No actions found</p>

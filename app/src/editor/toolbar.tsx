@@ -218,7 +218,7 @@ export function Toolbar({
       // Hover and pressed: the text colour at 10% / 15% over the bar. The theme's muted is almost the
       // bar's own colour in dark mode, so the usual hover:bg-muted barely showed.
       className={cn(
-        "sticky top-[calc(env(safe-area-inset-top)+3rem)] z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-0.5 rounded-[10px] border bg-popover p-0.5 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] desktop:fixed desktop:inset-x-2 desktop:top-auto desktop:bottom-2 [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 phone:[&_button]:h-9 phone:[&_button]:min-w-9 phone:[&_button]:px-1 [&_button:hover]:bg-foreground/10 [&_button[aria-pressed=true]]:bg-foreground/15 [&_svg:not([class*='size-'])]:size-4 phone:[&_svg:not([class*='size-'])]:size-[18px]",
+        "sticky top-0 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-0.5 rounded-[10px] border bg-popover p-0.5 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] desktop:fixed desktop:inset-x-2 desktop:top-auto desktop:bottom-2 [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 phone:[&_button]:h-9 phone:[&_button]:min-w-9 phone:[&_button]:px-1 [&_button:hover]:bg-foreground/10 [&_button[aria-pressed=true]]:bg-foreground/15 [&_svg:not([class*='size-'])]:size-4 phone:[&_svg:not([class*='size-'])]:size-[18px]",
         inBar &&
           "static w-auto max-w-full [scrollbar-width:none] flex-nowrap justify-start overflow-x-auto",
       )}

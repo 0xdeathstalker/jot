@@ -11,7 +11,7 @@ import { formatShortcut as shortcut, isDesktop } from "@/lib/platform"
 // buttons as `children` (desktop/title-bar.tsx). `data-tauri-drag-region` drags the frameless
 // desktop window from the bar and its spacer; elsewhere it does nothing. The title is
 // pointer-events-none so drags pass through it.
-// The top padding keeps it clear of the iPhone notch (the bar is sticky at the very top).
+// The top padding keeps it clear of the iPhone notch. It sits above the note's scroll box (app.tsx).
 export function TopBar({
   title,
   onActions,
@@ -29,7 +29,7 @@ export function TopBar({
   return (
     <div
       data-tauri-drag-region
-      className="sticky top-0 z-20 box-content flex h-10 shrink-0 items-center gap-1 bg-background px-2 pt-[env(safe-area-inset-top)] select-none"
+      className="relative z-20 box-content flex h-10 shrink-0 items-center gap-1 bg-background px-2 pt-[env(safe-area-inset-top)] select-none"
     >
       <Button
         variant="ghost"

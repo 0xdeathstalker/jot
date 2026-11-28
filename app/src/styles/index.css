@@ -311,3 +311,13 @@
   white-space: nowrap;
   user-select: none;
 }
+
+/* Scrollbars that show only while scrolling (hooks/use-scroll-fade.ts sets data-scrolling), like
+   Raycast Notes: a thin thumb, invisible at rest. iOS and Android already use overlay bars. */
+.scroll-fade {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.scroll-fade[data-scrolling] {
+  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 40%, transparent) transparent;
+}

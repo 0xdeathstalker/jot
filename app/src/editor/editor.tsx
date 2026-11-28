@@ -264,6 +264,11 @@ export function Editor({
     setBarSlot(layout === "web" ? document.getElementById("top-bar-centre") : null)
   }, [layout])
 
+  // Phone and desktop: the bar is fixed to the bottom of the window, but rendered in <body>, outside
+  // the note's scroll box. That box carries shadcn's `scroll-fade` edge mask, which would otherwise
+  // fade the bar along with the note (2026-11-28).
+  const portalTo = barSlot ?? (layout === "web" ? null : document.body)
+
   if (lost) return <NoAccess onRemove={() => onRemoveLost?.()} />
 
   const toolbar = (
@@ -294,7 +299,7 @@ export function Editor({
           </p>
         )
       )}
-      {barSlot ? createPortal(toolbar, barSlot) : toolbar}
+      {portalTo ? createPortal(toolbar, portalTo) : toolbar}
       <EditorContent editor={editor} />
       <NoticeToast notice={notice} onClose={clearNotice} />
     </>
