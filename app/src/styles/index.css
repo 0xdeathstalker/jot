@@ -185,7 +185,7 @@
   padding-left: 1.5rem;
 }
 
-/* Checklists (TaskList / TaskItem): checkbox beside the first line, no bullet, ticked items muted. */
+/* Checklists (TaskList / TaskItem): checkbox beside the first line, no bullet, ticked items faded and struck through. */
 .ProseMirror ul[data-type="taskList"] {
   list-style: none;
   padding-left: 0.25rem;
@@ -205,11 +205,41 @@
   user-select: none;
 }
 
+/* shadcn Checkbox look (action-panel.md phase 13), on the real <input type="checkbox"> so clicks,
+   Space and screen readers keep working: a 16px box, 1px `--input` border, 5px radius.
+   Checked (owner, after a reference image): a thin `--primary` border, a 2px gap in the page
+   background, then a 10px `--primary` square. The square is a background layer clipped to the
+   content box (inside the 2px padding), so it is always centred and its corners stay concentric
+   with the box's: 5px radius less 1px border and 2px gap = 2px. Whole pixels only (a half-pixel
+   gap draws it off centre). A smaller gap gives a bigger square with rounder corners. */
 .ProseMirror ul[data-type="taskList"] li > label input {
-  width: 1rem;
-  height: 1rem;
-  accent-color: var(--primary);
+  appearance: none;
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  padding: 2px;
+  border: 1px solid var(--input);
+  border-radius: 5px;
+  background: var(--background);
   cursor: pointer;
+  transition: box-shadow 150ms;
+}
+
+.dark .ProseMirror ul[data-type="taskList"] li > label input {
+  background: color-mix(in oklab, var(--input) 30%, transparent);
+}
+
+.ProseMirror ul[data-type="taskList"] li > label input:checked {
+  background:
+    linear-gradient(var(--primary) 0 0) content-box,
+    var(--background);
+  border-color: var(--primary);
+}
+
+.ProseMirror ul[data-type="taskList"] li > label input:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
 }
 
 .ProseMirror ul[data-type="taskList"] li > div {
@@ -218,14 +248,20 @@
 }
 
 .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
-  color: var(--muted-foreground);
+  opacity: 0.5;
   text-decoration: line-through;
 }
 
-/* Viewers: TaskItem already reverts a click when the editor is read-only; also show it cannot be ticked. */
+/* Viewers: TaskItem already reverts a click when the editor is read-only; also show it cannot be
+   ticked (dimmed, phase 13.3). */
 .ProseMirror[contenteditable="false"] ul[data-type="taskList"] li > label input {
   cursor: default;
   pointer-events: none;
+}
+
+/* The label, so the box and its tick dim together. */
+.ProseMirror[contenteditable="false"] ul[data-type="taskList"] li > label {
+  opacity: 0.7;
 }
 
 /* Links: Tailwind preflight removes colour and underline. Pointer over a link, also while editing

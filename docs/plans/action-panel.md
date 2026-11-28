@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–12 done** (9.1 open). Phase 13 (editor chrome) planned; phase 14 (docs) last.
+Status (2026-11-28): **phases 1–13 done** (9.1 open). Phase 14 (docs) last.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -635,7 +635,7 @@ Check on a phone:
 
 Goal: checklist boxes look like the shadcn Checkbox, not the browser's native box.
 
-- [ ] **13.1** CSS only, in `styles/index.css` (the TaskItem input stays a real
+- [x] **13.1** CSS only, in `styles/index.css` (the TaskItem input stays a real
       `<input type="checkbox">`, so clicks, keyboard and screen readers keep working):
   - `appearance: none`
   - a 16px box with `border: 1px solid var(--input)` and a 4px radius, on `var(--background)`
@@ -643,11 +643,26 @@ Goal: checklist boxes look like the shadcn Checkbox, not the browser's native bo
     `var(--primary-foreground)` from a CSS mask (inline SVG data URI), like shadcn's
     `CheckIcon`
   - `:focus-visible` gets the shadcn ring (`var(--ring)` at 50%)
-- [ ] **13.2** Dark mode uses the same tokens, so nothing extra is needed. Check both themes.
-- [ ] **13.3** Viewers: the existing rule keeps `pointer-events: none`. Add `opacity: 0.7`.
-- [ ] **13.4** No shadcn `Checkbox` component: it is a React component, and the box lives inside a
+- [x] **13.2** Dark mode uses the same tokens, so nothing extra is needed. Check both themes.
+- [x] **13.3** Viewers: the existing rule keeps `pointer-events: none`. Add `opacity: 0.7`.
+- [x] **13.4** No shadcn `Checkbox` component: it is a React component, and the box lives inside a
       Tiptap node view. A React node view per item would cost far more than this CSS for the same
       look.
+
+Done as (2026-11-28): all in `styles/index.css`. The tick is the label's `::after` (shown via
+`label:has(input:checked)`), not the input's: Firefox and Safari draw no pseudo-element on an
+`<input>`. Dark mode fills the empty box with `--input` at 30%, as shadcn does. Viewers dim the
+whole label (box and tick) to 0.7. Not yet checked on screen.
+Then (owner, reference image): checked shows an 8px rounded square in `--primary-foreground`
+inside the filled box instead of the tick, and the text is at 50% opacity, struck through (was the
+muted colour).
+Then (owner): thin 1px `--primary` border, 2px gap in the page background, 10px `--primary`
+square inside (a `content-box` background layer with 2px padding; the `::after` is gone). Box
+radius 5px so the square's corners come out at 2px. Then a 9px square (owner): 2.5px padding drew it off centre, so the box is 17px with 3px padding
+and a 6px radius (whole pixels). The owner then set 16px, 3px gap, 5px radius; the 8px square is
+the label's `::after` again with its own 3px radius, since a clipped background's corners came
+out at 1px. Then (owner, reference image: smaller gap, more polished): back to the clipped
+background with a 2px gap: a 10px square, always centred, corners concentric at 2px.
 
 Check: tick and untick with the mouse, a tap, and Space on a focused box. Ticked items stay muted
 and struck through.
