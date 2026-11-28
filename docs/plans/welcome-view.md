@@ -1,7 +1,7 @@
 # Plan: Welcome view (no note open)
 
 Status (2026-11-28): design final (F for web and desktop, M4 for phones). Phase 1 done (component
-written, not yet mounted: phase 3); phases 2–4 to do.
+written, not yet mounted: phase 3) and phase 2 (phone) done; phases 3–4 to do.
 Source: owner request, 2026-11-28 (Excalidraw's empty canvas as the reference).
 
 ## Context
@@ -62,11 +62,17 @@ shows it).
 
 ## Phase 2: phone (M4)
 
-- [ ] **2.1** `useLayout() === "phone"` (`hooks/use-layout.ts`): hide the keycaps, make the bar and
+- [x] **2.1** `useLayout() === "phone"` (`hooks/use-layout.ts`): hide the keycaps, make the bar and
       rows `h-12`, centre the rows' content (`justify-center`), larger icons (20px).
-- [ ] **2.2** No Global hotkey row (it is never passed on a phone anyway: desktop only).
-- [ ] **2.3** Bottom padding so the view stays clear of the home indicator
+- [x] **2.2** No Global hotkey row (it is never passed on a phone anyway: desktop only).
+- [x] **2.3** Bottom padding so the view stays clear of the home indicator
       (`pb-[env(safe-area-inset-bottom)]`); check the iOS install hint at the top does not cover it.
+      Done as (2026-11-28): `phone:` classes in `welcome.tsx` (the CSS variant, not `useLayout`: no JS
+      needed), so the phone view never shows in the desktop app's narrow window. Keycaps `phone:hidden`;
+      bar and rows `phone:h-12`, rows `phone:justify-center` and full width; 20px icons; title back to
+      30px and a 34px logo (`max-sm:` had shrunk them for the 380px window). 2.3 needed no code: the app
+      shell (`app.tsx` root) already pads by `env(safe-area-inset-bottom)`; the install hint is checked
+      in phase 3, once the view is mounted.
 
 ## Phase 3: wiring in `app.tsx`
 
