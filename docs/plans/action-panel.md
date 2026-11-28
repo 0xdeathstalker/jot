@@ -375,7 +375,17 @@ Goal: **web** shows the formatting toolbar in the centre of the top bar, where t
 - [x] **7.5** Viewers (read-only notes) and no-access notes: show nothing in the slot, the same as
       today's disabled state, or keep the title there.
 
-Done as (2026-11-28):- `hooks/use-layout.ts` returns `desktop` / `phone` / `web` (`isApp` waits for phase 11).- `TopBar` renders `<div id="top-bar-centre">` in web and the title elsewhere.- `Editor` finds the slot after commit and portals `<Toolbar inBar>` into it: keeps its border and background (owner, 2026-11-28), one line, scrolls sideways if narrow.- Desktop: `desktop:fixed … bottom-2`, plus `.desktop .ProseMirror` bottom padding.- 7.5: viewers see the disabled toolbar in the bar, as before inline.- Not yet checked in a browser.
+Done as (2026-11-28):
+
+- `hooks/use-layout.ts` returns `desktop` / `phone` / `web` (`isApp` waits for phase 11).
+- `TopBar` renders `<div id="top-bar-centre">` in web and the title elsewhere.
+- `Editor` finds the slot after commit and portals `<Toolbar inBar>` into it. In the bar it keeps
+  its border and background (owner, 2026-11-28; first built frameless), stays on one line, and
+  scrolls sideways if narrow.
+- Desktop: `desktop:fixed … bottom-2`, plus `.desktop .ProseMirror` bottom padding.
+- 7.5: viewers see the disabled toolbar in the bar, as they saw it inline before.
+- Not yet checked in a browser.
+
 Check: in a browser tab, resize across 640px. The toolbar moves between the bottom and the top
 bar, and the title comes and goes, without losing the editor's selection.
 
