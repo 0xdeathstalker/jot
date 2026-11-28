@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–7 done.** Phases 8–13 (editor chrome) planned; phase 14 (docs) last.
+Status (2026-11-28): **phases 1–8 done.** Phases 9–13 (editor chrome) planned; phase 14 (docs) last.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -395,23 +395,34 @@ Goal: on **phone** and **desktop**, a ✕ hides the toolbar. In its place a slim
 note's character count and a **T** button that brings the toolbar back, as in the Raycast
 screenshots.
 
-- [ ] **8.1** `hooks/use-toolbar-hidden.ts`:
+- [x] **8.1** `hooks/use-toolbar-hidden.ts`:
   - It stores `jot-toolbar-hidden` in `localStorage`, because it is remembered on this device
     (owner, 2026-11-28).
   - It uses `useSyncExternalStore`, so every editor and tab on the device agree. The `storage`
     event keeps other tabs in step.
   - Wrap reads and writes in try/catch, as `use-theme.ts` does.
-- [ ] **8.2** The toolbar's last item is a round ✕ button (`Cancel01Icon` in a filled circle),
+- [x] **8.2** The toolbar's last item is a round ✕ button (`Cancel01Icon` in a filled circle),
       labelled "Hide toolbar". It appears in **phone** and **desktop** only, not in **web**,
       where the toolbar lives in the top bar.
-- [ ] **8.3** Hidden state: `editor/toolbar-collapsed.tsx` (new) is the same height and place
+- [x] **8.3** Hidden state: `editor/toolbar-collapsed.tsx` (new) is the same height and place
       as the toolbar.
   - In the centre, muted: "N characters", with the same count rule as the note list (line breaks
     left out, `getTitleAndPreview` in `features/notes/note-meta.ts`). It is read live from the
     editor's text and updates as you type.
   - On the right, a **T** button (`TextFontIcon` or similar) labelled "Show toolbar".
-- [ ] **8.4** Action Panel row: **Show Toolbar / Hide Toolbar** in group 2, in **phone** and
+- [x] **8.4** Action Panel row: **Show Toolbar / Hide Toolbar** in group 2, in **phone** and
       **desktop** only. It has no key yet; Raycast uses none either.
+
+Done as (2026-11-28):
+
+- `hooks/use-toolbar-hidden.ts` as planned (`jot-toolbar-hidden`, `storage` event, try/catch).
+- No `toolbar-collapsed.tsx`: `Toolbar` itself swaps its buttons for the count and the T button
+  when hidden, so the bar keeps its frame and place with no second copy of its classes. The count
+  is `getTitleAndPreview(editor.getText()).chars`, computed only while hidden.
+- The ✕ (its own divided group, last) and the hidden state apply whenever the toolbar is not in
+  the top bar, so phone and desktop. Web ignores the setting.
+- Panel row `toolbar` (group 2, `TextFontIcon`), hidden in web.
+- Not yet checked in a browser.
 
 Check: hide the toolbar, reload, and open another note. It stays hidden, and the count matches
 the switcher's "N characters" for that note.

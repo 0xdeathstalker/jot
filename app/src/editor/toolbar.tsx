@@ -1,5 +1,6 @@
 import {
   ArrowDown01Icon,
+  Cancel01Icon,
   CheckListIcon,
   CodeSquareIcon,
   Heading01Icon,
@@ -12,6 +13,7 @@ import {
   QuoteDownIcon,
   SourceCodeIcon,
   TextBoldIcon,
+  TextFontIcon,
   TextItalicIcon,
   TextStrikethroughIcon,
   TextUnderlineIcon,
@@ -34,6 +36,8 @@ import { Toggle, toggleVariants } from "@/components/ui/toggle"
 import { imageFiles } from "@/editor/images"
 import { LinkBox } from "@/editor/link-box"
 import type { Notify } from "@/editor/notice"
+import { getTitleAndPreview } from "@/features/notes/note-meta"
+import { useToolbarHidden } from "@/hooks/use-toolbar-hidden"
 import { formatShortcut as shortcut, shortcutKeys } from "@/lib/platform"
 import { cn } from "@/lib/utils"
 
@@ -168,6 +172,14 @@ export function Toolbar({
     }),
   })
   const activeList = lists[active.lists.indexOf(true)]
+  // Phone and desktop can hide it; web keeps it in the top bar.
+  const [hidden, setHidden] = useToolbarHidden()
+  const collapsed = hidden && !inBar
+  // Counted only while collapsed: getText on every keystroke is wasted work otherwise.
+  const chars = useEditorState({
+    editor,
+    selector: ({ editor }) => (collapsed ? getTitleAndPreview(editor.getText()).chars : 0),
+  })
 
   return (
     <div
@@ -190,50 +202,91 @@ export function Toolbar({
           "static w-auto max-w-full [scrollbar-width:none] flex-nowrap justify-start overflow-x-auto",
       )}
     >
-      <Group>
-        <Menu
-          label="Headings"
-          icon={HeadingIcon}
-          items={headings}
-          checked={active.headings}
-          single
-          editor={editor}
-          disabled={disabled}
-        />
-        <Menu
-          label="Text style"
-          icon={TextItalicIcon}
-          items={textStyles}
-          checked={active.textStyles}
-          editor={editor}
-          disabled={disabled}
-        />
-        <LinkBox editor={editor} inLink={active.inLink} disabled={disabled} notify={notify} />
-        <ImageButton pressed={active.onImage} disabled={disabled} onPick={onPickImages} />
-        <Button item={inlineCode} pressed={active.inlineCode} editor={editor} disabled={disabled} />
-      </Group>
-      <Group>
-        {blocks.map((item, i) => (
-          <Button
-            key={item.label}
-            item={item}
-            pressed={active.blocks[i]}
-            editor={editor}
-            disabled={disabled}
-          />
-        ))}
-      </Group>
-      <Group>
-        <Menu
-          label="Lists"
-          icon={activeList?.icon ?? LeftToRightListBulletIcon}
-          items={lists}
-          checked={active.lists}
-          single
-          editor={editor}
-          disabled={disabled}
-        />
-      </Group>
+      {collapsed ? (
+        // Hidden (phase 8): the note's character count, same rule as the switcher's, and a T
+        // button that brings the toolbar back.
+        <>
+          <span className="px-2 text-xs text-muted-foreground tabular-nums">
+            {chars} character{chars === 1 ? "" : "s"}
+          </span>
+          <button
+            type="button"
+            aria-label="Show toolbar"
+            title="Show toolbar"
+            className={toggleVariants({ size: "sm" })}
+            onClick={() => setHidden(false)}
+          >
+            <HugeiconsIcon icon={TextFontIcon} />
+          </button>
+        </>
+      ) : (
+        <>
+          <Group>
+            <Menu
+              label="Headings"
+              icon={HeadingIcon}
+              items={headings}
+              checked={active.headings}
+              single
+              editor={editor}
+              disabled={disabled}
+            />
+            <Menu
+              label="Text style"
+              icon={TextItalicIcon}
+              items={textStyles}
+              checked={active.textStyles}
+              editor={editor}
+              disabled={disabled}
+            />
+            <LinkBox editor={editor} inLink={active.inLink} disabled={disabled} notify={notify} />
+            <ImageButton pressed={active.onImage} disabled={disabled} onPick={onPickImages} />
+            <Button
+              item={inlineCode}
+              pressed={active.inlineCode}
+              editor={editor}
+              disabled={disabled}
+            />
+          </Group>
+          <Group>
+            {blocks.map((item, i) => (
+              <Button
+                key={item.label}
+                item={item}
+                pressed={active.blocks[i]}
+                editor={editor}
+                disabled={disabled}
+              />
+            ))}
+          </Group>
+          <Group>
+            <Menu
+              label="Lists"
+              icon={activeList?.icon ?? LeftToRightListBulletIcon}
+              items={lists}
+              checked={active.lists}
+              single
+              editor={editor}
+              disabled={disabled}
+            />
+          </Group>
+          {!inBar && (
+            <Group>
+              <button
+                type="button"
+                aria-label="Hide toolbar"
+                title="Hide toolbar"
+                className={toggleVariants({ size: "sm" })}
+                onClick={() => setHidden(true)}
+              >
+                <span className="grid size-4 place-items-center rounded-full bg-muted-foreground/25">
+                  <HugeiconsIcon icon={Cancel01Icon} className="size-2.5" strokeWidth={2.5} />
+                </span>
+              </button>
+            </Group>
+          )}
+        </>
+      )}
     </div>
   )
 }

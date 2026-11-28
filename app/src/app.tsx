@@ -12,6 +12,7 @@ import {
   Search01Icon,
   Share08Icon,
   Sun03Icon,
+  TextFontIcon,
   UserAdd01Icon,
 } from "@hugeicons/core-free-icons"
 import * as React from "react"
@@ -47,8 +48,10 @@ import { ShareLinkPage } from "@/features/sharing/share-link-page"
 import { type Action, useActionShortcuts } from "@/hooks/use-action-shortcuts"
 import { type AuthUser, signOut, useAuthUser } from "@/hooks/use-auth-user"
 import { useJoinInfo } from "@/hooks/use-join-info"
+import { useLayout } from "@/hooks/use-layout"
 import { useNoteId } from "@/hooks/use-note-id"
 import { useTheme } from "@/hooks/use-theme"
+import { useToolbarHidden } from "@/hooks/use-toolbar-hidden"
 import { lazyOrReload } from "@/lib/lazy"
 import { isDesktop, matchesShortcut } from "@/lib/platform"
 import {
@@ -218,6 +221,8 @@ function NotesApp({
   const [inviteOpen, setInviteOpen] = React.useState(false)
   const joinInfo = useJoinInfo(inviteOpen)
   const [isDark, setDark] = useTheme()
+  const layout = useLayout()
+  const [toolbarHidden, setToolbarHidden] = useToolbarHidden()
 
   // Sign out: push everything to the server first. Only if something could not be synced do we ask
   // before throwing it away (`unsynced`: how many, while that dialog is open).
@@ -392,6 +397,15 @@ function NotesApp({
       hidden: !isDesktop(),
       dialog: true,
       run: () => setHotkeyOpen(true),
+    },
+    {
+      id: "toolbar",
+      label: toolbarHidden ? "Show Toolbar" : "Hide Toolbar",
+      icon: TextFontIcon,
+      group: 2,
+      // Web keeps the toolbar in the top bar; there is nothing to hide.
+      hidden: layout === "web",
+      run: () => setToolbarHidden(!toolbarHidden),
     },
     {
       id: "invite",
