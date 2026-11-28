@@ -62,6 +62,7 @@ import {
   softDeleteAll,
   togglePin,
   updateMeta,
+  useNoteDeleted,
   useNotes,
 } from "@/sync/index-doc"
 import { deleteLocalNote, requestDurableStorage } from "@/sync/local-data"
@@ -119,6 +120,26 @@ function NotesApp({
   // A note picked in the switcher gets the caret, like a new draft (not on every open: on a phone
   // that would pop the keyboard each time).
   const [pickedId, setPickedId] = React.useState<string | null>(null)
+
+  // The open note deleted somewhere else (docs/plans/deleted-note-elsewhere.md): the delete only
+  // marks its list entry, so leave it here too, as the deleting device does. The "open the newest
+  // note" effect then picks the next one, or the welcome view shows. `deletedHere`: notes this tab
+  // deleted, which already showed their own toast. A note removed for being left empty (E4) closes
+  // without one: nobody chose to delete it.
+  const openDeleted = useNoteDeleted(doc, noteId)
+  const deletedHere = React.useRef(new Set<string>())
+  React.useEffect(() => {
+    if (!noteId || isDraft) return
+    // Open and not deleted (or restored since): forget a delete from here, so a later delete
+    // elsewhere still gets its toast.
+    if (openDeleted === "no") {
+      deletedHere.current.delete(noteId)
+      return
+    }
+    const here = deletedHere.current.delete(noteId)
+    openNote(null, { replace: true })
+    if (openDeleted === "deleted" && !here) setNotice({ title: "Note deleted on another device" })
+  }, [noteId, openDeleted, isDraft, openNote])
 
   React.useEffect(() => {
     try {
@@ -284,6 +305,7 @@ function NotesApp({
 
   // Access to a shared note was taken away: drop it from the list and from this device.
   const handleRemoveLost = (id: string) => {
+    deletedHere.current.add(id)
     softDelete(doc, id)
     deleteLocalNote(id)
     if (id === noteId) openNote(null, { replace: true })
@@ -328,6 +350,7 @@ function NotesApp({
       return
     }
     if (note?.shared && !(await needsServer(() => unshareNote(id)))) return
+    deletedHere.current.add(id)
     softDelete(doc, id)
     if (id === noteId) openNote(null, { replace: true })
     setNotice({ title: "Note deleted" })
@@ -496,6 +519,7 @@ function NotesApp({
   // Delete All: only notes you own and have not shared. Shared ones need the server and their own
   // confirm (handleDelete), so they stay. Everything deleted can come back from Recently Deleted.
   const handleDeleteAll = () => {
+    for (const id of deletableIds) deletedHere.current.add(id)
     softDeleteAll(doc, deletableIds)
     // The open note went too (or is an untouched draft): open the next one, as after a delete.
     if (noteId && !notes.some((note) => note.id === noteId && !deletableIds.includes(note.id)))

@@ -1,6 +1,6 @@
 # Plan: A note deleted on another device stays open here
 
-Status (2026-11-29): phase 1 done; phases 2–3 to do.
+Status (2026-11-29): phases 1–2 done (not yet checked on two devices); phase 3 to do.
 Source: owner bug report, 2026-11-29 (desktop app and web tab, each with a different note open).
 
 ## The bug
@@ -53,13 +53,18 @@ listed note read `"no"`; after `softDelete` `"deleted"`; with `{ empty: true }` 
 
 ### Phase 2: leave the note in `app.tsx`
 
-- [ ] **2.1** `const openDeleted = useNoteDeleted(doc, noteId)`. Effect: when it is not `"no"` and
+- [x] **2.1** `const openDeleted = useNoteDeleted(doc, noteId)`. Effect: when it is not `"no"` and
       the note is not a draft, `openNote(null, { replace: true })`. The existing "open the newest
       note" effect then picks the next note, or the welcome view shows when none is left.
-- [ ] **2.2** Toast "Note deleted on another device" when `openDeleted === "deleted"`, unless this
+- [x] **2.2** Toast "Note deleted on another device" when `openDeleted === "deleted"`, unless this
       device deleted it: `deleteNote` and `handleDeleteAll` record the ids they deleted in a ref,
       and the effect skips those (then clears them).
-- [ ] **2.3** `replace: true`, as the local delete does: Back does not return to the deleted note.
+- [x] **2.3** `replace: true`, as the local delete does: Back does not return to the deleted note.
+
+Done as (2026-11-29): one effect in `app.tsx` after `pickedId`, on `[noteId, openDeleted, isDraft,
+openNote]`. `deletedHere` (a ref'd `Set`) is filled by `deleteNote`, `handleDeleteAll` and also
+`handleRemoveLost` (it soft-deletes too). The effect drops the id once used, and also whenever the
+open note reads `"no"` (restored and reopened), so a later delete elsewhere still gets its toast.
 
 ### Phase 3: docs
 
