@@ -329,6 +329,7 @@ Rules:
 ### Data and sync traps
 
 - ❌ **Never hard-delete notes.** Use `deleted: true`, or an offline device can resurrect them.
+- ⚠️ A delete only marks the list entry (`deleted: true`); other windows still have that note open. The open note watches its own entry (`useNoteDeleted`) and leaves when it is deleted. Treat a missing entry as not deleted: drafts and unsynced notes are not in the list (`docs/plans/deleted-note-elsewhere.md`).
 - ❌ Don't store note content outside Yjs. There must be one source of truth.
 - ❌ Don't put every note in one giant Y.Doc. Use one per note + one index doc per user.
 - ❌ Don't trust the client for permissions. Check every connection in the Worker.

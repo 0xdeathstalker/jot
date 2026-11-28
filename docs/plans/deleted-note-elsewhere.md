@@ -1,6 +1,6 @@
 # Plan: A note deleted on another device stays open here
 
-Status (2026-11-29): phases 1–2 done (not yet checked on two devices); phase 3 to do.
+Status (2026-11-29): **done** (phases 1–3), checked by the owner across the desktop app and the web.
 Source: owner bug report, 2026-11-29 (desktop app and web tab, each with a different note open).
 
 ## The bug
@@ -68,9 +68,9 @@ open note reads `"no"` (restored and reopened), so a later delete elsewhere stil
 
 ### Phase 3: docs
 
-- [ ] **3.1** `project-context.md` §11 (traps): "Deleting elsewhere only marks the list entry:
+- [x] **3.1** `project-context.md` §11 (traps): "Deleting elsewhere only marks the list entry:
       the open note must watch its own entry".
-- [ ] **3.2** Tick this plan.
+- [x] **3.2** Tick this plan.
 
 ## Verification
 
