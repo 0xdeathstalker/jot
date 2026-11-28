@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–10 done** (9.1 and 9.5 open). Phases 11–13 (editor chrome) planned; phase 14 (docs) last.
+Status (2026-11-28): **phases 1–11 done** (9.1 open). Phases 12–13 (editor chrome) planned; phase 14 (docs) last.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -193,7 +193,7 @@ Goal: clear the list in one step, with everything still restorable from Phase 3.
 - [x] **4.3** Add a Delete All Notes row (group 3, destructive, Mod+Alt+D). It is disabled when
       there is nothing to delete.
 
-Done as (2026-11-28): `softDeleteAll(doc, ids)` in `sync/index-doc.ts` (one transaction). The confirm keeps its count while it closes. If the open note was deleted, or is an untouched draft, `openNote(null)` opens the next one (the draft's empty local copy is dropped as usual). A kept shared note stays open.
+Done as (2026-11-28): `softDeleteAll(doc, ids)` in `sync/index-doc.ts` (one transaction). Fix (owner, 2026-11-28): Ctrl+Alt+D typed "ḍ" on a Windows layout with AltGr (Ctrl+Alt is AltGr there, reported as `AltGraph`); `matchesShortcut` now counts AltGraph as Mod+Alt. The confirm keeps its count while it closes. If the open note was deleted, or is an untouched draft, `openNote(null)` opens the next one (the draft's empty local copy is dropped as usual). A kept shared note stays open.
 
 Check: Delete All removes your own notes and keeps the shared ones. Every deleted note shows up
 in Recently Deleted and can be restored.
@@ -449,7 +449,7 @@ on-screen keyboard. A button closes the keyboard.
       The collapsed bar from 8 shows it too.
 - [x] **9.4** The editor's bottom padding grows with the inset, so the caret line never sits
       under the toolbar. Scroll the caret into view on `visualViewport` resize.
-- [ ] **9.5** The toast position (phase 11) uses the same inset when it is at the bottom.
+- [x] **9.5** ~~The toast position (phase 11) uses the same inset when it is at the bottom.~~ Moot: phase 11 puts phone toasts at the top.
 
 Done as (2026-11-28):
 
@@ -533,20 +533,35 @@ only, and it fades out after a moment.
 Goal: deleting a note shows a toast. In **desktop**, **phone** and an installed PWA it sits at
 the top centre; in a **web** browser tab, at the bottom centre. Owner: message only, no Undo.
 
-- [ ] **11.1** `editor/notice.tsx`:
+- [x] **11.1** `editor/notice.tsx`:
   - `NoticeToast` takes its position from `useLayout()`. Top: just under the top bar
     (`top-[calc(env(safe-area-inset-top)+3rem)]`). Bottom: as today.
   - Every toast follows this rule, including the editor's own ("Select text to add a link", the
     image refusals), so there is one rule.
-- [ ] **11.2** Messages:
+- [x] **11.2** Messages:
   - Delete Note (own): "Note deleted".
   - Leave note: "Left note".
   - Delete All: "N notes deleted".
   - Removing a note you lost access to shows no toast; it is not your action.
   - Set them in `deleteNote` / `handleRemoveLost` / `handleDeleteAll` in `app.tsx`, only after the
     delete succeeded. Server failures keep their own messages.
-- [ ] **11.3** The top toast sits above dialogs' blur (z-index) and never covers the top bar's
+- [x] **11.3** The top toast sits above dialogs' blur (z-index) and never covers the top bar's
       buttons. It stays centred in a 380px desktop window.
+
+Done as (2026-11-28):
+
+- 11.1: `NoticeToast` (`editor/notice.tsx`) is at the top when `useLayout() !== "web"` or
+  `isInstalled()` (new in `lib/platform.ts`, also used by `isIosBrowser`), else `bottom-4`. The
+  old phone rule (above the bottom toolbar) is gone. Background is `bg-raised`, like the menus
+  and the install hint.
+- 11.2: in `deleteNote`, "Left note" and "Note deleted" after the server call succeeded (or was
+  not needed); "1 note deleted" / "N notes deleted" in `handleDeleteAll`. `handleRemoveLost`
+  itself shows nothing.
+- 11.3: `z-60`, above dialogs and their blur (`z-50`). It starts 3rem below the safe area, under
+  the 40px bar, so it never covers the bar's buttons. Centred with `left-1/2 -translate-x-1/2`
+  (no scrolling inside, so the iOS transform issue does not apply); `max-w-[calc(100vw-2rem)]`
+  keeps it inside a 380px window.
+- Not yet checked on screen.
 
 Check: delete from the panel and with Ctrl+D in each mode. The toast shows in the right place,
 once, and goes after 4s.

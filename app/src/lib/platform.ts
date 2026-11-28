@@ -4,10 +4,15 @@ export function isIosBrowser(): boolean {
   const ua = navigator.userAgent
   const iosDevice =
     /iPhone|iPad|iPod/.test(ua) || (ua.includes("Macintosh") && navigator.maxTouchPoints > 1)
-  const installed =
+  return iosDevice && !isInstalled()
+}
+
+// Running as an installed app (Home Screen on iOS, an installed PWA elsewhere), not a browser tab.
+export function isInstalled(): boolean {
+  return (
     (navigator as Navigator & { standalone?: boolean }).standalone === true ||
     window.matchMedia("(display-mode: standalone)").matches
-  return iosDevice && !installed
+  )
 }
 
 // Apple keyboards: shortcuts read ⌘ ⌥ ⇧ instead of Ctrl / Alt / Shift.
@@ -35,10 +40,13 @@ export function formatShortcut(keys: string[]): string {
 // physical key, because ⌥ on a Mac changes `event.key` (⌥D gives "∂").
 export function matchesShortcut(event: KeyboardEvent, keys: string[]): boolean {
   const key = keys.at(-1)!.toLowerCase()
+  // Windows: Ctrl+Alt is AltGr on layouts that have one, reported as AltGraph (and it types its
+  // character, e.g. "ḍ" for Ctrl+Alt+D) rather than as Ctrl and Alt. Count it as both.
+  const altGr = event.getModifierState?.("AltGraph") ?? false
   return (
-    (event.ctrlKey || event.metaKey) === keys.includes("Mod") &&
+    (event.ctrlKey || event.metaKey || altGr) === keys.includes("Mod") &&
     event.shiftKey === keys.includes("Shift") &&
-    event.altKey === keys.includes("Alt") &&
+    (event.altKey || altGr) === keys.includes("Alt") &&
     (event.key.toLowerCase() === key || event.code === `Key${key.toUpperCase()}`)
   )
 }

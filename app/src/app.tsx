@@ -316,13 +316,18 @@ function NotesApp({
       return false
     }
 
+    // Toasts only after it worked (phase 11); a failure keeps its own message above.
     if (note?.role) {
-      if (await needsServer(() => removeMember(id, user.id))) handleRemoveLost(id)
+      if (await needsServer(() => removeMember(id, user.id))) {
+        handleRemoveLost(id)
+        setNotice({ title: "Left note" })
+      }
       return
     }
     if (note?.shared && !(await needsServer(() => unshareNote(id)))) return
     softDelete(doc, id)
     if (id === noteId) openNote(null, { replace: true })
+    setNotice({ title: "Note deleted" })
   }
 
   // A note picked in the switcher or restored from Recently Deleted: open it with the caret in it.
@@ -492,6 +497,8 @@ function NotesApp({
     // The open note went too (or is an untouched draft): open the next one, as after a delete.
     if (noteId && !notes.some((note) => note.id === noteId && !deletableIds.includes(note.id)))
       openNote(null, { replace: true })
+    const n = deletableIds.length
+    setNotice({ title: n === 1 ? "1 note deleted" : `${n} notes deleted` })
   }
 
   return (
