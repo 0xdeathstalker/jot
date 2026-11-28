@@ -1,6 +1,6 @@
 # Plan: A note deleted on another device stays open here
 
-Status (2026-11-29): planned, not started.
+Status (2026-11-29): phase 1 done; phases 2–3 to do.
 Source: owner bug report, 2026-11-29 (desktop app and web tab, each with a different note open).
 
 ## The bug
@@ -40,10 +40,16 @@ When the open note's list entry becomes deleted, leave it the way the deleting d
 
 ### Phase 1: read the open note's deleted state
 
-- [ ] **1.1** `sync/index-doc.ts`: `useNoteDeleted(doc, id): "no" | "deleted" | "empty"`, read from
+- [x] **1.1** `sync/index-doc.ts`: `useNoteDeleted(doc, id): "no" | "deleted" | "empty"`, read from
       the note's own entry (not from `useNotes`, which leaves deleted notes out). Same
       `useSyncExternalStore` + `observeDeep` pattern as `createStore`, snapshot a string so it
       stays stable. `"no"` when the entry is missing or not deleted, or `id` is null.
+
+Done as (2026-11-29): `noteDeleted(doc, id)` (plain read) and `useNoteDeleted(doc, id)` (subscribes
+with `observeDeep`, reads with `noteDeleted`; the snapshot is a string, so no cached store) in
+`sync/index-doc.ts`. Checked with a throwaway script on a real Y.Doc: missing id, null and a
+listed note read `"no"`; after `softDelete` `"deleted"`; with `{ empty: true }` `"empty"`; after
+`undelete` `"no"` again. Not used yet (phase 2).
 
 ### Phase 2: leave the note in `app.tsx`
 
