@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–13 done** (9.1 open). Phase 14 (docs) last.
+Status (2026-11-28): **done** (phases 1–14). Open: 9.1 (Android check).
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -669,15 +669,15 @@ and struck through.
 
 ### Phase 14: Docs
 
-- [ ] **14.1** `project-context.md`:
+- [x] **14.1** `project-context.md`:
   - In §12, mark "Command palette" as Decided, with the keys and the date.
   - In the §12 desktop app row, change the switcher key to Ctrl+P.
   - In §12, record that the sidebar was removed (2026-11-28) and the top bar is shared.
-- [ ] **14.2** `project-context.md` §10: add ticked items for the Action Panel, Recently Deleted,
+- [x] **14.2** `project-context.md` §10: add ticked items for the Action Panel, Recently Deleted,
       Delete All, the shared top bar and the editor chrome (phases 6–13).
-- [ ] **14.3** `desktop-app.md` 3.5: switcher keys are now Ctrl/⌘+P, and Ctrl/⌘+K opens the Action
+- [x] **14.3** `desktop-app.md` 3.5: switcher keys are now Ctrl/⌘+P, and Ctrl/⌘+K opens the Action
       Panel.
-- [ ] **14.4** Set this plan's status to done.
+- [x] **14.4** Set this plan's status to done.
 
 ## Files
 
@@ -687,7 +687,11 @@ and struck through.
 - `app/src/features/notes/deleted-notes-dialog.tsx` (new)
 - `app/src/sync/index-doc.ts`: `readDeletedNotes`, `undelete`
 - `app/src/desktop/title-bar.tsx`: the Actions button and the Search hint; wraps the shared bar (phase 5)
-- `app/src/features/notes/top-bar.tsx` (new, phase 5)
+- `app/src/features/notes/top-bar.tsx` (new, phase 5): framed buttons, phone ⋮ menu, tooltips (phase 12)
+- `app/src/editor/toolbar.tsx`, `editor.tsx`, `notice.tsx`: editor chrome (phases 6–12)
+- `app/src/hooks/use-layout.ts`, `use-toolbar-hidden.ts`, `use-scroll-fade.ts` (new)
+- `app/src/components/shortcut-tooltip.tsx`, `components/ui/tooltip.tsx` (new, phase 12)
+- `app/src/styles/index.css`: `phone:` variant, `--raised`, checkboxes (phase 13)
 
 ## Verification
 
