@@ -1,8 +1,7 @@
 # Plan: Welcome view (no note open)
 
-Status (2026-11-28): design final (F for web and desktop, M4 for phones). Phase 1 done (component
-written) and 2 (phone) done; phase 3 (mounted in `app.tsx`) done, not yet checked on screen;
-phase 4 to do.
+Status (2026-11-29): **done** (phases 1–4); every Verification check done by the owner on web,
+desktop and phones.
 Source: owner request, 2026-11-28 (Excalidraw's empty canvas as the reference).
 
 ## Context
@@ -15,7 +14,7 @@ and the few actions that get you started, with their keys.
 
 ## Final design (owner, 2026-11-28)
 
-Mockups in `mockup/` (open `mockup/index.html`; throwaway, see phase 4).
+Mockups were in `mockup/` (deleted in 4.3; in git history before that). Named below by their file.
 
 **Web and desktop: F** (`mockup/f-combined.html`). Centred, three blocks, the gaps between
 blocks clearly larger than the space inside each:
@@ -93,9 +92,9 @@ it, so nothing needs clicks passed through.
 
 ## Phase 4: docs and clean-up
 
-- [ ] **4.1** `docs/project-context.md`: §10 ticked item, §12 row "Welcome view: Decided".
-- [ ] **4.2** This plan: tick, set status to done.
-- [ ] **4.3** `mockup/`: owner decides, delete it or add it to `.gitignore`, before the PR.
+- [x] **4.1** `docs/project-context.md`: §10 ticked item, §12 row "Welcome view: Decided".
+- [x] **4.2** This plan: tick, set status to done.
+- [x] **4.3** (Deleted 2026-11-29, owner: the design is recorded here.) `mockup/`: owner decides, delete it or add it to `.gitignore`, before the PR.
 
 ## Verification
 

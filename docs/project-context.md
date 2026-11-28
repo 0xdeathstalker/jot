@@ -307,7 +307,11 @@ Rules:
 - [x] Action Panel (Ctrl/⌘+K): every action with its keys; one action list feeds the panel and the shortcuts
 - [x] Recently Deleted with Restore, and Delete All Notes (soft delete; shared notes kept)
 - [x] Shared top bar on every platform, sidebar removed; phone: New note and a ⋮ menu
-- [x] Editor chrome (phases 6–13): smaller toolbar, toolbar in the web top bar, hide toolbar, close keyboard, scroll fade, toasts, H2 first line on new phone notes, tooltips with keys, shadcn-style checkboxes
+- [x] Editor chrome (phases 6–13): smaller toolbar, toolbar in the web top bar, hide toolbar, phone toolbar that scrolls sideways (close keyboard dropped), scroll fade, toasts, H2 first line on new phone notes, tooltips with keys, shadcn-style checkboxes
+
+### Welcome view (`docs/plans/welcome-view.md`)
+
+- [x] Welcome view when no note is open: name, one line, a "What would you like to do?" bar (Action Panel), New note, Search notes, Global hotkey (desktop). Phone: same, no keycaps, 48px centred rows
 
 ### Later (optional)
 
@@ -392,6 +396,7 @@ Rules:
 | What sign-out deletes            | Decided     | Only the signed-out account's own data (its list and the notes in it). Another account's data left in the browser stays until it comes back or signs out: no silent loss of its offline edits, at the cost of a browser that is not empty after sign-out (owner, 2026-11-23, `docs/plans/note-list-sync.md`)                                                   |
 | Command palette (⌘K / Ctrl+K)    | Decided     | The Raycast-style Action Panel (owner, 2026-11-27): Ctrl/⌘+K opens a searchable list of every action with its keys (New, Pin, Share, Browse Notes Ctrl/⌘+P, Back / Forward, Recently Deleted, Delete Ctrl/⌘+D, Delete All Ctrl/⌘+Alt+D). One action list feeds the panel and the shortcuts (`docs/plans/action-panel.md`). The link box uses Ctrl/⌘+L          |
 | Sidebar and top bar              | Decided     | Sidebar removed (owner, 2026-11-28): one shared top bar on web, phone and desktop (`features/notes/top-bar.tsx`) with Actions, New note and Search; notes are reached through the switcher. Web puts the formatting toolbar in the bar; phone has New note and a ⋮ menu. Replaces the phone sidebar edge swipe                                                 |
+| Welcome view                     | Decided     | When no note is open (owner, 2026-11-28): logo, "Jot", one line, a "What would you like to do?" bar that opens the Action Panel, then New note, Search notes and (desktop) Global hotkey with their keys. Phone: no keycaps, 48px centred rows. Replaces "No notes yet". Mockups F and M4 (`docs/plans/welcome-view.md`)                                       |
 
 ---
 

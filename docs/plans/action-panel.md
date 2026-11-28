@@ -1,6 +1,7 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **done** (phases 1–14). Open: 9.1 (Android check).
+Status (2026-11-29): **done** (phases 1–14), all checks done by the owner on desktop, web, iPhone
+and Android.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -307,7 +308,7 @@ Done as (2026-11-28):
   left alone.
 - **Checks.**
   - `pnpm check` and `pnpm build` pass. The precache is 30 entries, 1297 KiB.
-  - Not yet checked on a real phone or in the desktop app.
+  - Checked by the owner (2026-11-29) on phones and in the desktop app.
 - `pnpm build && pnpm preview`: offline start still works (the service worker precache shrank,
   never grew past 2 MiB).
 
@@ -384,7 +385,7 @@ Done as (2026-11-28):
   scrolls sideways if narrow.
 - Desktop: `desktop:fixed … bottom-2`, plus `.desktop .ProseMirror` bottom padding.
 - 7.5: viewers see the disabled toolbar in the bar, as they saw it inline before.
-- Not yet checked in a browser.
+- Checked by the owner in the browser (2026-11-29).
 
 Check: in a browser tab, resize across 640px. The toolbar moves between the bottom and the top
 bar, and the title comes and goes, without losing the editor's selection.
@@ -422,7 +423,7 @@ Done as (2026-11-28):
 - The ✕ (its own divided group, last) and the hidden state apply whenever the toolbar is not in
   the top bar, so phone and desktop. Web ignores the setting.
 - Panel row `toolbar` (group 2, `TextFontIcon`), hidden in web.
-- Not yet checked in a browser.
+- Checked by the owner in the browser (2026-11-29).
 
 Check: hide the toolbar, reload, and open another note. It stays hidden, and the count matches
 the switcher's "N characters" for that note.
@@ -432,7 +433,7 @@ the switcher's "N characters" for that note.
 Goal: on **phone**, while typing, the toolbar (or the collapsed bar from 8) sits just above the
 on-screen keyboard. A button closes the keyboard.
 
-- [ ] **9.1** Android: `index.html` already has `interactive-widget=resizes-content`, so the page
+- [x] **9.1** Android (checked by the owner, 2026-11-29): `index.html` already has `interactive-widget=resizes-content`, so the page
       shrinks above the keyboard and `bottom-*` already works there. Confirm it on a real phone.
 - [x] **9.2** ~~iOS ignores that setting.~~ Dropped: iOS keeps fixed bars above the keyboard too (see Done as).
   - `hooks/use-keyboard-inset.ts` reads `window.visualViewport`:
@@ -517,8 +518,8 @@ Done as (2026-11-28):
   scrolling). No `:hover` rule: hovering anywhere over the note would show it.
 - 10.5: the inline toolbar (share-link page, or before the web slot is found) is `sticky top-0`
   inside the scroll box, no safe-area/bar offset.
-- `pnpm build`: precache 30 entries, 1308 KiB. Not yet checked in a browser, the desktop app or
-  on a phone (iOS now scrolls an inner box instead of the page; check the caret stays visible
+- `pnpm build`: precache 30 entries, 1308 KiB. Checked by the owner (2026-11-29) in a browser, the desktop app and
+  on a phone (iOS now scrolls an inner box instead of the page; the caret stays visible
   while typing).
 - The note box's `scroll-fade` class also picks up shadcn's `scroll-fade` utility
   (`shadcn/dist/tailwind.css`): a scroll-driven `mask-image` fading the box's top and bottom
@@ -562,7 +563,7 @@ Done as (2026-11-28):
   `left-1/2 -translate-x-1/2`
   (no scrolling inside, so the iOS transform issue does not apply); `max-w-[calc(100vw-2rem)]`
   keeps it inside a 380px window.
-- Not yet checked on screen.
+- Checked by the owner on screen (2026-11-29).
 
 Check: delete from the panel and with Ctrl+D in each mode. The toast shows in the right place,
 once, and goes after 4s.
@@ -633,7 +634,7 @@ Done as (2026-11-28):
   Hide toolbar sits outside it, always in view. Elsewhere that box is `display: contents`.
   Then (owner): shadcn `scroll-fade-x` on that box: the right edge fades while more buttons lie
   that way, the left once scrolled.
-- Not yet checked on a phone.
+- Checked by the owner on a phone (2026-11-29).
 
 Check on a phone:
 
@@ -663,7 +664,7 @@ Goal: checklist boxes look like the shadcn Checkbox, not the browser's native bo
 Done as (2026-11-28): all in `styles/index.css`. The tick is the label's `::after` (shown via
 `label:has(input:checked)`), not the input's: Firefox and Safari draw no pseudo-element on an
 `<input>`. Dark mode fills the empty box with `--input` at 30%, as shadcn does. Viewers dim the
-whole label (box and tick) to 0.7. Not yet checked on screen.
+whole label (box and tick) to 0.7. Checked by the owner (2026-11-29).
 Then (owner, reference image): checked shows an 8px rounded square in `--primary-foreground`
 inside the filled box instead of the tick, and the text is at 50% opacity, struck through (was the
 muted colour).
