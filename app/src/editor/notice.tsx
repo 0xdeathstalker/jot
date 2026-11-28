@@ -32,7 +32,8 @@ export function NoticeToast({ notice, onClose }: { notice: Notice | null; onClos
         <div
           className={cn(
             "fixed left-1/2 z-60 flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-start gap-3 rounded-xl bg-raised px-4 py-3 text-popover-foreground shadow-2xl ring-1 ring-foreground/10",
-            top ? "top-[calc(env(safe-area-inset-top)+3rem)]" : "bottom-4",
+            // Under the top bar: 52px on phones, 50px elsewhere (8px above its buttons).
+            top ? "top-[calc(env(safe-area-inset-top)+3.75rem)]" : "bottom-4",
           )}
         >
           <button

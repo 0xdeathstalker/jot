@@ -78,9 +78,9 @@ export function stopSyncing(session: RoomSession) {
   session.provider.disconnect()
 }
 
-// One Y.Doc per note: /parties/note-room/<noteId>.
-export function useNoteSession(noteId: string): RoomSession {
-  return useRoomSession({ party: "note-room", room: noteId, idbName: `jot-note-${noteId}` }).session
+// One Y.Doc per note: /parties/note-room/<noteId>. `loaded`: this device's saved copy is merged in.
+export function useNoteSession(noteId: string): { session: RoomSession; loaded: boolean } {
+  return useRoomSession({ party: "note-room", room: noteId, idbName: `jot-note-${noteId}` })
 }
 
 // One note list per user: /parties/index-room/index-<userId>, IndexedDB jot-index-<userId>.

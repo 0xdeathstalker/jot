@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–11 done** (9.1 open). Phases 12–13 (editor chrome) planned; phase 14 (docs) last.
+Status (2026-11-28): **phases 1–12 done** (9.1 open). Phase 13 (editor chrome) planned; phase 14 (docs) last.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -558,7 +558,8 @@ Done as (2026-11-28):
   not needed); "1 note deleted" / "N notes deleted" in `handleDeleteAll`. `handleRemoveLost`
   itself shows nothing.
 - 11.3: `z-60`, above dialogs and their blur (`z-50`). It starts 3rem below the safe area, under
-  the 40px bar, so it never covers the bar's buttons. Centred with `left-1/2 -translate-x-1/2`
+  the 40px bar (now 50px, see phase 12), so it never covers the bar's buttons. Centred with
+  `left-1/2 -translate-x-1/2`
   (no scrolling inside, so the iOS transform issue does not apply); `max-w-[calc(100vw-2rem)]`
   keeps it inside a 380px window.
 - Not yet checked on screen.
@@ -572,15 +573,56 @@ Goal: a note created in **phone** mode starts with its first line as Heading 2. 
 change it with the toolbar; otherwise it stays H2. Notes created on web or desktop are unchanged,
 and existing notes are never rewritten (owner, 2026-11-28).
 
-- [ ] **12.1** `app.tsx` marks a draft as "phone" when `handleNew` runs in **phone** mode, and
+- [x] **12.1** `app.tsx` marks a draft as "phone" when `handleNew` runs in **phone** mode, and
       passes `startWithHeading` to `<Editor>` for that draft only.
-- [ ] **12.2** `editor/editor.tsx`: once the editor is ready and the draft's doc is still blank,
+- [x] **12.2** `editor/editor.tsx`: once the editor is ready and the draft's doc is still blank,
       run `setNode("heading", { level: 2 })` on the first line. Enter at the end of it gives a
       normal paragraph next, which is Tiptap's default.
-- [ ] **12.3** Blank checks: covered by `blank-notes.md` E1 (owner, 2026-11-28: blank = no text and
+- [x] **12.3** Blank checks: covered by `blank-notes.md` E1 (owner, 2026-11-28: blank = no text and
       no image, whatever the blocks), so an empty H2 already counts as blank. Do E1 first.
-- [ ] **12.4** The title is still the first line's text, so the list, switcher and top bar are
+- [x] **12.4** The title is still the first line's text, so the list, switcher and top bar are
       unaffected.
+
+Done as (2026-11-28):
+
+- 12.1: `headingDraftId` state in `app.tsx`, set by `handleNew` when `layout === "phone"`;
+  `<Editor startWithHeading={isDraft && noteId === headingDraftId}>`. Not kept across a reload
+  (the heading itself is already saved in the note by then).
+- 12.2: an effect in `editor.tsx` runs `setNode("heading", { level: 2 })` once the note's local
+  copy is loaded (`useNoteSession` now also returns `loaded`), so a reloaded draft cannot get a
+  second heading merged in. Only while the doc is still blank.
+- 12.3: no extra code: `blank-notes.md` E1 already treats an empty H2 as blank. The H2 edit marks
+  the note as edited here (E3), but an unlisted draft is skipped by `handleLeftEmpty` and cleaned
+  up as a draft.
+- Phone top bar (owner, 2026-11-28, after the first phase 12 test): New note alone on the left
+  and a ⋮ menu on the right with Actions and Search notes (icon and label; `bg-raised`,
+  `finalFocus={false}` so the opened dialog keeps focus). Both buttons are 36px with 20px icons
+  (32/16 before); the title uses `inset-x-14`, centred between them. Web and desktop unchanged.
+  Then (owner): each sits in a toolbar-style frame (`rounded-[10px] border bg-popover p-0.5`)
+  with the toolbar's `bg-foreground/10` hover and `/15` while the menu is open; the phone bar
+  is `h-11` (44px) to fit the 42px frame, plus 8px above the buttons (owner screenshot: they
+  touched the top edge). Phone toasts and the install hint start at `3.75rem` to clear it.
+  Inner radius 7px (frame 10px less padding and border); hover, open (`aria-expanded`) and menu
+  rows use the toolbar's `bg-foreground/10` / `/15`, overriding the ghost button's `dark:` and
+  `aria-expanded:` shades.
+- Web and desktop top bar (owner, 2026-11-28): Actions, New note and Search share one toolbar-style
+  frame (`gap-0.5`), 28px buttons with the same 7px radius and shades. The frame is 34px, inside
+  the 40px bar.
+  Then (owner): 8px above the frame to match the 8px left edge (`h-[2.125rem]` plus `pt-2 pb-2`,
+  50px bar). Toasts and the install hint start at `3.75rem` everywhere; Action Panel and switcher
+  at `desktop:top-14`.
+  Then (owner): a shadcn Tooltip (`components/ui/tooltip.tsx`, base-maia registry; the CLI refuses
+  `-c app`) on each of the three: label plus keycaps (`shortcutKeys`), below the button, one
+  `TooltipProvider` so moving along the row opens the next at once. Replaces their `title`.
+  Phone has none (no hover).
+  Then (owner): the same tooltip on the formatting toolbar's plain buttons that have a shortcut
+  (`Button` in `toolbar.tsx`, Link in `link-box.tsx`), via `components/shortcut-tooltip.tsx`
+  (shared with the top bar; `side="top"`, flips when there is no room). Dropdowns and buttons
+  without keys (Image) keep their `title`. One `TooltipProvider` around the toolbar (`editor.tsx`).
+  Then (owner): dropdowns (Headings, Text style, Lists) and buttons without keys (Image, Show /
+  Hide toolbar) get it too, name only. Close keyboard (phone only) keeps its `title`. The shadcn
+  arrow is removed from `components/ui/tooltip.tsx`, and its provider delay is 500ms (shadcn: 0).
+- Not yet checked on a phone.
 
 Check on a phone:
 

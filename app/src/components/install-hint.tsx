@@ -34,7 +34,7 @@ export function InstallHint() {
     <div
       role="note"
       // Top, under the top bar: the bottom belongs to the phone toolbar (and the keyboard).
-      className="fixed inset-x-4 top-[calc(env(safe-area-inset-top)+3rem)] z-30 flex items-center gap-3 rounded-2xl border bg-raised p-3 text-sm shadow-lg"
+      className="fixed inset-x-4 top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 flex items-center gap-3 rounded-2xl border bg-raised p-3 text-sm shadow-lg"
     >
       <p className="flex-1">
         Install Jot: tap{" "}

@@ -23,6 +23,7 @@ import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import { type Editor, useEditorState } from "@tiptap/react"
 import * as React from "react"
 
+import { ShortcutTooltip } from "@/components/shortcut-tooltip"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -40,7 +41,7 @@ import type { Notify } from "@/editor/notice"
 import { getTitleAndPreview } from "@/features/notes/note-meta"
 import { useLayout } from "@/hooks/use-layout"
 import { useToolbarHidden } from "@/hooks/use-toolbar-hidden"
-import { formatShortcut as shortcut, shortcutKeys } from "@/lib/platform"
+import { shortcutKeys } from "@/lib/platform"
 import { cn } from "@/lib/utils"
 
 type Item = {
@@ -230,15 +231,16 @@ export function Toolbar({
           <span className="px-2 text-xs text-muted-foreground tabular-nums">
             {chars} character{chars === 1 ? "" : "s"}
           </span>
-          <button
-            type="button"
-            aria-label="Show toolbar"
-            title="Show toolbar"
-            className={toggleVariants({ size: "sm" })}
-            onClick={() => setHidden(false)}
-          >
-            <HugeiconsIcon icon={TextFontIcon} />
-          </button>
+          <ShortcutTooltip label="Show toolbar">
+            <button
+              type="button"
+              aria-label="Show toolbar"
+              className={toggleVariants({ size: "sm" })}
+              onClick={() => setHidden(false)}
+            >
+              <HugeiconsIcon icon={TextFontIcon} />
+            </button>
+          </ShortcutTooltip>
           {closeKeyboard}
         </>
       ) : (
@@ -295,17 +297,18 @@ export function Toolbar({
           {!inBar && (
             <Group>
               {closeKeyboard}
-              <button
-                type="button"
-                aria-label="Hide toolbar"
-                title="Hide toolbar"
-                className={toggleVariants({ size: "sm" })}
-                onClick={() => setHidden(true)}
-              >
-                <span className="grid size-4 place-items-center rounded-full bg-muted-foreground/25">
-                  <HugeiconsIcon icon={Cancel01Icon} className="size-2.5" strokeWidth={2.5} />
-                </span>
-              </button>
+              <ShortcutTooltip label="Hide toolbar">
+                <button
+                  type="button"
+                  aria-label="Hide toolbar"
+                  className={toggleVariants({ size: "sm" })}
+                  onClick={() => setHidden(true)}
+                >
+                  <span className="grid size-4 place-items-center rounded-full bg-muted-foreground/25">
+                    <HugeiconsIcon icon={Cancel01Icon} className="size-2.5" strokeWidth={2.5} />
+                  </span>
+                </button>
+              </ShortcutTooltip>
             </Group>
           )}
         </>
@@ -327,16 +330,17 @@ function ImageButton({
   const inputRef = React.useRef<HTMLInputElement>(null)
   return (
     <>
-      <Toggle
-        size="sm"
-        aria-label="Image"
-        title="Image"
-        pressed={pressed}
-        disabled={disabled}
-        onPressedChange={() => inputRef.current?.click()}
-      >
-        <HugeiconsIcon icon={Image01Icon} />
-      </Toggle>
+      <ShortcutTooltip label="Image">
+        <Toggle
+          size="sm"
+          aria-label="Image"
+          pressed={pressed}
+          disabled={disabled}
+          onPressedChange={() => inputRef.current?.click()}
+        >
+          <HugeiconsIcon icon={Image01Icon} />
+        </Toggle>
+      </ShortcutTooltip>
       <input
         ref={inputRef}
         type="file"
@@ -365,16 +369,17 @@ type Common = { editor: Editor; disabled: boolean }
 
 function Button({ item, pressed, editor, disabled }: Common & { item: Item; pressed: boolean }) {
   return (
-    <Toggle
-      size="sm"
-      aria-label={item.label}
-      title={`${item.label} (${shortcut(item.keys)})`}
-      pressed={pressed}
-      disabled={disabled}
-      onPressedChange={() => item.run(editor)}
-    >
-      <HugeiconsIcon icon={item.icon} />
-    </Toggle>
+    <ShortcutTooltip label={item.label} keys={item.keys}>
+      <Toggle
+        size="sm"
+        aria-label={item.label}
+        pressed={pressed}
+        disabled={disabled}
+        onPressedChange={() => item.run(editor)}
+      >
+        <HugeiconsIcon icon={item.icon} />
+      </Toggle>
+    </ShortcutTooltip>
   )
 }
 
@@ -441,19 +446,21 @@ function Menu({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={label}
-        disabled={disabled}
-        className={cn(
-          toggleVariants({ size: "sm" }),
-          "gap-0.5 px-2",
-          "data-popup-open:bg-foreground/15",
-          anyActive && "bg-foreground/15 text-foreground",
-        )}
-      >
-        <HugeiconsIcon icon={icon} />
-        <HugeiconsIcon icon={ArrowDown01Icon} className="size-3!" />
-      </DropdownMenuTrigger>
+      <ShortcutTooltip label={label}>
+        <DropdownMenuTrigger
+          aria-label={label}
+          disabled={disabled}
+          className={cn(
+            toggleVariants({ size: "sm" }),
+            "gap-0.5 px-2",
+            "data-popup-open:bg-foreground/15",
+            anyActive && "bg-foreground/15 text-foreground",
+          )}
+        >
+          <HugeiconsIcon icon={icon} />
+          <HugeiconsIcon icon={ArrowDown01Icon} className="size-3!" />
+        </DropdownMenuTrigger>
+      </ShortcutTooltip>
       {/* finalFocus false: the command already put the cursor back in the editor; returning focus
           to the trigger would take it away again. */}
       {/* `bg-raised` (styles/index.css): lighter than the page in dark mode, so the open menu stands

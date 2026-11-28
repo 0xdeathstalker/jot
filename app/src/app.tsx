@@ -112,6 +112,8 @@ function NotesApp({
     open: boolean
   } | null>(null)
   const [draftId, setDraftId] = React.useState(() => readDraft(noteId))
+  // Phase 12: the draft made by New note on a phone starts with an H2 first line (this tab only).
+  const [headingDraftId, setHeadingDraftId] = React.useState<string | null>(null)
   const isDraft = !!noteId && noteId === draftId && !currentNote
   const [focusKey, setFocusKey] = React.useState(0)
   // A note picked in the switcher gets the caret, like a new draft (not on every open: on a phone
@@ -182,6 +184,7 @@ function NotesApp({
     else {
       const id = crypto.randomUUID()
       setDraftId(id)
+      setHeadingDraftId(layout === "phone" ? id : null)
       openNote(id)
     }
   }
@@ -507,7 +510,7 @@ function NotesApp({
     // scroll; the top bar sits above the note's own scroll box, so the scrollbar spans the note only.
     <div className="flex h-dvh flex-col pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]">
       {isDesktop() ? (
-        <React.Suspense fallback={<div className="h-10 shrink-0" />}>
+        <React.Suspense fallback={<div className="h-[3.125rem] shrink-0" />}>
           <TitleBar {...topBar} />
         </React.Suspense>
       ) : (
@@ -561,6 +564,7 @@ function NotesApp({
               onEdited={isDraft ? handleDraftEdited : undefined}
               onLeftEmpty={() => handleLeftEmpty(noteId)}
               focusKey={isDraft || noteId === pickedId ? focusKey : undefined}
+              startWithHeading={isDraft && noteId === headingDraftId}
             />
           ) : (
             // Centred in the window (the scroll box is `relative`); pointer-events-none so it never

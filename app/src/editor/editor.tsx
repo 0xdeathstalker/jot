@@ -11,6 +11,7 @@ import * as React from "react"
 import { createPortal } from "react-dom"
 
 import { Button } from "@/components/ui/button"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import {
   NOTE_FULL,
   NoteImage,
@@ -59,6 +60,8 @@ type Props = {
   onLeftEmpty?: () => void
   // Focus the editor when set, and again each time it changes (New note pressed while in the draft).
   focusKey?: number
+  // A new note made on a phone (action-panel.md phase 12): its first line starts as Heading 2.
+  startWithHeading?: boolean
 }
 
 // Blank = no text (whitespace only) and no image, whatever the blocks: an empty checklist, heading
@@ -89,8 +92,9 @@ export function Editor({
   onEdited,
   onLeftEmpty,
   focusKey,
+  startWithHeading,
 }: Props) {
-  const session = useNoteSession(noteId)
+  const { session, loaded } = useNoteSession(noteId)
   const { doc } = session
   const readOnly = role === "viewer"
   const lost = useAccessLost(session, noteId, role !== undefined, onRoleChanged) || !!noAccess
@@ -253,6 +257,15 @@ export function Editor({
       editor.commands.focus()
   }, [editor, focusKey])
 
+  // Phase 12: once this device's copy is in (a reloaded draft may already hold its heading; writing
+  // one before that would merge into two), a still-blank new phone note gets an H2 first line. It
+  // stays blank by E1 (blank-notes.md), so it joins the list only when typed in. Runs once per
+  // opened note: changing the line back to a paragraph is kept.
+  React.useEffect(() => {
+    if (editor && startWithHeading && loaded && isBlankDoc(editor.state.doc))
+      editor.commands.setNode("heading", { level: 2 })
+  }, [editor, startWithHeading, loaded])
+
   // Web layout: the toolbar sits in the top bar's centre slot (features/notes/top-bar.tsx renders
   // it only then). Looked up after mount, when the bar is in the page; until it is found (or on a
   // page without the bar) the toolbar stays inline above the note.
@@ -271,14 +284,17 @@ export function Editor({
 
   if (lost) return <NoAccess onRemove={() => onRemoveLost?.()} />
 
+  // The provider: once one toolbar tooltip shows, the next button's opens at once.
   const toolbar = (
-    <Toolbar
-      editor={editor}
-      disabled={readOnly || outdated}
-      notify={setNotice}
-      onPickImages={(files) => void insertImageFiles(editor.view, doc, files, setNotice)}
-      inBar={!!barSlot}
-    />
+    <TooltipProvider>
+      <Toolbar
+        editor={editor}
+        disabled={readOnly || outdated}
+        notify={setNotice}
+        onPickImages={(files) => void insertImageFiles(editor.view, doc, files, setNotice)}
+        inBar={!!barSlot}
+      />
+    </TooltipProvider>
   )
 
   return (
