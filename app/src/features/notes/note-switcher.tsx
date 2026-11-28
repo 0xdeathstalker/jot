@@ -119,7 +119,7 @@ export function NoteSwitcher({
           Action Panel uses the same sizes. */}
       <DialogContent
         showCloseButton={false}
-        className="top-[15%] translate-y-0 gap-0 p-0 desktop:top-12 desktop:gap-0 desktop:p-0"
+        className="top-[15%] bottom-auto gap-0 p-0 desktop:top-12 desktop:gap-0 desktop:p-0"
         finalFocus={finalFocus}
       >
         <DialogTitle className="sr-only">Go to note</DialogTitle>

@@ -223,8 +223,12 @@ export function Editor({
     }
   }, [editor])
 
+  // Touch screens skip it: iOS focuses the note without opening the keyboard when focus is not set
+  // inside the tap itself, and the user's next tap then only moves the caret, so it took two taps
+  // to start typing. One tap on the note focuses it properly.
   React.useEffect(() => {
-    if (editor && focusKey !== undefined) editor.commands.focus()
+    if (editor && focusKey !== undefined && !matchMedia("(pointer: coarse)").matches)
+      editor.commands.focus()
   }, [editor, focusKey])
 
   // Web layout: the toolbar sits in the top bar's centre slot (features/notes/top-bar.tsx renders

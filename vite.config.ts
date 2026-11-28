@@ -59,4 +59,6 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, "./app/src") },
   },
+  // `pnpm dev:tunnel`: phones reach the dev server through the named Cloudflare Tunnel (README).
+  server: { allowedHosts: ["dev-jot.deathstalker.dev"] },
 })

@@ -8,6 +8,7 @@ import {
   Heading03Icon,
   HeadingIcon,
   Image01Icon,
+  KeyboardOffIcon,
   LeftToRightListBulletIcon,
   LeftToRightListNumberIcon,
   QuoteDownIcon,
@@ -37,6 +38,7 @@ import { imageFiles } from "@/editor/images"
 import { LinkBox } from "@/editor/link-box"
 import type { Notify } from "@/editor/notice"
 import { getTitleAndPreview } from "@/features/notes/note-meta"
+import { useLayout } from "@/hooks/use-layout"
 import { useToolbarHidden } from "@/hooks/use-toolbar-hidden"
 import { formatShortcut as shortcut, shortcutKeys } from "@/lib/platform"
 import { cn } from "@/lib/utils"
@@ -175,6 +177,25 @@ export function Toolbar({
   // Phone and desktop can hide it; web keeps it in the top bar.
   const [hidden, setHidden] = useToolbarHidden()
   const collapsed = hidden && !inBar
+
+  // Phone (phase 9): iOS and Android already keep this bottom-fixed bar above the keyboard (no
+  // extra lift; adding the keyboard height doubled it). A button closes the keyboard, shown only
+  // while the note has focus, i.e. while the keyboard is up.
+  const phone = useLayout() === "phone"
+  const focused = useEditorState({ editor, selector: ({ editor }) => editor.isFocused })
+  const closeKeyboard = phone && focused && (
+    <button
+      type="button"
+      aria-label="Close keyboard"
+      title="Close keyboard"
+      className={toggleVariants({ size: "sm" })}
+      // Keep the note focused until the tap ends, or the button would vanish under the finger.
+      onPointerDown={(event) => event.preventDefault()}
+      onClick={() => editor.commands.blur()}
+    >
+      <HugeiconsIcon icon={KeyboardOffIcon} />
+    </button>
+  )
   // Counted only while collapsed: getText on every keystroke is wasted work otherwise.
   const chars = useEditorState({
     editor,
@@ -218,6 +239,7 @@ export function Toolbar({
           >
             <HugeiconsIcon icon={TextFontIcon} />
           </button>
+          {closeKeyboard}
         </>
       ) : (
         <>
@@ -272,6 +294,7 @@ export function Toolbar({
           </Group>
           {!inBar && (
             <Group>
+              {closeKeyboard}
               <button
                 type="button"
                 aria-label="Hide toolbar"
@@ -433,13 +456,9 @@ function Menu({
       </DropdownMenuTrigger>
       {/* finalFocus false: the command already put the cursor back in the editor; returning focus
           to the trigger would take it away again. */}
-      {/* Dark mode: a lighter shade than the page (the popover colour with 10% of the text colour,
-          like Raycast Notes), so the open menu stands out from the note behind it. Hover and
-          checked rows use the text colour too, as on the toolbar. */}
-      <DropdownMenuContent
-        finalFocus={false}
-        className="w-auto rounded-[12px] dark:bg-[color-mix(in_oklab,var(--popover),var(--foreground)_10%)]"
-      >
+      {/* `bg-raised` (styles/index.css): lighter than the page in dark mode, so the open menu stands
+          out from the note behind it. Hover and checked rows use the text colour, as on the bar. */}
+      <DropdownMenuContent finalFocus={false} className="w-auto rounded-[12px] bg-raised">
         {single ? (
           <DropdownMenuRadioGroup value={items[checked.indexOf(true)]?.label ?? ""}>
             {entries}

@@ -86,6 +86,26 @@ Jot logs in with Google, so you need your own OAuth client (free). Any Google ac
 2. Create a note in one; it should appear in the other, and typing should sync.
 3. Stop `pnpm dev`, edit in both, start it again. Both edits should be kept.
 
+### Test on a phone
+
+Google login needs `localhost` or https, so a phone cannot use your PC's LAN address. A named
+Cloudflare Tunnel gives `pnpm dev` a fixed https address instead. Nothing is deployed.
+
+One-time setup (needs [`cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/), e.g. `winget install Cloudflare.cloudflared`):
+
+1. `cloudflared tunnel login`, and pick `deathstalker.dev`.
+2. `cloudflared tunnel create jot-dev`
+3. `cloudflared tunnel route dns jot-dev dev-jot.deathstalker.dev`
+4. Add `https://dev-jot.deathstalker.dev/api/auth/callback/google` to the Google OAuth client's
+   redirect URIs.
+
+Each time: run `pnpm dev`, then `pnpm dev:tunnel` in a second terminal, and open
+`https://dev-jot.deathstalker.dev` on the phone. While it runs, anyone with the address reaches
+your dev server (notes still need login), so stop it when you are done.
+
+Android without a tunnel: USB debugging, then Chrome's `chrome://inspect` → Port forwarding
+`5173` → `localhost:5173`, and open `http://localhost:5173` on the phone.
+
 ---
 
 ## Deploy
@@ -179,6 +199,7 @@ pnpm dlx shadcn@latest add <component> -c app
 | Command                  | What it does                                                         |
 | ------------------------ | -------------------------------------------------------------------- |
 | `pnpm dev`               | Run the app + Worker locally                                         |
+| `pnpm dev:tunnel`        | Expose `pnpm dev` at `https://dev-jot.deathstalker.dev` for phones   |
 | `pnpm build`             | Type-check and build for production                                  |
 | `pnpm preview`           | Build and preview the production bundle locally                      |
 | `pnpm run deploy`        | Build and deploy to Cloudflare                                       |

@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–8 done.** Phases 9–13 (editor chrome) planned; phase 14 (docs) last.
+Status (2026-11-28): **phases 1–9 done** (9.1 and 9.5 open). Phases 10–13 (editor chrome) planned; phase 14 (docs) last.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -434,7 +434,7 @@ on-screen keyboard. A button closes the keyboard.
 
 - [ ] **9.1** Android: `index.html` already has `interactive-widget=resizes-content`, so the page
       shrinks above the keyboard and `bottom-*` already works there. Confirm it on a real phone.
-- [ ] **9.2** iOS ignores that setting.
+- [x] **9.2** ~~iOS ignores that setting.~~ Dropped: iOS keeps fixed bars above the keyboard too (see Done as).
   - `hooks/use-keyboard-inset.ts` reads `window.visualViewport`:
     `inset = innerHeight - visualViewport.height - visualViewport.offsetTop`. It listens to
     `resize` and `scroll`.
@@ -443,13 +443,39 @@ on-screen keyboard. A button closes the keyboard.
     `calc(max(0.5rem, env(safe-area-inset-bottom)) + var(--keyboard-inset, 0px))`.
   - The safe-area padding counts only when the keyboard is closed. With the keyboard up, the
     home-bar inset is under the keyboard.
-- [ ] **9.3** A **Close keyboard** button (`KeyboardIcon` with a down arrow, or `ArrowDown01Icon`)
+- [x] **9.3** A **Close keyboard** button (`KeyboardIcon` with a down arrow, or `ArrowDown01Icon`)
       at the toolbar's right end, before the ✕. It appears only in **phone**, while the editor
       has focus. It calls `editor.commands.blur()`, which closes the keyboard on iOS and Android.
       The collapsed bar from 8 shows it too.
-- [ ] **9.4** The editor's bottom padding grows with the inset, so the caret line never sits
+- [x] **9.4** The editor's bottom padding grows with the inset, so the caret line never sits
       under the toolbar. Scroll the caret into view on `visualViewport` resize.
 - [ ] **9.5** The toast position (phase 11) uses the same inset when it is at the bottom.
+
+Done as (2026-11-28):
+
+- 9.2 dropped (owner's iPhone test, 2026-11-28): iOS already keeps a bottom-fixed bar above the
+  keyboard, like Android. The first build added the keyboard height again
+  (`hooks/use-keyboard-inset.ts`, `--keyboard-inset`), which pushed the toolbar up to the top bar
+  on a new note. The hook is deleted; the bar keeps `bottom-[max(0.5rem,env(safe-area-inset-bottom))]`
+  and the note's phone padding stays `5rem`.
+- Close keyboard: `KeyboardOffIcon`, phone only, shown while the editor has focus, in the
+  toolbar's last group before the ✕ and at the end of the collapsed bar. `pointerdown` is
+  prevented so the tap does not blur the note before `click` runs `editor.commands.blur()`.
+- First iPhone test (owner, 2026-11-28): the iOS "Install Jot" hint sat at the bottom over the
+  toolbar (z-30 over z-10), above the keyboard too, in the page's own colour. It moved to the top
+  under the bar, on a new `--raised` token (`bg-raised`: popover, plus 10% text colour in dark
+  mode), which the toolbar menus now use as well.
+- Two taps to open the keyboard (owner's iPhone test, 2026-11-28): New note and picking from the
+  switcher focus the editor from an effect (`focusKey`). iOS then focuses it without the
+  keyboard, so the first tap only moved the caret. Touch screens (`pointer: coarse`) now skip
+  that focus; one tap focuses the note and opens the keyboard.
+- Dialog lists did not scroll on iPhone (owner, 2026-11-28; Chrome never, Safari sometimes).
+  Bisected with a temporary switch: only taking the transform off the dialog box fixed it.
+  `components/ui/dialog.tsx` and `alert-dialog.tsx` now centre with `inset-0 m-auto h-fit`
+  instead of `-translate-x/y-1/2`; the panel and switcher use `top-[15%] bottom-auto`. That alone
+  did not fix it; the open animation is also off on touch screens (`pointer-coarse:animate-none!`).
+- 9.1 (Android) and 9.5 (toast, waits for phase 11) are still open; nothing was tried on a real
+  phone.
 
 Check on a real iPhone (PWA and Safari tab) and an Android phone:
 
@@ -515,10 +541,8 @@ and existing notes are never rewritten (owner, 2026-11-28).
 - [ ] **12.2** `editor/editor.tsx`: once the editor is ready and the draft's doc is still blank,
       run `setNode("heading", { level: 2 })` on the first line. Enter at the end of it gives a
       normal paragraph next, which is Tiptap's default.
-- [ ] **12.3** Blank checks: one empty H2 must count as blank, like one empty paragraph. That
-      applies to `isBlankDoc` in `editor/editor.tsx` and to `isBlankDocument` in
-      `features/notes/note-meta.ts`. Otherwise an untouched phone draft would join the list (the
-      "first real edit" rule, `docs/plans/blank-notes.md`) and never be cleaned up.
+- [ ] **12.3** Blank checks: covered by `blank-notes.md` E1 (owner, 2026-11-28: blank = no text and
+      no image, whatever the blocks), so an empty H2 already counts as blank. Do E1 first.
 - [ ] **12.4** The title is still the first line's text, so the list, switcher and top bar are
       unaffected.
 

@@ -37,6 +37,7 @@
   --color-primary: var(--primary);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
+  --color-raised: var(--raised);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   --color-foreground: var(--foreground);
@@ -59,6 +60,8 @@
   --card: #faf7f0;
   --card-foreground: #111111;
   --popover: #faf7f0;
+  /* Floating surfaces over the note (toolbar menus, the install hint): must stand out from it. */
+  --raised: var(--popover);
   --popover-foreground: #111111;
   --primary: #2f4a7a;
   --primary-foreground: #f3eee3;
@@ -89,6 +92,8 @@
   --card: #262624;
   --card-foreground: #d8cbb3;
   --popover: #262624;
+  /* Dark: the popover colour lifted 10% towards the text, like Raycast Notes menus. */
+  --raised: color-mix(in oklab, var(--popover), var(--foreground) 10%);
   --popover-foreground: #d8cbb3;
   --primary: #9db2d9;
   --primary-foreground: #1e1e1c;
