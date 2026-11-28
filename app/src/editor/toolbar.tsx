@@ -1,5 +1,6 @@
 import {
   ArrowDown01Icon,
+  Cancel01Icon,
   CheckListIcon,
   CodeSquareIcon,
   Heading01Icon,
@@ -7,11 +8,13 @@ import {
   Heading03Icon,
   HeadingIcon,
   Image01Icon,
+  KeyboardOffIcon,
   LeftToRightListBulletIcon,
   LeftToRightListNumberIcon,
   QuoteDownIcon,
   SourceCodeIcon,
   TextBoldIcon,
+  TextFontIcon,
   TextItalicIcon,
   TextStrikethroughIcon,
   TextUnderlineIcon,
@@ -34,6 +37,9 @@ import { Toggle, toggleVariants } from "@/components/ui/toggle"
 import { imageFiles } from "@/editor/images"
 import { LinkBox } from "@/editor/link-box"
 import type { Notify } from "@/editor/notice"
+import { getTitleAndPreview } from "@/features/notes/note-meta"
+import { useLayout } from "@/hooks/use-layout"
+import { useToolbarHidden } from "@/hooks/use-toolbar-hidden"
 import { formatShortcut as shortcut, shortcutKeys } from "@/lib/platform"
 import { cn } from "@/lib/utils"
 
@@ -145,11 +151,14 @@ export function Toolbar({
   disabled = false,
   notify,
   onPickImages,
+  inBar = false,
 }: {
   editor: Editor
   disabled?: boolean
   notify: Notify
   onPickImages: (files: File[]) => void
+  // Web layout: inside the top bar (editor.tsx portals it there): no frame of its own, one line.
+  inBar?: boolean
 }) {
   // Tiptap v3 does not re-render React on every transaction: subscribe to the active flags.
   const active = useEditorState({
@@ -165,61 +174,142 @@ export function Toolbar({
     }),
   })
   const activeList = lists[active.lists.indexOf(true)]
+  // Phone and desktop can hide it; web keeps it in the top bar.
+  const [hidden, setHidden] = useToolbarHidden()
+  const collapsed = hidden && !inBar
+
+  // Phone (phase 9): iOS and Android already keep this bottom-fixed bar above the keyboard (no
+  // extra lift; adding the keyboard height doubled it). A button closes the keyboard, shown only
+  // while the note has focus, i.e. while the keyboard is up.
+  const phone = useLayout() === "phone"
+  const focused = useEditorState({ editor, selector: ({ editor }) => editor.isFocused })
+  const closeKeyboard = phone && focused && (
+    <button
+      type="button"
+      aria-label="Close keyboard"
+      title="Close keyboard"
+      className={toggleVariants({ size: "sm" })}
+      // Keep the note focused until the tap ends, or the button would vanish under the finger.
+      onPointerDown={(event) => event.preventDefault()}
+      onClick={() => editor.commands.blur()}
+    >
+      <HugeiconsIcon icon={KeyboardOffIcon} />
+    </button>
+  )
+  // Counted only while collapsed: getText on every keystroke is wasted work otherwise.
+  const chars = useEditorState({
+    editor,
+    selector: ({ editor }) => (collapsed ? getTitleAndPreview(editor.getText()).chars : 0),
+  })
 
   return (
     <div
       role="toolbar"
       aria-label="Formatting"
-      // As wide as its buttons, centred, sticky at the top. Phones (below sm): pinned to the bottom of
-      // the screen (inset-x + mx-auto centres it; left-1/2 would halve the width it may use), with
-      // touch-sized buttons like Apple Notes: 40px buttons, 20px icons, a 46px bar. Tight gaps keep
-      // it on one line down to a 360px-wide phone; it still wraps (centred) if that does not fit.
-      className="sticky top-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-[12px] border bg-popover p-1 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:gap-0.5 max-sm:p-0.5 max-sm:[&_button]:h-10 max-sm:[&_button]:min-w-10 max-sm:[&_button]:px-1 max-sm:[&_svg:not([class*='size-'])]:size-5"
+      // As wide as its buttons, centred, sticky at the top. Compact like Raycast Notes: 28px
+      // buttons, 16px icons, a 34px bar (the [&_button] rules size the Toggles, menu triggers and
+      // the link button alike). Below sm: pinned to the bottom of the window (inset-x +
+      // mx-auto centres it; left-1/2 would halve the width it may use). Phones (`phone:`, never the
+      // desktop app, whose window is often that narrow too) get 36px buttons and 18px
+      // icons, still fine to tap. Tight gaps keep it on one line down to a 360px-wide phone; it
+      // still wraps (centred) if that does not fit.
+      // Desktop app: always at the bottom of the window, like Raycast Notes. Web: inside the top
+      // bar (`inBar`), same frame; a narrow bar scrolls it sideways rather than wrapping it.
+      // Hover and pressed: the text colour at 10% / 15% over the bar. The theme's muted is almost the
+      // bar's own colour in dark mode, so the usual hover:bg-muted barely showed.
+      className={cn(
+        "sticky top-[calc(env(safe-area-inset-top)+3rem)] z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-0.5 rounded-[10px] border bg-popover p-0.5 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] desktop:fixed desktop:inset-x-2 desktop:top-auto desktop:bottom-2 [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 phone:[&_button]:h-9 phone:[&_button]:min-w-9 phone:[&_button]:px-1 [&_button:hover]:bg-foreground/10 [&_button[aria-pressed=true]]:bg-foreground/15 [&_svg:not([class*='size-'])]:size-4 phone:[&_svg:not([class*='size-'])]:size-[18px]",
+        inBar &&
+          "static w-auto max-w-full [scrollbar-width:none] flex-nowrap justify-start overflow-x-auto",
+      )}
     >
-      <Group>
-        <Menu
-          label="Headings"
-          icon={HeadingIcon}
-          items={headings}
-          checked={active.headings}
-          single
-          editor={editor}
-          disabled={disabled}
-        />
-        <Menu
-          label="Text style"
-          icon={TextItalicIcon}
-          items={textStyles}
-          checked={active.textStyles}
-          editor={editor}
-          disabled={disabled}
-        />
-        <LinkBox editor={editor} inLink={active.inLink} disabled={disabled} notify={notify} />
-        <ImageButton pressed={active.onImage} disabled={disabled} onPick={onPickImages} />
-        <Button item={inlineCode} pressed={active.inlineCode} editor={editor} disabled={disabled} />
-      </Group>
-      <Group>
-        {blocks.map((item, i) => (
-          <Button
-            key={item.label}
-            item={item}
-            pressed={active.blocks[i]}
-            editor={editor}
-            disabled={disabled}
-          />
-        ))}
-      </Group>
-      <Group>
-        <Menu
-          label="Lists"
-          icon={activeList?.icon ?? LeftToRightListBulletIcon}
-          items={lists}
-          checked={active.lists}
-          single
-          editor={editor}
-          disabled={disabled}
-        />
-      </Group>
+      {collapsed ? (
+        // Hidden (phase 8): the note's character count, same rule as the switcher's, and a T
+        // button that brings the toolbar back.
+        <>
+          <span className="px-2 text-xs text-muted-foreground tabular-nums">
+            {chars} character{chars === 1 ? "" : "s"}
+          </span>
+          <button
+            type="button"
+            aria-label="Show toolbar"
+            title="Show toolbar"
+            className={toggleVariants({ size: "sm" })}
+            onClick={() => setHidden(false)}
+          >
+            <HugeiconsIcon icon={TextFontIcon} />
+          </button>
+          {closeKeyboard}
+        </>
+      ) : (
+        <>
+          <Group>
+            <Menu
+              label="Headings"
+              icon={HeadingIcon}
+              items={headings}
+              checked={active.headings}
+              single
+              editor={editor}
+              disabled={disabled}
+            />
+            <Menu
+              label="Text style"
+              icon={TextItalicIcon}
+              items={textStyles}
+              checked={active.textStyles}
+              editor={editor}
+              disabled={disabled}
+            />
+            <LinkBox editor={editor} inLink={active.inLink} disabled={disabled} notify={notify} />
+            <ImageButton pressed={active.onImage} disabled={disabled} onPick={onPickImages} />
+            <Button
+              item={inlineCode}
+              pressed={active.inlineCode}
+              editor={editor}
+              disabled={disabled}
+            />
+          </Group>
+          <Group>
+            {blocks.map((item, i) => (
+              <Button
+                key={item.label}
+                item={item}
+                pressed={active.blocks[i]}
+                editor={editor}
+                disabled={disabled}
+              />
+            ))}
+          </Group>
+          <Group>
+            <Menu
+              label="Lists"
+              icon={activeList?.icon ?? LeftToRightListBulletIcon}
+              items={lists}
+              checked={active.lists}
+              single
+              editor={editor}
+              disabled={disabled}
+            />
+          </Group>
+          {!inBar && (
+            <Group>
+              {closeKeyboard}
+              <button
+                type="button"
+                aria-label="Hide toolbar"
+                title="Hide toolbar"
+                className={toggleVariants({ size: "sm" })}
+                onClick={() => setHidden(true)}
+              >
+                <span className="grid size-4 place-items-center rounded-full bg-muted-foreground/25">
+                  <HugeiconsIcon icon={Cancel01Icon} className="size-2.5" strokeWidth={2.5} />
+                </span>
+              </button>
+            </Group>
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -265,7 +355,7 @@ function ImageButton({
 
 function Group({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1 not-first:border-l not-first:pl-1 max-sm:gap-0 max-sm:not-first:pl-0.5">
+    <div className="flex items-center gap-0.5 not-first:ml-0.5 not-first:border-l not-first:pl-1 phone:gap-0 phone:not-first:ml-0 phone:not-first:pl-0.5">
       {children}
     </div>
   )
@@ -293,7 +383,7 @@ function Button({ item, pressed, editor, disabled }: Common & { item: Item; pres
 // checked state for screen readers but show it as an accent background, not a tick. Font weight tells
 // it apart from the hover highlight, which uses the same accent colour in this theme.
 const itemClass =
-  "pr-3 data-checked:bg-accent data-checked:font-medium data-checked:text-accent-foreground *:data-[slot$=indicator]:hidden rounded-4xl"
+  "pr-3 focus:bg-foreground/10 data-checked:bg-foreground/15 data-checked:font-medium data-checked:text-accent-foreground *:data-[slot$=indicator]:hidden rounded-4xl"
 function Menu({
   label,
   icon,
@@ -357,7 +447,8 @@ function Menu({
         className={cn(
           toggleVariants({ size: "sm" }),
           "gap-0.5 px-2",
-          anyActive && "bg-muted text-foreground",
+          "data-popup-open:bg-foreground/15",
+          anyActive && "bg-foreground/15 text-foreground",
         )}
       >
         <HugeiconsIcon icon={icon} />
@@ -365,7 +456,9 @@ function Menu({
       </DropdownMenuTrigger>
       {/* finalFocus false: the command already put the cursor back in the editor; returning focus
           to the trigger would take it away again. */}
-      <DropdownMenuContent finalFocus={false} className="w-auto rounded-[12px]">
+      {/* `bg-raised` (styles/index.css): lighter than the page in dark mode, so the open menu stands
+          out from the note behind it. Hover and checked rows use the text colour, as on the bar. */}
+      <DropdownMenuContent finalFocus={false} className="w-auto rounded-[12px] bg-raised">
         {single ? (
           <DropdownMenuRadioGroup value={items[checked.indexOf(true)]?.label ?? ""}>
             {entries}

@@ -15,6 +15,7 @@ Local-first notes PWA. React + TipTap + Yjs, synced via Cloudflare Durable Objec
 ## Commands (pnpm only)
 
 - `pnpm dev`: app + Worker locally
+- `pnpm dev:tunnel`: with `pnpm dev` running, serves it at `https://dev-jot.deathstalker.dev` for phone tests (README, "Test on a phone")
 - `pnpm preview:worker`: build + `wrangler dev` on `http://localhost:8787` (real Worker-first routing)
 - `pnpm check`: lint + format check + typecheck. Run before saying work is done.
 - `pnpm lint:fix` / `pnpm format:fix`: apply fixes

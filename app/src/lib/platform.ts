@@ -30,6 +30,19 @@ export function formatShortcut(keys: string[]): string {
   return shortcutKeys(keys).join(isApple() ? "" : "+")
 }
 
+// Does this key press match ["Mod", "Shift", "P"]? Modifiers must match exactly. Mod is Ctrl or ⌘
+// (either, on every platform, as the app's shortcuts always took). A letter also matches by its
+// physical key, because ⌥ on a Mac changes `event.key` (⌥D gives "∂").
+export function matchesShortcut(event: KeyboardEvent, keys: string[]): boolean {
+  const key = keys.at(-1)!.toLowerCase()
+  return (
+    (event.ctrlKey || event.metaKey) === keys.includes("Mod") &&
+    event.shiftKey === keys.includes("Shift") &&
+    event.altKey === keys.includes("Alt") &&
+    (event.key.toLowerCase() === key || event.code === `Key${key.toUpperCase()}`)
+  )
+}
+
 // True inside the Windows desktop app (the Tauri shell injects this global before the page runs).
 export function isDesktop(): boolean {
   return "__TAURI_INTERNALS__" in window

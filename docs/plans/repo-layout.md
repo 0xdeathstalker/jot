@@ -1,6 +1,6 @@
 # Plan: Repository layout (app / worker / shared / tauri)
 
-Status (2026-11-25): **phases 1 to 5 done, checks passed; waiting to merge.** Only the CI deploy after merge is left.
+Status (2026-11-25): **done.** Merged in #11; the deploy workflow passed.
 
 Goal: a root that reads as "app, worker, shared types, desktop shell", and one source of truth for the
 types the client and the Worker both use. No change to what ships, how it deploys or how it runs.
@@ -135,7 +135,7 @@ The §10 "Create the layout" checkbox and old plans keep their old paths (histor
       links
 - [x] Two tabs, one offline: edits sync after reconnecting
 - [x] `pnpm desktop:dev`: window, tray, hotkey
-- [ ] `pnpm run deploy` from CI after merge: the deploy workflow commands are unchanged
+- [x] `pnpm run deploy` from CI after merge: the deploy workflow commands are unchanged (passed, 2026-11-25)
 
 ## Watch out
 

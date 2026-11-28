@@ -1,3 +1,20 @@
+import {
+  Add01Icon,
+  CircleArrowLeft01Icon,
+  CircleArrowRight01Icon,
+  Delete02Icon,
+  KeyboardIcon,
+  Logout03Icon,
+  Moon02Icon,
+  PinIcon,
+  PinOffIcon,
+  RestoreBinIcon,
+  Search01Icon,
+  Share08Icon,
+  Sun03Icon,
+  TextFontIcon,
+  UserAdd01Icon,
+} from "@hugeicons/core-free-icons"
 import * as React from "react"
 
 import { LoginScreen } from "@/auth/login-screen"
@@ -12,35 +29,42 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Editor } from "@/editor/editor"
 import { type Notice, NoticeToast } from "@/editor/notice"
+import { ActionPanel } from "@/features/notes/action-panel"
+import { DeletedNotesDialog } from "@/features/notes/deleted-notes-dialog"
 import type { NoteText } from "@/features/notes/note-meta"
 import { NoteSwitcher } from "@/features/notes/note-switcher"
-import { NotesSidebar } from "@/features/notes/notes-sidebar"
-import { SidebarToggle } from "@/features/notes/sidebar-toggle"
+import { TopBar } from "@/features/notes/top-bar"
 import { removeMember, unshareNote } from "@/features/sharing/api"
 import { caretUser } from "@/features/sharing/caret-user"
+import { InviteDialog } from "@/features/sharing/invite-friend"
 import { type InviteLink, readInviteLink } from "@/features/sharing/invite-link"
 import { JoinPage } from "@/features/sharing/join-page"
 import { refreshRoles } from "@/features/sharing/refresh-roles"
 import { restoreOwned } from "@/features/sharing/restore-owned"
 import { ShareDialog } from "@/features/sharing/share-dialog"
 import { ShareLinkPage } from "@/features/sharing/share-link-page"
-import { type AuthUser, useAuthUser } from "@/hooks/use-auth-user"
+import { type Action, useActionShortcuts } from "@/hooks/use-action-shortcuts"
+import { type AuthUser, signOut, useAuthUser } from "@/hooks/use-auth-user"
+import { useJoinInfo } from "@/hooks/use-join-info"
+import { useLayout } from "@/hooks/use-layout"
 import { useNoteId } from "@/hooks/use-note-id"
+import { useTheme } from "@/hooks/use-theme"
+import { useToolbarHidden } from "@/hooks/use-toolbar-hidden"
 import { lazyOrReload } from "@/lib/lazy"
-import { isDesktop } from "@/lib/platform"
+import { isDesktop, matchesShortcut } from "@/lib/platform"
 import {
   createNote,
   markShared,
   softDelete,
+  softDeleteAll,
   togglePin,
   updateMeta,
   useNotes,
 } from "@/sync/index-doc"
 import { deleteLocalNote, requestDurableStorage } from "@/sync/local-data"
-import { useIndexSession } from "@/sync/provider"
+import { syncAllLocalData, useIndexSession } from "@/sync/provider"
 
 // A new note is a draft until its first edit: not in the list yet (docs/plans/blank-notes.md).
 // Its id survives a reload in sessionStorage (per tab). A stored draft that is not the open note
@@ -58,6 +82,7 @@ function readDraft(noteId: string | null): string | null {
 
 // Desktop-only code (Tauri) loads only inside the desktop app; web and phone never fetch it.
 const TitleBar = lazyOrReload(() => import("@/desktop/title-bar"))
+const HotkeyDialog = lazyOrReload(() => import("@/desktop/hotkey-dialog"))
 
 // Signed-in app. Keyed by user id in `App`, so switching accounts remounts it with a fresh index.
 function NotesApp({
@@ -182,20 +207,48 @@ function NotesApp({
     }
   }, [])
 
-  // Ctrl/⌘+P or +K: note switcher (everywhere; it replaces print on the web). Ctrl+N: new note,
-  // desktop only (browsers keep Ctrl+N for a new window and do not let pages take it).
+  // Ctrl/⌘+K toggles the Action Panel (in place of the switcher, if that is open). The other
+  // shortcuts come from the action list (below).
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
+  const [actionsOpen, setActionsOpen] = React.useState(false)
+  const [hotkeyOpen, setHotkeyOpen] = React.useState(false)
+  const [deletedOpen, setDeletedOpen] = React.useState(false)
+  // Kept after closing (open: false) so the count does not change during the close animation.
+  const [deleteAll, setDeleteAll] = React.useState<{ count: number; open: boolean } | null>(null)
+  const deletableIds = notes
+    .filter((note) => !note.role && !note.shared && !note.noAccess)
+    .map((note) => note.id)
+  const [inviteOpen, setInviteOpen] = React.useState(false)
+  const joinInfo = useJoinInfo(inviteOpen)
+  const [isDark, setDark] = useTheme()
+  const layout = useLayout()
+  const [toolbarHidden, setToolbarHidden] = useToolbarHidden()
+
+  // Sign out: push everything to the server first. Only if something could not be synced do we ask
+  // before throwing it away (`unsynced`: how many, while that dialog is open).
+  const [signingOut, setSigningOut] = React.useState(false)
+  const [unsynced, setUnsynced] = React.useState<number | null>(null)
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    setNotice({ title: "Syncing…", description: "Saving your notes before signing out." })
+    const { failed } = await syncAllLocalData(user.id)
+    if (failed > 0) {
+      setNotice(null)
+      setUnsynced(failed)
+    } else await signOut(user.id)
+  }
+  // Cancel, Escape: keep the notes and stay signed in.
+  const handleUnsyncedChange = (open: boolean) => {
+    if (open) return
+    setUnsynced(null)
+    setSigningOut(false)
+  }
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return
-      const key = event.key.toLowerCase()
-      if (key === "p" || key === "k") {
-        event.preventDefault()
-        setSwitcherOpen(true)
-      } else if (key === "n" && isDesktop()) {
-        event.preventDefault()
-        handleNewRef.current()
-      }
+      if (!matchesShortcut(event, ["Mod", "K"])) return
+      event.preventDefault()
+      setSwitcherOpen(false)
+      setActionsOpen((open) => !open)
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
@@ -206,6 +259,14 @@ function NotesApp({
     if (!draftId) return
     createNote(doc, draftId)
     setDraftId(null)
+  }
+
+  // Left empty after an edit (blank-notes.md E4): an own, unshared, listed note goes, like Apple
+  // Notes. Soft delete, hidden from Recently Deleted. Drafts (not listed) clean up on their own;
+  // a note already deleted (Delete All) is not in `notes` either.
+  const handleLeftEmpty = (id: string) => {
+    const note = notes.find((n) => n.id === id)
+    if (note && !note.role && !note.shared) softDelete(doc, id, { empty: true })
   }
 
   // Stable per (doc, noteId): the editor re-subscribes when this changes.
@@ -262,89 +323,243 @@ function NotesApp({
     if (id === noteId) openNote(null, { replace: true })
   }
 
-  // The ⋮ menu's actions: the same in the sidebar and the note switcher.
+  // A note picked in the switcher or restored from Recently Deleted: open it with the caret in it.
+  const openPicked = (id: string) => {
+    openNote(id)
+    setPickedId(id)
+    setFocusKey((key) => key + 1)
+  }
+
   const noteActions = {
     onTogglePin: (id: string) => togglePin(doc, id),
     onShare: (id: string) => setShare((s) => ({ id, n: (s?.n ?? 0) + 1, open: true })),
     onDelete: handleDelete,
   }
 
+  // Everything you can do from anywhere: the Action Panel's rows and the app's shortcuts
+  // (docs/plans/action-panel.md). Note rows act on the open note, and hide for a draft (not in the
+  // list yet) or when no note is open.
+  const canGo = (way: "back" | "forward") =>
+    !("navigation" in window) || (way === "back" ? navigation.canGoBack : navigation.canGoForward)
+  const actions: Action[] = [
+    {
+      id: "new",
+      label: "New Note",
+      icon: Add01Icon,
+      // Desktop only: browsers keep Ctrl+N for a new window and do not let pages take it.
+      keys: isDesktop() ? ["Mod", "N"] : undefined,
+      group: 1,
+      run: handleNew,
+    },
+    {
+      id: "pin",
+      label: currentNote?.pinned ? "Unpin Note" : "Pin Note",
+      icon: currentNote?.pinned ? PinOffIcon : PinIcon,
+      keys: ["Mod", "Shift", "P"],
+      group: 1,
+      hidden: !currentNote,
+      run: () => noteId && noteActions.onTogglePin(noteId),
+    },
+    {
+      id: "share",
+      label: "Share Note…",
+      icon: Share08Icon,
+      group: 1,
+      // Only the owner shares (a note with a `role` belongs to someone else).
+      hidden: !currentNote || !!currentNote.role,
+      dialog: true,
+      run: () => noteId && noteActions.onShare(noteId),
+    },
+    {
+      id: "browse",
+      label: "Browse Notes",
+      icon: Search01Icon,
+      keys: ["Mod", "P"],
+      group: 1,
+      dialog: true,
+      run: () => setSwitcherOpen(true),
+    },
+    {
+      id: "back",
+      label: "Go Back",
+      icon: CircleArrowLeft01Icon,
+      keys: ["Mod", "["],
+      group: 1,
+      disabled: !canGo("back"),
+      run: () => history.back(),
+    },
+    {
+      id: "forward",
+      label: "Go Forward",
+      icon: CircleArrowRight01Icon,
+      keys: ["Mod", "]"],
+      group: 1,
+      disabled: !canGo("forward"),
+      run: () => history.forward(),
+    },
+    {
+      id: "hotkey",
+      label: "Global Hotkey…",
+      icon: KeyboardIcon,
+      group: 2,
+      hidden: !isDesktop(),
+      dialog: true,
+      run: () => setHotkeyOpen(true),
+    },
+    {
+      id: "toolbar",
+      label: toolbarHidden ? "Show Toolbar" : "Hide Toolbar",
+      icon: TextFontIcon,
+      group: 2,
+      // Web keeps the toolbar in the top bar; there is nothing to hide.
+      hidden: layout === "web",
+      run: () => setToolbarHidden(!toolbarHidden),
+    },
+    {
+      id: "invite",
+      label: "Invite a Friend…",
+      icon: UserAdd01Icon,
+      group: 2,
+      // No invites for invited users, and offline (joinInfo is null then).
+      hidden: !joinInfo,
+      dialog: true,
+      run: () => setInviteOpen(true),
+    },
+    {
+      id: "deleted",
+      label: "Show Recently Deleted Notes",
+      icon: RestoreBinIcon,
+      group: 3,
+      dialog: true,
+      run: () => setDeletedOpen(true),
+    },
+    {
+      id: "delete",
+      label: currentNote?.role ? "Leave Note" : "Delete Note",
+      icon: Delete02Icon,
+      keys: ["Mod", "D"],
+      group: 3,
+      destructive: true,
+      hidden: !currentNote,
+      // Leaving, or deleting a note you shared, asks first (handleDelete).
+      dialog: !!(currentNote?.role || currentNote?.shared),
+      run: () => noteId && noteActions.onDelete(noteId),
+    },
+    {
+      id: "delete-all",
+      label: "Delete All Notes",
+      icon: Delete02Icon,
+      keys: ["Mod", "Alt", "D"],
+      group: 3,
+      destructive: true,
+      disabled: deletableIds.length === 0,
+      dialog: true,
+      run: () => setDeleteAll({ count: deletableIds.length, open: true }),
+    },
+    {
+      id: "theme",
+      // Names the mode it switches to.
+      label: isDark ? "Light Mode" : "Dark Mode",
+      icon: isDark ? Sun03Icon : Moon02Icon,
+      group: 4,
+      run: () => setDark(!isDark),
+    },
+    {
+      id: "sign-out",
+      label: "Sign Out",
+      icon: Logout03Icon,
+      group: 4,
+      destructive: true,
+      disabled: signingOut,
+      run: () => void handleSignOut(),
+    },
+  ]
+  useActionShortcuts(actions)
+
+  const topBar = {
+    title: noteId ? currentNote?.title || "Untitled" : undefined,
+    onActions: () => setActionsOpen(true),
+    onNew: handleNew,
+    onSearch: () => setSwitcherOpen(true),
+  }
+
+  // Delete All: only notes you own and have not shared. Shared ones need the server and their own
+  // confirm (handleDelete), so they stay. Everything deleted can come back from Recently Deleted.
+  const handleDeleteAll = () => {
+    softDeleteAll(doc, deletableIds)
+    // The open note went too (or is an untouched draft): open the next one, as after a delete.
+    if (noteId && !notes.some((note) => note.id === noteId && !deletableIds.includes(note.id)))
+      openNote(null, { replace: true })
+  }
+
   return (
-    // Phone (< 768 px): the sidebar is a sheet over the editor. Desktop: a column that hides fully
-    // (trigger or Ctrl/⌘+B outside the editor); the provider remembers it in a cookie.
-    <SidebarProvider
-      defaultOpen={!document.cookie.includes("sidebar_state=false")}
-      className="h-dvh min-h-0 pr-[env(safe-area-inset-right)]"
-    >
-      <NotesSidebar
-        user={user}
+    // No sidebar (owner, 2026-11-28): one top bar on every platform, the note list in the switcher
+    // (Ctrl/⌘+P), everything else in the Action Panel (Ctrl/⌘+K). This box scrolls; the bar sticks.
+    <div className="relative h-dvh overflow-y-auto pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]">
+      {isDesktop() ? (
+        <React.Suspense fallback={<div className="h-10 shrink-0" />}>
+          <TitleBar {...topBar} />
+        </React.Suspense>
+      ) : (
+        <TopBar {...topBar} />
+      )}
+      <ActionPanel actions={actions} open={actionsOpen} onOpenChange={setActionsOpen} />
+      <NoteSwitcher
         notes={notes}
-        loading={!loaded}
         activeId={noteId}
-        onNew={handleNew}
-        onOpen={openNote}
-        {...noteActions}
+        open={switcherOpen}
+        onOpenChange={setSwitcherOpen}
+        onPick={openPicked}
       />
-
-      <SidebarInset className="min-w-0 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-        {isDesktop() && (
-          <React.Suspense fallback={<div className="h-10 shrink-0" />}>
-            <TitleBar />
-          </React.Suspense>
-        )}
-        <NoteSwitcher
-          notes={notes}
-          activeId={noteId}
-          {...noteActions}
-          open={switcherOpen}
-          onOpenChange={setSwitcherOpen}
-          onPick={(id) => {
-            openNote(id)
-            setPickedId(id)
-            setFocusKey((key) => key + 1)
-          }}
+      {hotkeyOpen && (
+        <React.Suspense>
+          <HotkeyDialog open onOpenChange={setHotkeyOpen} />
+        </React.Suspense>
+      )}
+      {deletedOpen && (
+        <DeletedNotesDialog doc={doc} onOpenChange={setDeletedOpen} onRestored={openPicked} />
+      )}
+      <InviteDialog info={joinInfo} open={inviteOpen} onOpenChange={setInviteOpen} />
+      {share && (
+        <ShareDialog
+          key={share.n}
+          noteId={share.id}
+          open={share.open}
+          onOpenChange={(open) => setShare({ ...share, open })}
+          onShared={() => markShared(doc, share.id)}
         />
-        {/* Desktop: a small window, so tighter edges (the title bar sits above). */}
-        <div className="mx-auto w-full max-w-3xl p-4 desktop:px-3 desktop:pt-1">
-          {/* Desktop: the title bar has the trigger instead. */}
-          <div className="mb-2 flex items-center md:absolute md:top-2 md:left-2 md:mb-0 desktop:hidden">
-            <SidebarToggle />
-          </div>
-          {share && (
-            <ShareDialog
-              key={share.n}
-              noteId={share.id}
-              open={share.open}
-              onOpenChange={(open) => setShare({ ...share, open })}
-              onShared={() => markShared(doc, share.id)}
-            />
-          )}
+      )}
 
-          {shareToken ? (
-            <ShareLinkPage token={shareToken} doc={doc} onOpen={openSharedNote} />
-          ) : noteId ? (
-            <Editor
-              key={noteId}
-              noteId={noteId}
-              onMetaChange={handleMeta}
-              role={currentNote?.role}
-              followRemote={!!(currentNote?.role || currentNote?.shared)}
-              onRemoveLost={() => handleRemoveLost(noteId)}
-              onRoleChanged={() => void refreshRoles(doc)}
-              noAccess={currentNote?.noAccess}
-              caret={caretUser(user)}
-              onEdited={isDraft ? handleDraftEdited : undefined}
-              focusKey={isDraft || noteId === pickedId ? focusKey : undefined}
-            />
-          ) : (
-            // Centred in the writing area (SidebarInset is `relative`); pointer-events-none so it
-            // never blocks the sidebar toggle under it.
+      {/* Desktop: a small window, so tighter edges (the title bar sits above). */}
+      <div className="mx-auto w-full max-w-3xl p-4 desktop:px-3 desktop:pt-1">
+        {shareToken ? (
+          <ShareLinkPage token={shareToken} doc={doc} onOpen={openSharedNote} />
+        ) : noteId ? (
+          <Editor
+            key={noteId}
+            noteId={noteId}
+            onMetaChange={handleMeta}
+            role={currentNote?.role}
+            followRemote={!!(currentNote?.role || currentNote?.shared)}
+            onRemoveLost={() => handleRemoveLost(noteId)}
+            onRoleChanged={() => void refreshRoles(doc)}
+            noAccess={currentNote?.noAccess}
+            caret={caretUser(user)}
+            onEdited={isDraft ? handleDraftEdited : undefined}
+            onLeftEmpty={() => handleLeftEmpty(noteId)}
+            focusKey={isDraft || noteId === pickedId ? focusKey : undefined}
+          />
+        ) : (
+          // Centred in the window (the scroll box is `relative`); pointer-events-none so it never
+          // blocks the top bar under it. Not while this device's list is still loading (the
+          // sidebar's placeholder rows used to cover that moment).
+          loaded && (
             <p className="pointer-events-none absolute inset-0 flex items-center justify-center p-4 text-center text-muted-foreground">
-              No notes yet. Create one with “New note”.
+              No notes yet. Create one with + at the top.
             </p>
-          )}
-        </div>
-      </SidebarInset>
+          )
+        )}
+      </div>
 
       <AlertDialog
         open={!!confirmDelete?.open}
@@ -377,9 +592,57 @@ function NotesApp({
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog
+        open={!!deleteAll?.open}
+        onOpenChange={(open) => setDeleteAll((d) => d && { ...d, open })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteAll?.count === 1 ? "Delete 1 note?" : `Delete all ${deleteAll?.count} notes?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Recently Deleted can bring them back. Shared notes are kept.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                setDeleteAll((d) => d && { ...d, open: false })
+                handleDeleteAll()
+              }}
+            >
+              Delete all
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={unsynced !== null} onOpenChange={handleUnsyncedChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {unsynced === 1 ? "1 note is not synced" : `${unsynced} notes are not synced`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {unsynced === 1 ? "It" : "They"} could not be saved to the server (offline, or not
+              yours). Signing out deletes {unsynced === 1 ? "it" : "them"} from this device.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay signed in</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => void signOut(user.id)}>
+              Sign out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <NoticeToast notice={notice} onClose={clearNotice} />
       <InstallHint />
-    </SidebarProvider>
+    </div>
   )
 }
 

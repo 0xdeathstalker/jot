@@ -45,16 +45,16 @@ function blockText(node: XmlFragment | XmlElement): string {
     .join("")
 }
 
-// Same rule as the editor's isBlankDoc: nothing, or one empty paragraph. An empty checklist or
-// heading is not blank. Typing and deleting leaves an empty text node, still an empty paragraph.
+// Blank = no text (whitespace only) and no image, whatever the blocks: an empty checklist, heading
+// or code block is blank too (docs/plans/blank-notes.md E1, owner 2026-11-28). Same rule as the
+// editor's isBlankDoc (editor/editor.tsx); change both together.
 export function isBlankDocument(doc: Doc): boolean {
-  const blocks = doc.getXmlFragment("default").toArray()
-  if (blocks.length === 0) return true
-  const [first] = blocks
-  return (
-    blocks.length === 1 &&
-    first instanceof XmlElement &&
-    first.nodeName === "paragraph" &&
-    first.toArray().every((child) => child instanceof XmlText && child.length === 0)
-  )
+  const fragment = doc.getXmlFragment("default")
+  return !blockText(fragment).trim() && !hasImage(fragment)
+}
+
+function hasImage(node: XmlFragment | XmlElement): boolean {
+  return node
+    .toArray()
+    .some((child) => child instanceof XmlElement && (child.nodeName === "image" || hasImage(child)))
 }
