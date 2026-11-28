@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–5 done.** Phases 6–13 (editor chrome) planned; phase 14 (docs) last.
+Status (2026-11-28): **phases 1–6 done.** Phases 7–13 (editor chrome) planned; phase 14 (docs) last.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -342,17 +342,18 @@ Goal: the toolbar matches Raycast Notes in size. Picture: one slim row of 16px i
 square buttons, with chevrons on the dropdowns, thin dividers between groups, and a round ✕ at
 the right end (the ✕ comes in phase 8).
 
-- [ ] **6.1** `editor/toolbar.tsx`, desktop and web:
+- [x] **6.1** `editor/toolbar.tsx`, desktop and web:
   - buttons are 28px (`h-7 min-w-7`) with 16px icons
   - group gaps are `gap-0.5`, with a 1px divider and `px-1`
   - the bar's padding is `p-0.5` and its radius `rounded-[10px]`
   - the dropdown chevron is 12px
-- [ ] **6.2** Phone: buttons go from 40px down to 36px (`h-9 min-w-9`), with 18px icons. That is
+- [x] **6.2** Phone: buttons go from 40px down to 36px (`h-9 min-w-9`), with 18px icons. That is
       still a fair touch size; Apple asks for 44pt, and 36px is the smallest this plan accepts.
       The bar stays on one line down to a 360px-wide phone.
-- [ ] **6.3** Check the dropdowns (Headings, text style, lists) still open from the smaller
+- [x] **6.3** Check the dropdowns (Headings, text style, lists) still open from the smaller
       buttons. Their menu items keep the current size.
 
+Done as (2026-11-28): only `editor/toolbar.tsx` changed. The bar's `[&_button]` / `[&_svg]` rules size every control in it: Toggles, menu triggers and the link button. Desktop and web get 28px buttons with `px-1.5` and 16px icons (24px was tried and dropped, owner 2026-11-28). Phone sizes use a new `phone:` variant (`styles/index.css`: below 640px and not inside `.desktop`), because the desktop window is usually under 640px wide and was picking up the 36px phone sizes. Hover is `bg-foreground/10`, pressed and open menus `bg-foreground/15`; the theme's muted barely showed on the bar in dark mode. Also `gap-0.5`, `p-0.5`, `rounded-[10px]`, and dividers with `ml-0.5 pl-1`. Phones get 36px buttons with 18px icons. The chevron was already 12px. The toolbar dropdowns (owner, 2026-11-28, Raycast screenshot) use a lighter background in dark mode (`color-mix` of popover and 10% foreground), and their rows highlight with `bg-foreground/10` on hover and `/15` when checked. Not yet compared with Raycast on screen.
 Check: compare it with the Raycast screenshot at the same window width, in both themes.
 
 ### Phase 7: Toolbar in the top bar on web (point 1)

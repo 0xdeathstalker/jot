@@ -6,6 +6,14 @@
 @custom-variant dark (&:is(.dark *));
 /* Inside the Windows desktop app (main.tsx sets the class). */
 @custom-variant desktop (&:is(.desktop *));
+/* Phone-width screens, but not a narrow desktop app window (which keeps desktop sizes). */
+@custom-variant phone {
+  @media (width < 40rem) {
+    &:not(.desktop *) {
+      @slot;
+    }
+  }
+}
 
 @theme inline {
   --font-heading: var(--font-sans);

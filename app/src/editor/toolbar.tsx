@@ -170,11 +170,16 @@ export function Toolbar({
     <div
       role="toolbar"
       aria-label="Formatting"
-      // As wide as its buttons, centred, sticky at the top. Phones (below sm): pinned to the bottom of
-      // the screen (inset-x + mx-auto centres it; left-1/2 would halve the width it may use), with
-      // touch-sized buttons like Apple Notes: 40px buttons, 20px icons, a 46px bar. Tight gaps keep
-      // it on one line down to a 360px-wide phone; it still wraps (centred) if that does not fit.
-      className="sticky top-[calc(env(safe-area-inset-top)+3rem)] z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-1 rounded-[12px] border bg-popover p-1 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:gap-0.5 max-sm:p-0.5 max-sm:[&_button]:h-10 max-sm:[&_button]:min-w-10 max-sm:[&_button]:px-1 max-sm:[&_svg:not([class*='size-'])]:size-5"
+      // As wide as its buttons, centred, sticky at the top. Compact like Raycast Notes: 28px
+      // buttons, 16px icons, a 34px bar (the [&_button] rules size the Toggles, menu triggers and
+      // the link button alike). Below sm: pinned to the bottom of the window (inset-x +
+      // mx-auto centres it; left-1/2 would halve the width it may use). Phones (`phone:`, never the
+      // desktop app, whose window is often that narrow too) get 36px buttons and 18px
+      // icons, still fine to tap. Tight gaps keep it on one line down to a 360px-wide phone; it
+      // still wraps (centred) if that does not fit.
+      // Hover and pressed: the text colour at 10% / 15% over the bar. The theme's muted is almost the
+      // bar's own colour in dark mode, so the usual hover:bg-muted barely showed.
+      className="sticky top-[calc(env(safe-area-inset-top)+3rem)] z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-0.5 rounded-[10px] border bg-popover p-0.5 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 phone:[&_button]:h-9 phone:[&_button]:min-w-9 phone:[&_button]:px-1 [&_button:hover]:bg-foreground/10 [&_button[aria-pressed=true]]:bg-foreground/15 [&_svg:not([class*='size-'])]:size-4 phone:[&_svg:not([class*='size-'])]:size-[18px]"
     >
       <Group>
         <Menu
@@ -265,7 +270,7 @@ function ImageButton({
 
 function Group({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1 not-first:border-l not-first:pl-1 max-sm:gap-0 max-sm:not-first:pl-0.5">
+    <div className="flex items-center gap-0.5 not-first:ml-0.5 not-first:border-l not-first:pl-1 phone:gap-0 phone:not-first:ml-0 phone:not-first:pl-0.5">
       {children}
     </div>
   )
@@ -293,7 +298,7 @@ function Button({ item, pressed, editor, disabled }: Common & { item: Item; pres
 // checked state for screen readers but show it as an accent background, not a tick. Font weight tells
 // it apart from the hover highlight, which uses the same accent colour in this theme.
 const itemClass =
-  "pr-3 data-checked:bg-accent data-checked:font-medium data-checked:text-accent-foreground *:data-[slot$=indicator]:hidden rounded-4xl"
+  "pr-3 focus:bg-foreground/10 data-checked:bg-foreground/15 data-checked:font-medium data-checked:text-accent-foreground *:data-[slot$=indicator]:hidden rounded-4xl"
 function Menu({
   label,
   icon,
@@ -357,7 +362,8 @@ function Menu({
         className={cn(
           toggleVariants({ size: "sm" }),
           "gap-0.5 px-2",
-          anyActive && "bg-muted text-foreground",
+          "data-popup-open:bg-foreground/15",
+          anyActive && "bg-foreground/15 text-foreground",
         )}
       >
         <HugeiconsIcon icon={icon} />
@@ -365,7 +371,13 @@ function Menu({
       </DropdownMenuTrigger>
       {/* finalFocus false: the command already put the cursor back in the editor; returning focus
           to the trigger would take it away again. */}
-      <DropdownMenuContent finalFocus={false} className="w-auto rounded-[12px]">
+      {/* Dark mode: a lighter shade than the page (the popover colour with 10% of the text colour,
+          like Raycast Notes), so the open menu stands out from the note behind it. Hover and
+          checked rows use the text colour too, as on the toolbar. */}
+      <DropdownMenuContent
+        finalFocus={false}
+        className="w-auto rounded-[12px] dark:bg-[color-mix(in_oklab,var(--popover),var(--foreground)_10%)]"
+      >
         {single ? (
           <DropdownMenuRadioGroup value={items[checked.indexOf(true)]?.label ?? ""}>
             {entries}
