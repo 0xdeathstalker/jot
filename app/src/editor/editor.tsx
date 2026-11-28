@@ -8,6 +8,7 @@ import type { Node as PMNode } from "@tiptap/pm/model"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import * as React from "react"
+import { createPortal } from "react-dom"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -27,6 +28,7 @@ import { getTitleAndPreview, type NoteText } from "@/features/notes/note-meta"
 import type { CaretUser } from "@/features/sharing/caret-user"
 import { NoAccess } from "@/features/sharing/no-access"
 import { useAccessLost } from "@/hooks/use-access-lost"
+import { useLayout } from "@/hooks/use-layout"
 import type { SharedRole } from "@/sync/index-doc"
 import { stopSyncing, useNoteSession } from "@/sync/provider"
 
@@ -225,7 +227,28 @@ export function Editor({
     if (editor && focusKey !== undefined) editor.commands.focus()
   }, [editor, focusKey])
 
+  // Web layout: the toolbar sits in the top bar's centre slot (features/notes/top-bar.tsx renders
+  // it only then). Looked up after mount, when the bar is in the page; until it is found (or on a
+  // page without the bar) the toolbar stays inline above the note.
+  const layout = useLayout()
+  const [barSlot, setBarSlot] = React.useState<HTMLElement | null>(null)
+  React.useEffect(() => {
+    // The slot is a DOM node another component commits: it can only be read after commit.
+    // oxlint-disable-next-line react/set-state-in-effect
+    setBarSlot(layout === "web" ? document.getElementById("top-bar-centre") : null)
+  }, [layout])
+
   if (lost) return <NoAccess onRemove={() => onRemoveLost?.()} />
+
+  const toolbar = (
+    <Toolbar
+      editor={editor}
+      disabled={readOnly || outdated}
+      notify={setNotice}
+      onPickImages={(files) => void insertImageFiles(editor.view, doc, files, setNotice)}
+      inBar={!!barSlot}
+    />
+  )
 
   return (
     <>
@@ -245,12 +268,7 @@ export function Editor({
           </p>
         )
       )}
-      <Toolbar
-        editor={editor}
-        disabled={readOnly || outdated}
-        notify={setNotice}
-        onPickImages={(files) => void insertImageFiles(editor.view, doc, files, setNotice)}
-      />
+      {barSlot ? createPortal(toolbar, barSlot) : toolbar}
       <EditorContent editor={editor} />
       <NoticeToast notice={notice} onClose={clearNotice} />
     </>

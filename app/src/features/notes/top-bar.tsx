@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import type * as React from "react"
 
 import { Button } from "@/components/ui/button"
+import { useLayout } from "@/hooks/use-layout"
 import { formatShortcut as shortcut, isDesktop } from "@/lib/platform"
 
 // The one bar on every platform (web, phone, desktop), like Raycast Notes: Actions, New note and
@@ -24,6 +25,7 @@ export function TopBar({
   onSearch: () => void
   children?: React.ReactNode
 }) {
+  const layout = useLayout()
   return (
     <div
       data-tauri-drag-region
@@ -57,10 +59,15 @@ export function TopBar({
       >
         <HugeiconsIcon icon={Search01Icon} />
       </Button>
-      {/* inset-x-32: same on both sides, so it stays centred, clear of the three left buttons. */}
-      <span className="pointer-events-none absolute inset-x-32 truncate text-center text-sm text-muted-foreground">
-        {title}
-      </span>
+      {/* inset-x-32: same on both sides, so it stays centred, clear of the three left buttons.
+          Web: the editor puts its formatting toolbar here instead of the title (editor.tsx). */}
+      {layout === "web" ? (
+        <div id="top-bar-centre" className="absolute inset-x-32 flex justify-center" />
+      ) : (
+        <span className="pointer-events-none absolute inset-x-32 truncate text-center text-sm text-muted-foreground">
+          {title}
+        </span>
+      )}
       <div data-tauri-drag-region className="h-full flex-1" />
       {children}
     </div>

@@ -145,11 +145,14 @@ export function Toolbar({
   disabled = false,
   notify,
   onPickImages,
+  inBar = false,
 }: {
   editor: Editor
   disabled?: boolean
   notify: Notify
   onPickImages: (files: File[]) => void
+  // Web layout: inside the top bar (editor.tsx portals it there): no frame of its own, one line.
+  inBar?: boolean
 }) {
   // Tiptap v3 does not re-render React on every transaction: subscribe to the active flags.
   const active = useEditorState({
@@ -177,9 +180,15 @@ export function Toolbar({
       // desktop app, whose window is often that narrow too) get 36px buttons and 18px
       // icons, still fine to tap. Tight gaps keep it on one line down to a 360px-wide phone; it
       // still wraps (centred) if that does not fit.
+      // Desktop app: always at the bottom of the window, like Raycast Notes. Web: inside the top
+      // bar (`inBar`), same frame; a narrow bar scrolls it sideways rather than wrapping it.
       // Hover and pressed: the text colour at 10% / 15% over the bar. The theme's muted is almost the
       // bar's own colour in dark mode, so the usual hover:bg-muted barely showed.
-      className="sticky top-[calc(env(safe-area-inset-top)+3rem)] z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-0.5 rounded-[10px] border bg-popover p-0.5 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 phone:[&_button]:h-9 phone:[&_button]:min-w-9 phone:[&_button]:px-1 [&_button:hover]:bg-foreground/10 [&_button[aria-pressed=true]]:bg-foreground/15 [&_svg:not([class*='size-'])]:size-4 phone:[&_svg:not([class*='size-'])]:size-[18px]"
+      className={cn(
+        "sticky top-[calc(env(safe-area-inset-top)+3rem)] z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-0.5 rounded-[10px] border bg-popover p-0.5 max-sm:fixed max-sm:inset-x-2 max-sm:top-auto max-sm:bottom-[max(0.5rem,env(safe-area-inset-bottom))] desktop:fixed desktop:inset-x-2 desktop:top-auto desktop:bottom-2 [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 phone:[&_button]:h-9 phone:[&_button]:min-w-9 phone:[&_button]:px-1 [&_button:hover]:bg-foreground/10 [&_button[aria-pressed=true]]:bg-foreground/15 [&_svg:not([class*='size-'])]:size-4 phone:[&_svg:not([class*='size-'])]:size-[18px]",
+        inBar &&
+          "static w-auto max-w-full [scrollbar-width:none] flex-nowrap justify-start overflow-x-auto",
+      )}
     >
       <Group>
         <Menu

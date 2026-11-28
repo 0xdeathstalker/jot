@@ -1,6 +1,6 @@
 # Plan: Action Panel (Raycast Notes style, Ctrl/⌘+K)
 
-Status (2026-11-28): **phases 1–6 done.** Phases 7–13 (editor chrome) planned; phase 14 (docs) last.
+Status (2026-11-28): **phases 1–7 done.** Phases 8–13 (editor chrome) planned; phase 14 (docs) last.
 
 Goal: a searchable list of every action for the open note, like the Raycast Notes Action Panel,
 and (phase 5) one top bar on every platform in place of the sidebar.
@@ -361,20 +361,21 @@ Check: compare it with the Raycast screenshot at the same window width, in both 
 Goal: **web** shows the formatting toolbar in the centre of the top bar, where the title was.
 **desktop** and **phone** keep the title there.
 
-- [ ] **7.1** `features/notes/top-bar.tsx` renders a centre slot `<div id="top-bar-centre">`. In
+- [x] **7.1** `features/notes/top-bar.tsx` renders a centre slot `<div id="top-bar-centre">`. In
       **web** it holds nothing else. In the other modes the title is shown, as today.
-- [ ] **7.2** The editor owns the toolbar, because it needs the editor instance. In **web**,
+- [x] **7.2** The editor owns the toolbar, because it needs the editor instance. In **web**,
       `editor/editor.tsx` renders `<Toolbar>` through `createPortal` into the centre slot.
       Elsewhere it stays where it is. Fall back to the inline toolbar if the slot is missing, for
       example on the share-link page.
-- [ ] **7.3** In the bar, the toolbar is centred and fits between the left buttons and the edge.
-  - Drop its border and background there; it already sits on the bar.
+- [x] **7.3** In the bar, the toolbar is centred and fits between the left buttons and the edge.
+  - Keeps its border and background there (owner, 2026-11-28; first built frameless).
   - Below about 720px it may scroll sideways (`overflow-x-auto`, no scrollbar) rather than wrap.
-- [ ] **7.4** **desktop**: the toolbar always sits at the bottom of the window, as in Raycast,
+- [x] **7.4** **desktop**: the toolbar always sits at the bottom of the window, as in Raycast,
       not sticky under the bar. This drops the `sm:` sticky-top rule from 5.7 for desktop.
-- [ ] **7.5** Viewers (read-only notes) and no-access notes: show nothing in the slot, the same as
+- [x] **7.5** Viewers (read-only notes) and no-access notes: show nothing in the slot, the same as
       today's disabled state, or keep the title there.
 
+Done as (2026-11-28):- `hooks/use-layout.ts` returns `desktop` / `phone` / `web` (`isApp` waits for phase 11).- `TopBar` renders `<div id="top-bar-centre">` in web and the title elsewhere.- `Editor` finds the slot after commit and portals `<Toolbar inBar>` into it: keeps its border and background (owner, 2026-11-28), one line, scrolls sideways if narrow.- Desktop: `desktop:fixed … bottom-2`, plus `.desktop .ProseMirror` bottom padding.- 7.5: viewers see the disabled toolbar in the bar, as before inline.- Not yet checked in a browser.
 Check: in a browser tab, resize across 640px. The toolbar moves between the bottom and the top
 bar, and the title comes and goes, without losing the editor's selection.
 
