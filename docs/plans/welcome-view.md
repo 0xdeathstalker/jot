@@ -1,7 +1,7 @@
 # Plan: Welcome view (no note open)
 
-Status (2026-11-28): design final (F for web and desktop, M4 for phones). Phases 1–4 planned, not
-started.
+Status (2026-11-28): design final (F for web and desktop, M4 for phones). Phase 1 done (component
+written, not yet mounted: phase 3); phases 2–4 to do.
 Source: owner request, 2026-11-28 (Excalidraw's empty canvas as the reference).
 
 ## Context
@@ -44,20 +44,21 @@ shows it).
 
 ## Phase 1: the component
 
-- [ ] **1.1** New `app/src/features/notes/welcome.tsx`, `Welcome({ onActions, onNew, onSearch,
+- [x] **1.1** New `app/src/features/notes/welcome.tsx`, `Welcome({ onActions, onNew, onSearch,
       onHotkey })`. `onHotkey` is passed only in the desktop app; no row without it.
-- [ ] **1.2** Header: the logo as inline SVG (the favicon path, `fill-foreground` square and
+- [x] **1.2** Header: the logo as inline SVG (the favicon path, `fill-foreground` square and
       `stroke-background` mark, so it follows the theme), "Jot" (`text-3xl font-bold
       tracking-tight`, `text-2xl` in the small window), the description in `text-muted-foreground`.
-- [ ] **1.3** The bar: a `<button>` with the toolbar frame look (`rounded-xl border bg-popover`,
+- [x] **1.3** The bar: a `<button>` with the toolbar frame look (`rounded-xl border bg-popover`,
       soft shadow), `CommandLineIcon`, the text in `text-muted-foreground`, keycaps on the right.
-- [ ] **1.4** The rows: `<button>`s with an icon (`Add01Icon`, `Search01Icon`, a keyboard icon for
+- [x] **1.4** The rows: `<button>`s with an icon (`Add01Icon`, `Search01Icon`, a keyboard icon for
       the hotkey), label, and keycaps right-aligned; hover `bg-foreground/10` like the toolbar.
-- [ ] **1.5** Keys come from the same arrays the action list uses (`["Mod","K"]`, `["Mod","P"]`,
+- [x] **1.5** Keys come from the same arrays the action list uses (`["Mod","K"]`, `["Mod","P"]`,
       `["Mod","N"]` only when `isDesktop()`), drawn with `Kbd size="sm"` and `shortcutKeys`
       (`components/ui/kbd.tsx`, `lib/platform.ts`), as in the toolbar dropdowns.
-- [ ] **1.6** The whole view is `pointer-events-auto` (its wrapper in `app.tsx` is
+- [x] **1.6** The whole view is `pointer-events-auto` (its wrapper in `app.tsx` is
       `pointer-events-none` so it never blocks the top bar); real buttons, so Tab and Enter work.
+      Done as (2026-11-28): `features/notes/welcome.tsx`. The small desktop window uses `max-sm:`(smaller logo and title, gap 5 instead of 8); phase 2 swaps that for the phone rules where theydiffer. The bar is `max-w-100`, the rows `max-w-70`, as in the mockup (400px / 280px).
 
 ## Phase 2: phone (M4)
 
