@@ -36,6 +36,7 @@ import { DeletedNotesDialog } from "@/features/notes/deleted-notes-dialog"
 import type { NoteText } from "@/features/notes/note-meta"
 import { NoteSwitcher } from "@/features/notes/note-switcher"
 import { TopBar } from "@/features/notes/top-bar"
+import { Welcome } from "@/features/notes/welcome"
 import { removeMember, unshareNote } from "@/features/sharing/api"
 import { caretUser } from "@/features/sharing/caret-user"
 import { InviteDialog } from "@/features/sharing/invite-friend"
@@ -567,13 +568,21 @@ function NotesApp({
               startWithHeading={isDraft && noteId === headingDraftId}
             />
           ) : (
-            // Centred in the window (the scroll box is `relative`); pointer-events-none so it never
-            // blocks the top bar under it. Not while this device's list is still loading (the
-            // sidebar's placeholder rows used to cover that moment).
+            // No note open (none yet, or the open one was deleted or left): the welcome view
+            // (docs/plans/welcome-view.md). It fills the scroll box (`relative`), centred while it
+            // fits and scrolling in a short desktop window rather than clipping. Not while this
+            // device's list is still loading.
             loaded && (
-              <p className="pointer-events-none absolute inset-0 flex items-center justify-center p-4 text-center text-muted-foreground">
-                No notes yet. Create one with + at the top.
-              </p>
+              <div className="absolute inset-0 overflow-y-auto">
+                <div className="flex min-h-full items-center justify-center p-4">
+                  <Welcome
+                    onActions={() => setActionsOpen(true)}
+                    onNew={handleNew}
+                    onSearch={() => setSwitcherOpen(true)}
+                    onHotkey={isDesktop() ? () => setHotkeyOpen(true) : undefined}
+                  />
+                </div>
+              </div>
             )
           )}
         </div>

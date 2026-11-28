@@ -1,7 +1,8 @@
 # Plan: Welcome view (no note open)
 
 Status (2026-11-28): design final (F for web and desktop, M4 for phones). Phase 1 done (component
-written, not yet mounted: phase 3) and phase 2 (phone) done; phases 3–4 to do.
+written) and 2 (phone) done; phase 3 (mounted in `app.tsx`) done, not yet checked on screen;
+phase 4 to do.
 Source: owner request, 2026-11-28 (Excalidraw's empty canvas as the reference).
 
 ## Context
@@ -56,7 +57,7 @@ shows it).
 - [x] **1.5** Keys come from the same arrays the action list uses (`["Mod","K"]`, `["Mod","P"]`,
       `["Mod","N"]` only when `isDesktop()`), drawn with `Kbd size="sm"` and `shortcutKeys`
       (`components/ui/kbd.tsx`, `lib/platform.ts`), as in the toolbar dropdowns.
-- [x] **1.6** The whole view is `pointer-events-auto` (its wrapper in `app.tsx` is
+- [x] **1.6** (Superseded in phase 3: no pointer-events rules needed.) The whole view is `pointer-events-auto` (its wrapper in `app.tsx` is
       `pointer-events-none` so it never blocks the top bar); real buttons, so Tab and Enter work.
       Done as (2026-11-28): `features/notes/welcome.tsx`. The small desktop window uses `max-sm:`(smaller logo and title, gap 5 instead of 8); phase 2 swaps that for the phone rules where theydiffer. The bar is `max-w-100`, the rows `max-w-70`, as in the mockup (400px / 280px).
 
@@ -76,13 +77,19 @@ shows it).
 
 ## Phase 3: wiring in `app.tsx`
 
-- [ ] **3.1** Replace the "No notes yet" `<p>` with `<Welcome … />` under the same `loaded` guard,
+- [x] **3.1** Replace the "No notes yet" `<p>` with `<Welcome … />` under the same `loaded` guard,
       in the same absolutely positioned, centred wrapper.
-- [ ] **3.2** Handlers already there: `onActions={() => setActionsOpen(true)}`,
+- [x] **3.2** Handlers already there: `onActions={() => setActionsOpen(true)}`,
       `onNew={handleNew}`, `onSearch={() => setSwitcherOpen(true)}`, and on desktop
       `onHotkey={() => setHotkeyOpen(true)}`.
-- [ ] **3.3** Scroll box: the view must fit the 380×320 desktop window; if it does not, let it
+- [x] **3.3** Scroll box: the view must fit the 380×320 desktop window; if it does not, let it
       scroll (wrapper `min-h-full` instead of `inset-0` centring) rather than clip.
+
+Done as (2026-11-28): the `<p>` in `app.tsx` is now `<Welcome>` inside an `absolute inset-0
+overflow-y-auto` box with a `min-h-full` centring row: centred while it fits, scrolls in a short
+window (3.3). Desktop passes `onHotkey` via `isDesktop()`. The old `pointer-events-none` (1.6) is
+gone: it dated from the sticky sidebar era; the top bar now sits above the scroll box, not under
+it, so nothing needs clicks passed through.
 
 ## Phase 4: docs and clean-up
 
